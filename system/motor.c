@@ -1,5 +1,7 @@
 #include "motor.h"
 
+#define MTR_DISENGAGE_STEPS 3
+
 // Default number of ticks for approach timer 
 // 418 clock ticks --> 41.78 million / 100000 = 10us
 #define TMR_DFLT  2926
@@ -27,6 +29,21 @@ unsigned short coarse_pw[COARSE_SCALE] = {TMR_DFLT,
 								TMR_DFLT*20};
 
 static bool step_cmp_flag = false;
+
+#define Z_MIN 175
+#define Z_SAMPLES 8
+#define Z_SAMPLE_DELAY 20
+#define COARSE_CHANGE 0.98f
+#define COARSE_SPEED 2
+#define COARSE_STEP_DWELL 40000
+#define BWD_STEPS 32
+#define FINE_CHANGE 0.6f
+#define FINE_SPEED 1
+#define FINE_STEP_DWELL 2000
+#define FINE_Z_SPEED (DAC_MAX/256.0f)
+#define FINE_Z_STEP_DWELL 2000
+
+static void mtr_disengage (void);
 
 void mtr_init (void)
 {
@@ -103,137 +120,137 @@ __inline static void _mtr_step (void)
 }
 
 
-u8 mtr_auto_approach (void)
+u8 mtr_auto_approach (us16 setpoint, us16 setpoint_error)
 {
-	const us16 FINE_Z_STEP = DAC_MAX/64;
-	const float COARSE_CHANGE = 0.95f;
-	const us16 COARSE_SPEED = 2;
-	const float FINE_CHANGE = 0.6f;
-	const us16 FINE_SPEED = 1;
-	const us16 SAMPLES = 8;
-	const us16 BWD_STEPS = 64;
-
-	volatile u32 set_time = 200000;
+	volatile u32 set_time;
 	us16 z_amp, z_amp_min, z_amp_start;
 	s32 i;
-	us16 z_off_max = dac_get_limit (DAC_ZOFFSET);
 	bool mov_compl = false;
 	bool mov_fwd_compl = false;
-	us16 setpoint = 564;
-	us16 setpoint_error = 30;
+	us16 coarse_max = dac_get_limit (dac11);
 
-	for (i = DAC_MAX; i > 0; i --){	
-		dac_set_val (dac11, i);
-		set_time = 2000;
+	/* Take arbritary but significant number of step backwards
+		to ensure we are not close to the tip */
+	mtr_set_dir (mtr_bwd);
+	for (i = 0; i < BWD_STEPS*4; i++){
+		_mtr_step ();
+		set_time = FINE_STEP_DWELL;
 		while (set_time--);
 	}
 
-	set_time = 500000;
+	/* Gets initial z-amp */
+	for (i = DAC_MAX; i > 0; i --){	
+		dac_set_val (dac11, i);
+		set_time = FINE_Z_STEP_DWELL;
+		while (set_time--);
+	}
+	set_time = 800000;
 	while (set_time--);
-
 	adc_start_conv (ADC_ZAMP);
-	z_amp_start = adc_get_avgw_val (SAMPLES, 20);
+	z_amp_start = adc_get_avgw_val (Z_SAMPLES, Z_SAMPLE_DELAY);
+	z_amp_min = z_amp_start;
 
+	/* Begin coarse approach */
 	mtr_set_dir (mtr_fwd);
 	mtr_set_pw (COARSE_SPEED);
-
-	z_amp_min = z_amp_start;
 	while (z_amp_min > COARSE_CHANGE*z_amp_start){
+		/* Kill auto approach if stop requested */
 		if (is_received () && uart_get_char () == 's'){
 			return 1;
 		}
 
-		// Step motor closer
+		/* Step motor closer */
 		_mtr_step ();
-
-		set_time = 2000;
+		set_time = COARSE_STEP_DWELL;
 		while (set_time--);
 
+		/* Use thermal coupling between z-actuator and sample
+			to determine when to stop coarse approach */
 		adc_start_conv (ADC_ZAMP);
-		z_amp = adc_get_avgw_val(SAMPLES, 20);
-
+		z_amp = adc_get_avgw_val(Z_SAMPLES, Z_SAMPLE_DELAY);
+		/* Done to prevent noise from masking tip-sample proximty */
 		if (z_amp < z_amp_min) {
 			z_amp_min = z_amp;
 		}
-
-		// Write some z-amplitude data
-		uart_write_bytes ((u8*)(&z_amp_min), 2);
 	}
 
+	/* Fine approach - Approach with small motor steps while scanning
+		back and forth with the tip using z-offset voltage. If we get too
+		close, step the motor back and then reapproach. Repeat method until
+		setpoint value is achieved through adjustment of z-offset. */ 
 	mtr_set_pw (FINE_SPEED);
-
 	while (!mov_compl){
+		/* Step motor back */
 		mtr_set_dir (mtr_bwd);
 		for (i = 0; i < BWD_STEPS; i++){
 			_mtr_step ();
-			set_time = 2000;
+			set_time = FINE_STEP_DWELL;
 			while (set_time--);
 		}
-		
-		mtr_set_dir (mtr_fwd);
+
+		/* Approach with motor */
 		mov_fwd_compl = false;
 		z_amp_min = z_amp_start;
+		mtr_set_dir (mtr_fwd);
 		while (z_amp_min > FINE_CHANGE*z_amp_start){
+			/* Kill approach if requested */
 			if (is_received () && uart_get_char () == 's'){
 				return 1;
 			}
 	
-			// Step motor closer
-			_mtr_step ();
-	
-			set_time = 2000;
+			/* Step motor closer */
+			_mtr_step ();	
+			set_time = FINE_STEP_DWELL;
 			while (set_time--);
-	
-			for (i = DAC_MAX; i > 0; i -= FINE_Z_STEP){
+
+			/* Sample by moving tip through range of motion */				
+			for (i = coarse_max; i > 0; i -= FINE_Z_SPEED){
+				/* Move tip */
 				dac_set_val (dac11, i);
-			
-				set_time = 2000;
+				set_time = FINE_Z_STEP_DWELL;
 				while (set_time--);
-				
+
+				/* Read bridge voltage */
 				adc_start_conv (ADC_ZAMP);
-				z_amp = adc_get_avgw_val(SAMPLES, 20);
-	
+				z_amp = adc_get_avgw_val(Z_SAMPLES, Z_SAMPLE_DELAY);
 				if (z_amp < z_amp_min) {
 					z_amp_min = z_amp;
 				}
-	
+
+				/* If we are within setpoint limits */	
 				if (abs(z_amp-setpoint)<=setpoint_error){
+
+					/* Wait for transient voltage change to settle */
 					set_time = 200000;
 					while (set_time--);
+					/* Resample to confirm we are within required setpoint */
 					adc_start_conv (ADC_ZAMP);
-					z_amp = adc_get_avgw_val(SAMPLES, 20);
+					z_amp = adc_get_avgw_val(Z_SAMPLES, Z_SAMPLE_DELAY);
 					if (abs(z_amp-setpoint)<=setpoint_error)
 					{
+						/* Auto approach is finished */
 						mov_compl = true;
 						/* TODO change this */
-						return 1;
+						return 0;
 					}
 				}
 			}
 		}
 	}
 
-	/*	-- Tests actuation of z
-		while (1){
-		dac_set_val (dac9, 500);
-		for (i = DAC_MAX; i > 0; i --){
-			dac_set_val (dac11, i);
-			
-			adc_start_conv (ADC_ZAMP);
-			z_amp = adc_get_avgw_val(SAMPLES, 20);
-		}
-		dac_set_val (dac9, 0);
-		for (i = 0; i <= DAC_MAX; i ++){
-			dac_set_val (dac11, i);
-			
-			adc_start_conv (ADC_ZAMP);
-			z_amp = adc_get_avgw_val(SAMPLES, 20);
-		}
-	} */
-			
-	uart_write_bytes ((u8*)(&z_amp_min), 2);		
+	mtr_disengage ();
 
 	return 0;
+}
+
+static void mtr_disengage (void)
+{
+	u32 i = 0;
+	mtr_set_dir (mtr_bwd);
+	mtr_set_pw (COARSE_SPEED);
+	for (i = 0; i < MTR_DISENGAGE_STEPS; i ++){
+		_mtr_step ();
+	}
 }
 
 void mtr_handler (void)

@@ -580,8 +580,12 @@ void cont_pulse(void)
 void auto_approach (void)
 {
 	u8 approach_fail;
+	us16 setpoint_req, setpoint_error;
 	pid_enable (false);
-	approach_fail = mtr_auto_approach ();
+
+   	uart_wait_get_bytes ((u8*)(&setpoint_req), 2);
+   	uart_wait_get_bytes ((u8*)(&setpoint_error), 2);
+	approach_fail = mtr_auto_approach (setpoint_req, setpoint_error);
 
 	if (!approach_fail){
 		uart_set_char ('o');

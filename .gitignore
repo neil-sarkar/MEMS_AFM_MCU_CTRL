@@ -50,3 +50,5 @@ Icon
 *.lst
 *.lnp
 *.bak
+*.plg
+project/mems_mcu.plg
