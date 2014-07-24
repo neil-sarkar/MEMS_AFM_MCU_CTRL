@@ -157,7 +157,7 @@ static u8 coarse_approach (us16 z_amp_limit)
 	mtr_set_pw (COARSE_SPEED);
 	while (z_amp_min > z_amp_limit){
 		/* Kill auto approach if stop requested */
-		if (is_received () && uart_get_char () == 's'){
+		if (is_received () && uart_get_char () == BRK_CHAR){
 			return 1;
 		}
 
@@ -205,7 +205,7 @@ static u8 fine_approach (us16 z_amp_limit, us16 setpoint, us16 setpoint_error)
 		mtr_set_dir (mtr_fwd);
 		while (z_amp_min > z_amp_limit){
 			/* Kill approach if requested */
-			if (is_received () && uart_get_char () == 's'){
+			if (is_received () && uart_get_char () == BRK_CHAR){
 				return 1;
 			}
 	

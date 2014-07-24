@@ -12,6 +12,8 @@
 #define MOTOR_DIR_DD BIT30
 #define MOTOR_PWR_DD BIT31
 
+#define BRK_CHAR 0x71 // 'q' character
+
 typedef enum 
 {
 	mtr_fwd,

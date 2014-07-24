@@ -31,15 +31,12 @@ static Actuator z_act;
 #define DAC0_CS_DIR_BIT BIT29
 #define DAC0_CS_BIT	BIT21
 
-// ASCII character 'q'
-#define BRK_CHAR  0x71
-
 // Macro function to clear terminal screen
 #define CLEAR() uart_write("\033c")
 
 // coarse approach ISR flag
-volatile bool flag;	
-void set_dir(char);
+//volatile bool flag;	
+//void set_dir(char);
 
 int main(void)
 {
@@ -531,49 +528,21 @@ void set_pw (void)
 
 void single_pulse(void)
 {
-	// pwr = gnd
-	GP2DAT &= ~MOTOR_PWR;
-
-	// Enable timer
-	flag = false;
-	T0CON |= BIT7;
-	while (!flag) {};
-	// disable timer
-	T0CON &= ~BIT7;
-
-	// pwr = vcc
-	GP2DAT |= MOTOR_PWR;
+	mtr_step ();
+	uart_write ("o");
 }
 
 void cont_pulse(void)
 {
-
-	u8 rx;
-
 	for (;;) {
-		rx = uart_get_char();
-		if (rx == BRK_CHAR) break;
+		/* Kill approach if requested */
+		if (is_received () && uart_get_char () == BRK_CHAR){
+			break;
+		}
 
-		// pwr = gnd
-		GP2DAT &= ~MOTOR_PWR;
-	
-		flag = false;
-		// Enable timer
-		T0CON |= BIT7;
-		while (!flag) {};
-		// disable timer
-		T0CON &= ~BIT7;
-
-		// pwr = vcc
-		GP2DAT |= MOTOR_PWR;
-
-		// Enable timer
-		flag = false;
-		T0CON |= BIT7;
-		while (!flag) {};
-		// disable timer
-		T0CON &= ~BIT7;
+		mtr_step ();
 	}
+	uart_write ("o");
 }
 
 void auto_approach (void)

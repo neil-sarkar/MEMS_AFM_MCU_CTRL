@@ -52,3 +52,4 @@ Icon
 *.bak
 *.plg
 project/mems_mcu.plg
+*.plg
