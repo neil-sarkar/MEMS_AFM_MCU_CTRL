@@ -116,6 +116,7 @@ u8 mtr_auto_approach (us16 setpoint, us16 setpoint_error)
 	/* Take arbritary but significant number of step backwards
 		to ensure we are not close to the tip */
 	mtr_set_dir (mtr_bwd);
+	mtr_set_pw (COARSE_SPEED);
 	for (i = 0; i < BWD_STEPS*10; i++){
 		mtr_step ();
 		wait_time = FINE_STEP_DWELL;

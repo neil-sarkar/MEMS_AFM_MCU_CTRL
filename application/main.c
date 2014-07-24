@@ -497,7 +497,7 @@ void freq_sweep_dds(void)
 		uart_set_char((adc_val));
 		uart_set_char(((adc_val >> 8)));
 
-		delay = 100000;
+		delay = 12500;
 		while(delay--){};
 
 		dds_increment();		
@@ -549,14 +549,20 @@ void auto_approach (void)
 {
 	u8 approach_fail;
 	us16 setpoint_req, setpoint_error;
+	us16 coarse_voltage;
+
 	pid_enable (false);
 
    	uart_wait_get_bytes ((u8*)(&setpoint_req), 2);
    	uart_wait_get_bytes ((u8*)(&setpoint_error), 2);
 	approach_fail = mtr_auto_approach (setpoint_req, setpoint_error);
 
+	coarse_voltage = dac_get_val (dac11);
+
 	if (!approach_fail){
 		uart_set_char ('o');
+		uart_set_char((u8)((coarse_voltage) & 0xFF));
+		uart_set_char((u8)((coarse_voltage >> 8) & 0xFF));
 	} else {
 		uart_set_char ('s');
 	}
