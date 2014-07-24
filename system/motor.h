@@ -1,8 +1,10 @@
 #pragma once
 
+#include <stdlib.h>
 #include "../global/global.h"
 #include "../peripheral/dac.h"
 #include "../peripheral/adc.h"
+#include "../peripheral/uart.h"
 
 #define MOTOR_DIR BIT22
 #define MOTOR_PWR BIT23
@@ -22,7 +24,7 @@ u8 mtr_set_pw(u8 pw);
 
 u8 mtr_set_dir (mtrdir dir);
 
-u8 mtr_step (void);
+__inline u8 mtr_step (void);
 u8 mtr_auto_approach (us16 setpoint, us16 setpoint_error);
 
 void mtr_handler (void);

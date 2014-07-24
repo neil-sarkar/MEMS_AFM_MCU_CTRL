@@ -1,5 +1,4 @@
 #include "main.h"
-#include <math.h>
 
 #include "../peripheral/uart.h"
 #include "../peripheral/adc.h"
