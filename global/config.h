@@ -8,7 +8,7 @@
 */
 //#define BOARD_m
 #define BOARD_m_assem
-//#define BOARD_d
+//#define BOARD_v2
 
 //#define ZAMP_PADC
 
@@ -38,6 +38,7 @@
 
 #endif
 
+/* Green board with onboard mcu */
 #ifdef BOARD_m_assem
 #define DAC_X1			dac11	
 #define DAC_X2			dac7//Swapped with DAC10 for fine Z control
@@ -64,29 +65,25 @@
 
 #endif
 
-#ifdef BOARD_d
-#define DAC_X1			dac2	
-#define DAC_X2			dac3
-#define DAC_Y1			dac4
-#define DAC_Y2			dac5
-#define DAC_BR1			dac0
-#define DAC_BR2			dac1
-#define DAC_ZVCO		dac6
-#define DAC_ZOFFSET		dac8
-#define DAC_ZAMP		dac7
+#ifdef BOARD_v2
+#define DAC_BUFFERED1		dac0
+#define DAC_BUFFERED2		dac1
+#define DAC_BR2				dac2
+#define DAC_ZAMP			dac3
+#define DAC_BR1				dac4
+#define DAC_BUFFERED3		dac5
+#define DAC_ZOFFSET_FINE	dac6
+#define DAC_Y1				dac7
+#define DAC_ZOFFSET_COARSE	dac8
+#define DAC_Y2				dac9
+#define DAC_X1				dac10
+#define DAC_X2				dac11
 
-#define ADC_X1			adc0
-#define ADC_X2			adc1
-#define ADC_Y1			adc2
-#define ADC_Y2			adc3
-#define ADC_ZOFFSET		adc4
-
-#ifdef ZAMP_PADC
-#define ADC_ZAMP		padc0
-#else
-#define ADC_ZAMP		padc5
-#endif
-
+#define ADC_ZOFFSET			adc0
+#define ADC_ZOFFSET			adc2
+#define ADC_X1				adc3
+#define ADC_SPARE1			adc4
+//#ifdef
 #endif
 
 #define PID_INPUT		ADC_ZAMP

@@ -1,6 +1,10 @@
 #include "motor.h"
 
-#define MTR_DISENGAGE_STEPS 1
+#define MTR_DIR BIT22
+#define MTR_PWR BIT23
+
+#define MTR_DIR_DD BIT30
+#define MTR_PWR_DD BIT31
 
 // Default number of ticks for approach timer 
 // 418 clock ticks --> 41.78 million / 100000 = 10us
@@ -42,6 +46,7 @@ static bool step_cmp_flag = false;
 #define FINE_STEP_DWELL 2000
 #define FINE_Z_SPEED (DAC_MAX/256.0f)
 #define FINE_Z_STEP_DWELL 2000
+#define MTR_DISENGAGE_STEPS 1
 
 static u8 coarse_approach (us16 z_amp_limit);
 static u8 fine_approach (us16 z_amp_limit, us16 setpoint, us16 setpoint_error);
@@ -50,11 +55,11 @@ static void mtr_disengage (void);
 void mtr_init (void)
 {
 	// Set as output
-	GP2DAT |= MOTOR_DIR_DD + MOTOR_PWR_DD;
+	GP2DAT |= MTR_DIR_DD + MTR_PWR_DD;
 
 	// Set default values
-	GP2DAT &= ~MOTOR_DIR;
-	GP2DAT |= MOTOR_PWR;
+	GP2DAT &= ~MTR_DIR;
+	GP2DAT |= MTR_PWR;
 
 	/* Initilize Timer 0 for the coarse approach */
 	T0LD  = TMR_DFLT;
@@ -77,12 +82,12 @@ u8 mtr_set_dir (mtrdir dir)
 {
 	if (dir == mtr_bwd) 
 	{
-		GP2DAT &= ~MOTOR_DIR;
+		GP2DAT &= ~MTR_DIR;
 		return 0;
 	}
 	else if (dir == mtr_fwd)
 	{
-		GP2DAT |= MOTOR_DIR;
+		GP2DAT |= MTR_DIR;
 		return 0;
 	}
 	return 1;
@@ -94,14 +99,14 @@ __inline u8 mtr_step (void)
 	step_cmp_flag = false;
 	T0CLRI = 0x55;
 	// pwr = gnd
-	GP2DAT &= ~MOTOR_PWR;	
+	GP2DAT &= ~MTR_PWR;	
 	// Begin timing
 	T0CON |= BIT7;
 	while (!step_cmp_flag );
 	// disable timer
 	T0CON &= ~BIT7;
 	// pwr = vcc
-	GP2DAT |= MOTOR_PWR;
+	GP2DAT |= MTR_PWR;
 	return 0;
 }
 

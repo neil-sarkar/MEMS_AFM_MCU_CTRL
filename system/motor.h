@@ -6,12 +6,6 @@
 #include "../peripheral/adc.h"
 #include "../peripheral/uart.h"
 
-#define MOTOR_DIR BIT22
-#define MOTOR_PWR BIT23
-
-#define MOTOR_DIR_DD BIT30
-#define MOTOR_PWR_DD BIT31
-
 #define BRK_CHAR 0x71 // 'q' character
 
 typedef enum 
