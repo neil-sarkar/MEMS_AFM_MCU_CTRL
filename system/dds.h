@@ -3,8 +3,6 @@
 
 #include "../global/global.h"
 
-#define DDS_CTRL BIT17
-
 void dds_spi_init(void);
 void dds_write(void);
 void dds_increment(void);

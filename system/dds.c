@@ -2,6 +2,20 @@
 
 #include "../peripheral/uart.h"
 
+#ifdef BOARD_m_assem
+	#define DDS_DAT_REG		GP0DAT
+	#define DDS_CTRL 		BIT17
+	#define DDS_CTRL_DD		(DDS_CTRL<<8)
+#elif defined(BOARD_v2)
+	#define DDS_DAT_REG		GP1DAT
+	#define DDS_CTRL 		BIT22
+	#define DDS_CTRL_DD		(DDS_CTRL<<8)
+#else 
+	#error "Motor GPIO not defined"
+#endif
+
+
+
 // DDS registers
 #define	REG_CTRL		0x0
 #define REG_N_INCR		0x1
@@ -47,8 +61,8 @@ void dds_spi_init()
 	GP0CON = BIT8 + BIT12 + BIT16 + BIT20;  // Select SPI alternative function
 	
 	// Configure P0.1 for DDS control, set to 0 and transition high
-	GP0DAT |= BIT25;
-	GP0DAT &= ~DDS_CTRL;
+	DDS_DAT_REG |= DDS_CTRL_DD;
+	DDS_DAT_REG &= ~DDS_CTRL;
 
 	SPICON = BIT0 + BIT1
 		   + BIT3
@@ -108,9 +122,9 @@ void dds_handler()
 void dds_increment()
 {
 	int cnt = 0xFF;
-	GP0DAT &= ~DDS_CTRL;
+	DDS_DAT_REG &= ~DDS_CTRL;
 	while (cnt--) {};
-	GP0DAT |= DDS_CTRL;
+	DDS_DAT_REG |= DDS_CTRL;
 }
 
 void dds_get_data()

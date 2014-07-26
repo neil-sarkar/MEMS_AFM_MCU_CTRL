@@ -1,10 +1,20 @@
 #include "motor.h"
 
-#define MTR_DIR BIT22
-#define MTR_PWR BIT23
-
-#define MTR_DIR_DD BIT30
-#define MTR_PWR_DD BIT31
+#ifdef BOARD_m_assem
+	#define MTR_DAT_REG		GP2DAT
+	#define MTR_DIR 		BIT22
+	#define MTR_PWR 		BIT23
+	#define MTR_DIR_DD 		(MTR_DIR<<8)
+	#define MTR_PWR_DD 		(MTR_PWR<<8)
+#elif defined(BOARD_v2)
+	#define MTR_DAT_REG		GP2DAT
+	#define MTR_DIR 		BIT22
+	#define MTR_PWR 		BIT23
+	#define MTR_DIR_DD 		(MTR_DIR<<8)
+	#define MTR_PWR_DD 		(MTR_PWR<<8)
+#else 
+	#error "Motor GPIO not defined"
+#endif
 
 // Default number of ticks for approach timer 
 // 418 clock ticks --> 41.78 million / 100000 = 10us
@@ -55,11 +65,11 @@ static void mtr_disengage (void);
 void mtr_init (void)
 {
 	// Set as output
-	GP2DAT |= MTR_DIR_DD + MTR_PWR_DD;
+	MTR_DAT_REG |= MTR_DIR_DD | MTR_PWR_DD;
 
 	// Set default values
-	GP2DAT &= ~MTR_DIR;
-	GP2DAT |= MTR_PWR;
+	MTR_DAT_REG &= ~MTR_DIR;
+	MTR_DAT_REG |= MTR_PWR;
 
 	/* Initilize Timer 0 for the coarse approach */
 	T0LD  = TMR_DFLT;
@@ -82,31 +92,33 @@ u8 mtr_set_dir (mtrdir dir)
 {
 	if (dir == mtr_bwd) 
 	{
-		GP2DAT &= ~MTR_DIR;
+		MTR_DAT_REG &= ~MTR_DIR;
 		return 0;
 	}
 	else if (dir == mtr_fwd)
 	{
-		GP2DAT |= MTR_DIR;
+		MTR_DAT_REG |= MTR_DIR;
 		return 0;
 	}
 	return 1;
 }
 
+/* Must be inline...
+	...TODO: figure out why this has doesn't work unless inlined */
 __inline u8 mtr_step (void)
 {
 	// Reset timer
 	step_cmp_flag = false;
 	T0CLRI = 0x55;
 	// pwr = gnd
-	GP2DAT &= ~MTR_PWR;	
+	MTR_DAT_REG &= ~MTR_PWR;	
 	// Begin timing
 	T0CON |= BIT7;
 	while (!step_cmp_flag );
 	// disable timer
 	T0CON &= ~BIT7;
 	// pwr = vcc
-	GP2DAT |= MTR_PWR;
+	MTR_DAT_REG |= MTR_PWR;
 	return 0;
 }
 
@@ -130,7 +142,7 @@ u8 mtr_auto_approach (us16 setpoint, us16 setpoint_error)
 
 	/* Gets initial z-amp */
 	for (i = DAC_MAX; i > 0; i --){	
-		dac_set_val (dac11, i);
+		dac_set_val (DAC_ZOFFSET_COARSE, i);
 		wait_time = FINE_Z_STEP_DWELL;
 		while (wait_time--);
 	}
@@ -192,7 +204,7 @@ static u8 fine_approach (us16 z_amp_limit, us16 setpoint, us16 setpoint_error)
 {
 	bool mov_compl = false;
 	us16 z_amp, z_amp_min;
-	us16 coarse_max = dac_get_limit (dac11);
+	us16 coarse_max = dac_get_limit (DAC_ZOFFSET_COARSE);
 	s32 i;
 	volatile u32 wait_time;
 
@@ -223,7 +235,7 @@ static u8 fine_approach (us16 z_amp_limit, us16 setpoint, us16 setpoint_error)
 			/* Sample by moving tip through range of motion */				
 			for (i = coarse_max; i > 0; i -= FINE_Z_SPEED){
 				/* Move tip */
-				dac_set_val (dac11, i);
+				dac_set_val (DAC_ZOFFSET_COARSE, i);
 				wait_time = FINE_Z_STEP_DWELL;
 				while (wait_time--);
 

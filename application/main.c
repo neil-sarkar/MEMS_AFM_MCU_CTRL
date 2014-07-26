@@ -101,7 +101,7 @@ int main(void)
 	/* Init actuators */
 	init_act (&left_act, DAC_Y1, ADC_Y1, ADC_ZOFFSET);
 	init_act (&right_act, DAC_Y2, ADC_Y2, ADC_ZOFFSET);
-	init_act (&z_act, DAC_ZOFFSET, ADC_ZOFFSET, ADC_Y1);
+	init_act (&z_act, DAC_ZOFFSET_FINE, ADC_ZOFFSET, ADC_Y1);
 
 	init_scanner (&left_act, &right_act, &z_act);
 
@@ -490,7 +490,7 @@ void auto_approach (void)
    	uart_wait_get_bytes ((u8*)(&setpoint_error), 2);
 	approach_fail = mtr_auto_approach (setpoint_req, setpoint_error);
 
-	coarse_voltage = dac_get_val (dac11);
+	coarse_voltage = dac_get_val (DAC_ZOFFSET_COARSE);
 
 	if (!approach_fail){
 		uart_set_char ('o');
