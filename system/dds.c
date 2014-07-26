@@ -11,7 +11,7 @@
 	#define DDS_CTRL 		BIT22
 	#define DDS_CTRL_DD		(DDS_CTRL<<8)
 #else 
-	#error "Motor GPIO not defined"
+	#error "DDS GPIO not defined"
 #endif
 
 

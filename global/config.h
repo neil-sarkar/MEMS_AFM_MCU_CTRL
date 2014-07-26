@@ -13,33 +13,30 @@
 //#define ZAMP_PADC
 
 #ifdef BOARD_m
-#define DAC_X1			dac10	
-#define DAC_X2			dac6//switch back to DAC9. Switched for fine Z control
-#define DAC_Y1			dac8
-#define DAC_Y2			dac7
-#define DAC_BR1			dac3
-#define DAC_BR2			dac2
-#define DAC_ZVCO		dac4
-#define DAC_ZOFFSET		dac9//switch back to DAC6. Switched for fine Z control
-#define DAC_ZAMP		dac5
+#define DAC_X1				dac10	
+#define DAC_X2				dac6//switch back to DAC9. Switched for fine Z control
+#define DAC_Y1				dac8
+#define DAC_Y2				dac7
+#define DAC_BR1				dac3
+#define DAC_BR2				dac2
+#define DAC_ZVCO			dac4
+#define DAC_ZOFFSET_FINE	dac9//switch back to DAC6. Switched for fine Z control
+#define DAC_ZAMP			dac5
 
-#define ADC_X1			adc4
-#define ADC_X2			adc2
-#define ADC_Y1			adc1
-#define ADC_Y2			adc0
-#define ADC_ZOFFSET		adc5
-#define ADC_PHASE		adc6
+#define ADC_X1				adc4
+#define ADC_X2				adc2
+#define ADC_Y1				adc1
+#define ADC_Y2				adc0
+#define ADC_ZOFFSET			adc5
+#define ADC_PHASE			adc6
 
 #ifdef ZAMP_PADC
 #define ADC_ZAMP		padc0
 #else
 #define ADC_ZAMP		adc3
 #endif
-
-#endif
-
 /* Green board with onboard mcu */
-#ifdef BOARD_m_assem
+#elif defined(BOARD_m_assem)
 #define DAC_X1				dac11	
 #define DAC_X2				dac7//Swapped with DAC10 for fine Z control
 #define DAC_Y1				dac9
@@ -63,10 +60,8 @@
 #else
 #define ADC_ZAMP		adc3
 #endif
-
-#endif
-
-#ifdef BOARD_v2
+/* Black board defined as v2 */
+#elif defined(BOARD_v2)
 #define DAC_BFRD1			dac0
 #define DAC_BFRD2			dac1
 #define DAC_BR2				dac2
