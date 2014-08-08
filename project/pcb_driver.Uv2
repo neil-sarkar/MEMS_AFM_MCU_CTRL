@@ -17,8 +17,10 @@ File 1,1,<..\peripheral\flash.c><flash.c>
 File 1,1,<..\peripheral\uart.c><uart.c>
 File 1,1,<..\application\scan.c><scan.c>
 File 1,1,<..\application\calibration.c><calibration.c>
-File 1,1,<..\peripheral\pga.c><pga.c>
 File 1,1,<..\system\motor.c><motor.c>
+File 1,1,<..\system\wire3.c><wire3.c>
+File 1,1,<..\peripheral\pga_1ch.c><pga_1ch.c>
+File 1,1,<..\peripheral\pga_4ch.c><pga_4ch.c>
 
 
 Options 1,0,0  // Target 'Target 1'

@@ -4,13 +4,15 @@
 #include "../peripheral/adc.h"
 #include "../peripheral/dac.h"
 #include "../peripheral/flash.h"
-#include "../peripheral/pga.h"
+#include "../peripheral/pga_1ch.h"
+#include "../peripheral/pga_4ch.h"
 #include "../peripheral/flash.h"
 
 #include "../system/dds.h"
 #include "../system/pid.h"
 #include "../system/filter.h"
 #include "../system/motor.h"
+#include "../system/wire3.h"
 #include "calibration.h"
 #include "scan.h"
 
@@ -94,9 +96,14 @@ int main(void)
 	mtr_init ();
 
 	/* Init DAC attenuators */
-	wire3_init ();
-	// Must be done every time different DAC needs to be written to
-	pga_set (DAC_SCALER_ADR, DAC0_CS_DIR_BIT, DAC0_CS_BIT);
+	pga_1ch_init (pga_fine);
+	pga_1ch_init (pga_dds);
+	pga_4ch_init ();		   
+
+	pga_4ch_set (pga_x1, 0);
+	pga_4ch_set (pga_x2, 0);
+	pga_4ch_set (pga_y1, 0);
+	pga_4ch_set (pga_y2, 0);
 
 	/* Init actuators */
 	init_act (&left_act, DAC_Y1, ADC_Y1, ADC_ZOFFSET);
@@ -104,10 +111,6 @@ int main(void)
 	init_act (&z_act, DAC_ZOFFSET_FINE, ADC_ZOFFSET, ADC_Y1);
 
 	init_scanner (&left_act, &right_act, &z_act);
-
-	// Random GPIO for testing PGA
-	GP2DAT |= BIT29;
-	GP0DAT |= BIT31;
 	
 	/* Disable filter and PID */
 	filter_enable(false);
@@ -218,6 +221,9 @@ int main(void)
 				break;
 			case '&':
 				set_dac_max ();
+				break;
+			case '*':
+				set_pga ();
 				break;
 		}
 	}
@@ -566,6 +572,40 @@ void step_scan (void)
 	scan_step ();
 }
 
+void set_pga (void)
+{
+	u8 pga;
+	u8 db;
+
+	// Get pga and pga's db to set
+	pga = uart_wait_get_char();
+	db = uart_wait_get_char();
+
+	switch (pga)
+	{
+		case ('z'):
+			pga_1ch_set (pga_fine, db);
+			break;
+		case ('a'):
+			pga_1ch_set (pga_dds, db);
+			break;
+		case ('g'):
+			pga_4ch_set (pga_x1, db);
+			break;
+		case ('h'):
+			pga_4ch_set (pga_x2, db);
+			break;
+		case ('i'):
+			pga_4ch_set (pga_y1, db);
+			break;
+		case ('j'):
+			pga_4ch_set (pga_y2, db);
+			break;
+	}
+
+	uart_write ("o");
+}
+
 void IRQ_Handler(void)  __irq  
 {
     u32 IRQSTATUS = 0;
@@ -582,6 +622,12 @@ void IRQ_Handler(void)  __irq
 	if ((IRQSTATUS & BIT2) == BIT2)	//Timer 0 interrupt source
 	{
 		MTR ();
+	}
+
+	// Timer 4 IRQs
+	if ((IRQSTATUS & BIT6) == BIT6)	//Timer 0 interrupt source
+	{
+		wire3_handler ();
 	}
 }
 

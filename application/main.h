@@ -53,4 +53,6 @@ void configure_scan (void);
 void start_scan (void);
 void step_scan (void);
 
+void set_pga (void);
+
 #endif

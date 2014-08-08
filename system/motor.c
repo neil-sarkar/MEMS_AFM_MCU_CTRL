@@ -42,7 +42,7 @@ unsigned short coarse_pw[COARSE_SCALE] = {TMR_DFLT,
 								TMR_DFLT*19,
 								TMR_DFLT*20};
 
-static bool step_cmp_flag = false;
+static volatile bool step_cmp_flag = false;
 
 #define Z_MIN 175
 #define Z_SAMPLES 8
