@@ -1,4 +1,4 @@
-MEMS_AFM_MCU_CTRL
-=================
+MEMS AFM MCU Control 
+====================
 
-MCU code for ADUC7122
+MCU code for ADUC7122 to control MEMS AFM
