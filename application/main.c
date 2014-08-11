@@ -99,11 +99,13 @@ int main(void)
 	pga_1ch_init (pga_fine);
 	pga_1ch_init (pga_dds);
 	pga_4ch_init ();		   
-
-	pga_4ch_set (pga_x1, 0);
-	pga_4ch_set (pga_x2, 0);
-	pga_4ch_set (pga_y1, 0);
-	pga_4ch_set (pga_y2, 0);
+	
+	pga_1ch_set (pga_fine, 0);
+	pga_1ch_set (pga_dds, 0);
+	pga_4ch_set (pga_x1, 192);
+	pga_4ch_set (pga_x2, 192);
+	pga_4ch_set (pga_y1, 192);
+	pga_4ch_set (pga_y2, 192);
 
 	/* Init actuators */
 	init_act (&left_act, DAC_Y1, ADC_Y1, ADC_ZOFFSET);

@@ -24,10 +24,10 @@ void pga_4ch_init (void)
 	PGA_4CH_DAT_REG |= PGA_4CH_CS_DD;
 	PGA_4CH_DAT_REG |= PGA_4CH_CS;
 
-	channel_db.x1 = 0;
-	channel_db.x2 = 0;
-	channel_db.y1 = 0;
-	channel_db.y2 = 0;
+	channel_db.x1 = 192;
+	channel_db.x2 = 192;
+	channel_db.y1 = 192;
+	channel_db.y2 = 192;
 
 	wire3_init ();	
 }

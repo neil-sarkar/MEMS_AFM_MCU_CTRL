@@ -7,8 +7,8 @@
  * Note that ONLY one of these directives must be un-commented at a time
 */
 //#define BOARD_m
-#define BOARD_m_assem
-//#define BOARD_v2
+//#define BOARD_m_assem
+#define BOARD_v2
 
 //#define ZAMP_PADC
 
