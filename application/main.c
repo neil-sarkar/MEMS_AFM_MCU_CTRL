@@ -123,8 +123,13 @@ int main(void)
 	 */
 	while (true)
 	{
-		rx_char = uart_wait_get_char();
+		if ((COMSTA0 & BIT1) == BIT1)
+		{
+			while (true);
+		}
 
+		rx_char = uart_wait_get_char();
+		
 		switch (rx_char)
 		{
 			// Set DAC

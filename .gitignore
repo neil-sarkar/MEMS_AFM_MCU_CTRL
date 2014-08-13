@@ -53,3 +53,4 @@ Icon
 *.plg
 project/mems_mcu.plg
 *.plg
+*.hex

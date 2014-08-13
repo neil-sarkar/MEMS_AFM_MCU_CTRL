@@ -5,11 +5,11 @@
 #ifdef BOARD_m_assem
 	#define DDS_DAT_REG		GP0DAT
 	#define DDS_CTRL 		BIT17
-	#define DDS_CTRL_DD		(DDS_CTRL<<8)
+	#define DDS_CTRL_DD		(DDS_CTRL<<8U)
 #elif defined(BOARD_v2)
 	#define DDS_DAT_REG		GP1DAT
 	#define DDS_CTRL 		BIT22
-	#define DDS_CTRL_DD		(DDS_CTRL<<8)
+	#define DDS_CTRL_DD		(DDS_CTRL<<8U)
 #else 
 	#error "DDS GPIO not defined"
 #endif
