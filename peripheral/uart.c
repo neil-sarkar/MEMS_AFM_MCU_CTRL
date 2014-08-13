@@ -11,8 +11,10 @@ static struct uart_fifo {
 	u8 head;
 	u8 tail;
 	u8 num_bytes;
-	uart_status status;
+	volatile uart_status status;
 } rx_fifo;
+
+static u8 init_buffer (void);
 
 void uart_init (void)
 {
@@ -36,33 +38,51 @@ void uart_init (void)
 	
 	/* Disable access to COMDIV registers */
 	COMCON0 = 0x007;
-}
 
-void uart_buffered (bool enable)
-{
-	if (enable){
-		COMIEN0 |= BIT0;
-		FIQEN |= BIT13;
-		rx_fifo.head = 0;
-		rx_fifo.tail = 0;
-		rx_fifo.num_bytes = 0;
-		rx_fifo.status = UBFR_OK;
-	} else {
-		COMIEN0 &= ~BIT0;
-		FIQEN &= ~BIT13;
-	}
+	/* Enable uart interrupts */
+	COMIEN0 |= BIT0 + BIT2;
+	FIQEN |= BIT13;
+	
+	/* Initialize software buffer */
+	init_buffer ();
 }
 
 void uart_handler (void){
-	unsigned long UARTSTATUS = COMIID0;
+	unsigned long UART_INTRPT = COMIID0;
 
-	if ((UARTSTATUS & (BIT2)) == (BIT2 & ~BIT1 & ~BIT0)){
-		if (rx_fifo.num_bytes == BFR_SIZE){
-			rx_fifo.status = UBFR_OVERFLOW;
+	/* Checks if interrupt is set */
+	if ((UART_INTRPT & (BIT0)) == 0)
+	{
+		/* Handle receive error interrupt */
+		if ((UART_INTRPT & (BIT1 + BIT2)) == (BIT1 + BIT2))
+		{
+			if ((COMSTA0 & BIT1) == BIT1)
+			{
+				rx_fifo.status = UBFR_HW_OVERFLOW;
+			}
+			else 
+			{
+				rx_fifo.status = UART_RCV_ERROR;
+			}
+		} 
+		/* Handle receive buffer full interrupt */
+		else if ((UART_INTRPT & (BIT1 + BIT2)) == (BIT2 & (~BIT1)))
+		{
+			if (rx_fifo.num_bytes == BFR_SIZE)
+			{
+				/* Read COMRX to clear interrupt */
+				rx_fifo.status = (uart_status)COMRX;
+				rx_fifo.status = UBFR_OVERFLOW;
+			}
+			else
+			{	
+				/* Add byte to software uart buffer */
+				rx_fifo.buffer [rx_fifo.tail] = COMRX;
+				rx_fifo.tail = (rx_fifo.tail + 1)%BFR_SIZE;
+				rx_fifo.num_bytes ++;
+			}
+			
 		}
-		rx_fifo.buffer [rx_fifo.tail] = COMRX;
-		rx_fifo.tail = (rx_fifo.tail + 1)%BFR_SIZE;
-		rx_fifo.num_bytes ++;
 	}
 }
 
@@ -191,4 +211,14 @@ bool is_received(void)
 void wait_receive(void)
 {
 	while (!((COMSTA0 & BIT0) == 0x01)) {}
+}
+							
+static u8 init_buffer (void)
+{
+	rx_fifo.head = 0;
+	rx_fifo.tail = 0;
+	rx_fifo.num_bytes = 0;
+	rx_fifo.status = UART_OK;
+
+	return 0;
 }

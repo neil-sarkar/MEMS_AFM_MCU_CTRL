@@ -4,8 +4,10 @@
 #include "../global/global.h"
 
 typedef enum {
-	UBFR_OK,
+	UART_OK,
+	UART_RCV_ERROR,
 	UBFR_OVERFLOW,
+	UBFR_HW_OVERFLOW,
 	UBFR_UNDERFLOW
 } uart_status;
 
