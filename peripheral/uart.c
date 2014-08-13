@@ -86,7 +86,11 @@ void uart_handler (void){
 	}
 }
 
-/*
+u8 uart_get_num_bytes (){
+	return rx_fifo.num_bytes;
+}
+
+// Non-blocking call
 u8 uart_get_char (void)
 {
 	u8 data;
@@ -100,6 +104,7 @@ u8 uart_get_char (void)
 	return data;
 }
 
+// Blocking call
 u8 uart_wait_get_char (void)
 {
 	u8 data;
@@ -110,13 +115,18 @@ u8 uart_wait_get_char (void)
 	return data;
 }
 
-u8 uart_wait_get_bytes (void)
+// Blocking call
+u32 uart_wait_get_bytes (u8 * buffer, u32 num_bytes)
 {
-	u8 data;
-} */
-
-u8 uart_get_num_bytes (){
-	return rx_fifo.num_bytes;
+	u32 len = 0;
+	while (len < num_bytes)
+	{
+		while (rx_fifo.num_bytes <= 0);
+		buffer [len++] = rx_fifo.buffer [rx_fifo.head];
+		rx_fifo.head = (rx_fifo.head + 1)%BFR_SIZE;
+		rx_fifo.num_bytes --;
+	}
+	return (len);
 }
 
 u32 uart_write (u8 *ptr) 
@@ -143,39 +153,22 @@ u32 uart_write_bytes (u8* ptr, u32 size)
 	return (len - size);
 }
 
-// Non-blocking call
-u8 uart_get_char (void)
+void uart_set_char (u8 ch)
 {
-	return (COMRX);
+	while(!(0x020==(COMSTA0 & 0x020))) {};
+ 
+ 	COMTX = ch;	
 }
 
-// Blocking call
-u8 uart_wait_get_char (void)
+bool is_received(void)
 {
-	while (!((COMSTA0 & BIT0) == 0x01)) {}
-	return (COMRX);
+
+	return (bool)(rx_fifo.num_bytes > 0);
+
 }
 
-// Blocking call
-u32 uart_wait_get_bytes (u8 * buffer, u32 num_bytes)
-{
-	u32 len = 0;
-	while (len < num_bytes)
-	{
-		while (!((COMSTA0 & BIT0) == 0x01)) {}
-		buffer[len++] = (COMRX);
-	}
-	return (len);
-}
-
-void uart_set_num(s16 num) 
-{
-	set_char(48+(num%10000)/1000);
-	set_char(48+(num%1000)/100);
-	set_char(48+(num%100)/10);
-	set_char(48+num%10);
-}
-
+/* Internal functions for UART */
+							
 static s16 set_char (s16 ch)
 {
 
@@ -194,25 +187,6 @@ static s16 set_char (s16 ch)
 	
 }
 
-void uart_set_char (u8 ch)
-{
-	while(!(0x020==(COMSTA0 & 0x020))) {};
- 
- 	COMTX = ch;	
-}
-
-bool is_received(void)
-{
-
-	return (bool)(COMSTA0 & 0x01);
-
-}
-
-void wait_receive(void)
-{
-	while (!((COMSTA0 & BIT0) == 0x01)) {}
-}
-							
 static u8 init_buffer (void)
 {
 	rx_fifo.head = 0;
