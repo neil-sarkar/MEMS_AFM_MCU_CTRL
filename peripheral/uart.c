@@ -2,7 +2,7 @@
 
 /* carriage return ASCII value */
 #define CR     0x0D
-#define BFR_SIZE 16
+#define BFR_SIZE 32
 
 static s16 set_char (s16 ch);
 
@@ -86,11 +86,27 @@ void uart_handler (void){
 	}
 }
 
-u8 uart_get_num_bytes (){
+u8 uart_get_num_bytes ()
+{
 	return rx_fifo.num_bytes;
 }
 
-// Non-blocking call
+uart_status uart_get_status (void)
+{
+	return rx_fifo.status;
+}
+
+u8 uart_reset_status (void)
+{
+	if (rx_fifo.status != UART_OK)
+	{
+		rx_fifo.status = UART_OK;
+		return 0;
+	}
+	return 1;
+}
+
+/* Non-blocking call */
 u8 uart_get_char (void)
 {
 	u8 data;
@@ -104,7 +120,7 @@ u8 uart_get_char (void)
 	return data;
 }
 
-// Blocking call
+/* Blocking call */
 u8 uart_wait_get_char (void)
 {
 	u8 data;
@@ -115,7 +131,7 @@ u8 uart_wait_get_char (void)
 	return data;
 }
 
-// Blocking call
+/* Blocking call */
 u32 uart_wait_get_bytes (u8 * buffer, u32 num_bytes)
 {
 	u32 len = 0;
@@ -167,7 +183,9 @@ bool is_received(void)
 
 }
 
-/* Internal functions for UART */
+/* 	---------------------------
+	Internal functions for UART 
+	--------------------------- */
 							
 static s16 set_char (s16 ch)
 {

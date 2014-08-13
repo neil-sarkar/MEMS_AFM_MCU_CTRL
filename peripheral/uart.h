@@ -16,6 +16,8 @@ void uart_init (void);
 void uart_handler (void);
 
 u8 uart_get_num_bytes (void);
+uart_status uart_get_status (void);
+u8 uart_reset_status (void);
 
 u8 uart_get_char (void);
 u8 uart_wait_get_char (void);
