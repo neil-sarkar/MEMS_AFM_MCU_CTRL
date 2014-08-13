@@ -123,10 +123,11 @@ int main(void)
 	 */
 	while (true)
 	{
-		if ((COMSTA0 & BIT1) == BIT1)
+		/* Enable to catch errors in UART
+		if (uart_get_status () != UART_OK)
 		{
 			while (true);
-		}
+		} */
 
 		rx_char = uart_wait_get_char();
 		
@@ -549,17 +550,23 @@ void set_scan_wait (void)
 void configure_scan (void)
 {
 	// read scan parameters over UART
+	u8 temp_buffer [2];
 	us16 vmin_line, vmin_scan, vmax, numpts, numlines;
 
-	uart_wait_get_bytes ((u8*)(&vmin_line), 2);
+	uart_wait_get_bytes (temp_buffer, 2);
+	vmin_line = (temp_buffer[0]) | (temp_buffer[1] << 8);
 
-   	uart_wait_get_bytes ((u8*)(&vmin_scan), 2);
+	uart_wait_get_bytes (temp_buffer, 2);
+	vmin_scan = (temp_buffer[0]) | (temp_buffer[1] << 8);
 
-   	uart_wait_get_bytes ((u8*)(&vmax), 2);
+	uart_wait_get_bytes (temp_buffer, 2);
+	vmax = (temp_buffer[0]) | (temp_buffer[1] << 8);
 
-	uart_wait_get_bytes ((u8*)(&numpts), 2);
+	uart_wait_get_bytes (temp_buffer, 2);
+	numpts = (temp_buffer[0]) | (temp_buffer[1] << 8);
 
-	uart_wait_get_bytes ((u8*)(&numlines), 2);
+	uart_wait_get_bytes (temp_buffer, 2);
+	numlines = (temp_buffer[0]) | (temp_buffer[1] << 8);
 
 	// return 'o' if successful, 'f' if failed
 	if (scan_configure (vmin_line, vmin_scan, vmax, numpts, numlines) == 0) {

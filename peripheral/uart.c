@@ -4,16 +4,15 @@
 #define CR     0x0D
 #define BFR_SIZE 32
 
-static s16 set_char (s16 ch);
-
 static struct uart_fifo {
 	u8 buffer [BFR_SIZE];
 	u8 head;
 	u8 tail;
-	u8 num_bytes;
+	volatile u8 num_bytes;
 	volatile uart_status status;
 } rx_fifo;
 
+static s16 set_char (s16 ch);
 static u8 init_buffer (void);
 
 void uart_init (void)
@@ -86,7 +85,7 @@ void uart_handler (void){
 	}
 }
 
-u8 uart_get_num_bytes ()
+u8 uart_get_num_bytes (void)
 {
 	return rx_fifo.num_bytes;
 }
