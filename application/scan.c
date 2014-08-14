@@ -68,8 +68,8 @@ void scan_start ()
 	scan_state.j = PAGE_SIZE;
 	scan_state.k = 0;
 	scan_state.adr = BLOCK0_BASE;
-	scan_state.left_act = DAC_Y1;
-	scan_state.right_act = DAC_Y2;
+	scan_state.left_act = l_act->out_dac;
+	scan_state.right_act = r_act->out_dac;
 
 }
 
