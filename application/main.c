@@ -109,7 +109,7 @@ int main(void)
 
 	/* Init actuators */
 	init_act (&left_act, DAC_Y1, ADC_Y1, ADC_ZOFFSET);
-	init_act (&right_act, DAC_Y2, ADC_Y2, ADC_ZOFFSET);
+	init_act (&right_act, DAC_X1, ADC_X1, ADC_ZOFFSET);
 	init_act (&z_act, DAC_ZOFFSET_FINE, ADC_ZOFFSET, ADC_Y1);
 
 	init_scanner (&left_act, &right_act, &z_act);
@@ -323,7 +323,7 @@ void set_actuators(void)
 
 	// Write to DACs corresponding to left/right actuators
 	// TODO Confirm dac channels
-	dac_set_val (DAC_Y2, ((dac1_h << 8) | dac1_l) & 0x0FFF);
+	dac_set_val (DAC_X1, ((dac1_h << 8) | dac1_l) & 0x0FFF);
 	dac_set_val (DAC_Y1, ((dac2_h << 8) | dac2_l) & 0x0FFF);
 }
 		
