@@ -34,6 +34,7 @@ static struct scan_params {
 } scan_state;
 
 static u8 generate_line (const us16 vmin_line, const us16 vmax, const us16 numpts);
+static float get_max_linepwr (const us16 vmin_line, const us16 vmax);
 
 void init_scanner (Actuator* left_act, Actuator* right_act, Actuator* z_act){
 	l_act = left_act;
@@ -195,7 +196,7 @@ static u8 generate_line (const us16 vmin_line,
 							const us16 vmax, const us16 numpts){
 
 	// Generate dac output levels for max power isothermal
-	const float LINE_PWR = pwr(l_act, vmax) + pwr(r_act, vmin_line);
+	const float LINE_PWR = get_max_linepwr (vmin_line, vmax);
 	const us16 vmid_l = (us16)volt(l_act, LINE_PWR/2.0);
 	const us16 vmid_r = (us16)volt(r_act, LINE_PWR/2.0);
 
@@ -285,4 +286,11 @@ static u8 generate_line (const us16 vmin_line,
 	}
 	
 	return 0; 
+}
+
+static float get_max_linepwr (const us16 vmin_line, const us16 vmax)
+{
+	float left_lean = pwr(l_act, vmin_line) + pwr(r_act, vmax);
+	float right_lean = pwr(l_act, vmax) + pwr(r_act, vmin_line);
+	return (left_lean > right_lean)?left_lean:right_lean;
 }
