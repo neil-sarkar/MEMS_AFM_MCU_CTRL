@@ -51,7 +51,7 @@ static volatile bool step_cmp_flag = false;
 #define COARSE_SPEED 2
 #define COARSE_STEP_DWELL 40000
 #define BWD_STEPS 32
-#define FINE_CHANGE 0.6f
+#define FINE_CHANGE 0.4f
 #define FINE_SPEED 1
 #define FINE_STEP_DWELL 2000
 #define FINE_Z_SPEED (DAC_MAX/256.0f)
@@ -233,7 +233,7 @@ static u8 fine_approach (us16 z_amp_limit, us16 setpoint, us16 setpoint_error)
 			while (wait_time--);
 
 			/* Sample by moving tip through range of motion */				
-			for (i = coarse_max; i > 0; i -= FINE_Z_SPEED){
+			for (i = coarse_max; i >= 0; i -= FINE_Z_SPEED){
 				/* Move tip */
 				dac_set_val (DAC_ZOFFSET_COARSE, i);
 				wait_time = FINE_Z_STEP_DWELL;

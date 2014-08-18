@@ -81,10 +81,10 @@
 #define ADC_X1				adc3
 #define ADC_SPARE1			adc4
 #ifdef ZAMP_PADC
-#error "Still not set PADC"
-#define ADC_ZAMP		padc0
+	#error "Still not set PADC"
+	#define ADC_ZAMP		padc0
 #else
-#define ADC_ZAMP		adc5
+	#define ADC_ZAMP		adc5
 #endif
 #define ADC_Y1				adc6
 #define ADC_X2				adc7
