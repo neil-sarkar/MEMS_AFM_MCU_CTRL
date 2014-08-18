@@ -444,6 +444,15 @@ void freq_sweep_dds(void)
 		uart_set_char((adc_val));
 		uart_set_char(((adc_val >> 8)));
 
+
+		// read adc for phase data
+		adc_start_conv(ADC_PHASE);
+		adc_val = adc_get_val();
+
+	 	// Send data out
+		uart_set_char((adc_val));
+		uart_set_char(((adc_val >> 8)));
+
 		delay = 12500;
 		while(delay--){};
 
