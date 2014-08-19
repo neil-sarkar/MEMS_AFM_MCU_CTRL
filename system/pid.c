@@ -26,7 +26,7 @@ volatile float  kp = 1.6,
 // Sample time is in ms for now (could be changed to us)
 unsigned short sampleTime = 1;
 
-volatile unsigned short outMin = 0, 
+volatile us16 outMin = 0, 
 			   outMax = 3000;
 
 static volatile bool pid_update_flag = false;
@@ -75,6 +75,8 @@ void pid_enable(bool enable)
 		FIQEN |= BIT3;
 		// Start clock
 		T1CON |= BIT7;
+
+		outMax = dac_get_limit (PID_OUTPUT);
 	}
 	else
 	{
@@ -110,8 +112,14 @@ void pid_handler(void)
 
 	error = setPoint - input;
 	iTerm += (ki * error);
-	if (iTerm > outMax) iTerm = outMax;
-	else if (iTerm < outMin) iTerm = outMin;
+	if (iTerm > outMax)
+	{ 
+		iTerm = outMax;
+	}
+	else if (iTerm < outMin)
+	{
+		iTerm = outMin;
+	}
 	dInput = (input - lastInput);
 
 	output = kp * error + iTerm - kd * dInput;
