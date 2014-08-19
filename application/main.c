@@ -646,12 +646,6 @@ void IRQ_Handler(void)  __irq
 	{
 		MTR ();
 	}
-
-	// Timer 4 IRQs
-	if ((IRQSTATUS & BIT6) == BIT6)	//Timer 0 interrupt source
-	{
-		wire3_handler ();
-	}
 }
 
 void FIQ_Handler(void) __irq
@@ -673,6 +667,12 @@ void FIQ_Handler(void) __irq
 		FILTER();
 		T2CLRI = 0x01;				// Clear interrupt, reload T1LD
 		//GP0DAT &= ~BIT23;
+	}
+	
+	// Timer 4 FIQs
+	if ((FIQSTATUS & BIT6) == BIT6)	//Timer 0 interrupt source
+	{
+		wire3_handler ();
 	}					
 
 	if ((FIQSTATUS & BIT13) == BIT13)

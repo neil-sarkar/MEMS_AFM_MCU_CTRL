@@ -28,8 +28,8 @@ static void wire3_end_write (void);
 void wire3_init (){
 	// Controls clock signal speed
 	T4LD = WIRE3_CLK_COUNTER;
-	// Enable IRQs for timer 4
-	IRQEN |= BIT6;
+	// Enable FIQs for timer 4
+	FIQEN |= BIT6;
 	// Set to periodic mode,
 	// use higher frequency clock if signal needs to be faster
 	T4CON |= BIT6;
@@ -67,8 +67,8 @@ void wire3_write_wait (u32 data, u8 len){
 	// Pull chip select high, transition to low later
 	(*wire3_config.cs_dat_reg) |= wire3_config.cs_bit;
 
-	// Enable IRQ for timer and start timer
-	IRQEN |= BIT6;
+	// Enable FIQ for timer and start timer
+	FIQEN |= BIT6;
 	T4CON |= BIT7;
 
 	clk_cnt = 0;
@@ -120,8 +120,8 @@ static void wire3_end_write (void)
 	// Pull data to high
 	(*wire3_config.cs_dat_reg) |= wire3_config.cs_bit;
 
-	// Stop timer and timer IRQs
-	IRQCLR |= BIT6;
+	// Stop timer and timer FIQs
+	FIQCLR |= BIT6;
 	T4CON &= ~BIT7;
 
 	status = wire3_ok;
