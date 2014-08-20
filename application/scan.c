@@ -211,7 +211,7 @@ static u8 generate_line (const us16 vmin_line,
 		power = pwr(l_act, i) + pwr(r_act, vmin_line + k);
 		while (power < LINE_PWR)
 		{
-			// DAC value calculations. Change this at some point to use pointer operations
+			// DAC value calculations
 			buffer[j]=((us16)i);
 			buffer[j+1]=(vmin_line+k);
 			// Check power of next interpolation point

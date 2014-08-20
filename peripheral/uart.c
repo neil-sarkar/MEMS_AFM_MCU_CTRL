@@ -2,7 +2,7 @@
 
 /* carriage return ASCII value */
 #define CR     0x0D
-#define BFR_SIZE 32
+#define BFR_SIZE 64
 
 static struct uart_fifo {
 	u8 buffer [BFR_SIZE];
