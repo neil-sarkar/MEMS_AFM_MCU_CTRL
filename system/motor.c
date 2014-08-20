@@ -53,7 +53,8 @@ static volatile bool step_cmp_flag = false;
 #define FINE_CHANGE 0.4f
 #define FINE_SPEED 1
 #define FINE_STEP_DWELL 800
-#define FINE_Z_SPEED (DAC_MAX/256.0f)
+#define FINE_Z_MAX_SCALER 0.2f
+#define FINE_Z_STEPS 100.0f
 #define FINE_Z_STEP_DWELL 2000
 #define MTR_DISENGAGE_STEPS 2
 
@@ -141,7 +142,7 @@ u8 mtr_auto_approach (us16 setpoint, us16 setpoint_error)
 
 	/* Gets initial z-amp */
 	for (i = DAC_MAX; i > 0; i --){	
-		dac_set_val (DAC_ZOFFSET_FINE, i);
+		dac_set_val (DAC_ZOFFSET_COARSE, i);
 		wait_time = FINE_Z_STEP_DWELL;
 		while (wait_time--);
 	}
@@ -203,9 +204,14 @@ static u8 fine_approach (us16 z_amp_limit, us16 setpoint, us16 setpoint_error)
 {
 	bool mov_compl = false;
 	us16 z_amp, z_amp_min;
-	us16 coarse_max = dac_get_limit (DAC_ZOFFSET_FINE);
+	us16 coarse_max;
+	us16 fine_z_speed;
 	s32 i;
 	volatile u32 wait_time;
+
+	coarse_max = dac_get_limit (DAC_ZOFFSET_COARSE)*FINE_Z_MAX_SCALER;
+	fine_z_speed = (coarse_max > FINE_Z_STEPS)?(coarse_max/FINE_Z_STEPS):1;
+
 
 	mtr_set_pw (FINE_SPEED);
 	while (!mov_compl){
@@ -232,9 +238,9 @@ static u8 fine_approach (us16 z_amp_limit, us16 setpoint, us16 setpoint_error)
 			while (wait_time--);
 
 			/* Sample by moving tip through range of motion */				
-			for (i = coarse_max; i >= 0; i -= FINE_Z_SPEED){
+			for (i = coarse_max; i >= 0; i -= fine_z_speed){
 				/* Move tip */
-				dac_set_val (DAC_ZOFFSET_FINE, i);
+				dac_set_val (DAC_ZOFFSET_COARSE, i);
 				wait_time = FINE_Z_STEP_DWELL;
 				while (wait_time--);
 
