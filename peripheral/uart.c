@@ -2,17 +2,18 @@
 
 /* carriage return ASCII value */
 #define CR     0x0D
-#define BFR_SIZE 16
-
-static s16 set_char (s16 ch);
+#define BFR_SIZE 32
 
 static struct uart_fifo {
 	u8 buffer [BFR_SIZE];
 	u8 head;
 	u8 tail;
-	u8 num_bytes;
-	uart_status status;
+	volatile u8 num_bytes;
+	volatile uart_status status;
 } rx_fifo;
+
+static s16 set_char (s16 ch);
+static u8 init_buffer (void);
 
 void uart_init (void)
 {
@@ -36,37 +37,75 @@ void uart_init (void)
 	
 	/* Disable access to COMDIV registers */
 	COMCON0 = 0x007;
-}
 
-void uart_buffered (bool enable)
-{
-	if (enable){
-		COMIEN0 |= BIT0;
-		FIQEN |= BIT13;
-		rx_fifo.head = 0;
-		rx_fifo.tail = 0;
-		rx_fifo.num_bytes = 0;
-		rx_fifo.status = UBFR_OK;
-	} else {
-		COMIEN0 &= ~BIT0;
-		FIQEN &= ~BIT13;
-	}
+	/* Enable uart interrupts */
+	COMIEN0 |= BIT0 + BIT2;
+	FIQEN |= BIT13;
+	
+	/* Initialize software buffer */
+	init_buffer ();
 }
 
 void uart_handler (void){
-	unsigned long UARTSTATUS = COMIID0;
+	unsigned long UART_INTRPT = COMIID0;
 
-	if ((UARTSTATUS & (BIT2)) == (BIT2 & ~BIT1 & ~BIT0)){
-		if (rx_fifo.num_bytes == BFR_SIZE){
-			rx_fifo.status = UBFR_OVERFLOW;
+	/* Checks if interrupt is set */
+	if ((UART_INTRPT & (BIT0)) == 0)
+	{
+		/* Handle receive error interrupt */
+		if ((UART_INTRPT & (BIT1 + BIT2)) == (BIT1 + BIT2))
+		{
+			if ((COMSTA0 & BIT1) == BIT1)
+			{
+				rx_fifo.status = UBFR_HW_OVERFLOW;
+			}
+			else 
+			{
+				rx_fifo.status = UART_RCV_ERROR;
+			}
+		} 
+		/* Handle receive buffer full interrupt */
+		else if ((UART_INTRPT & (BIT1 + BIT2)) == (BIT2 & (~BIT1)))
+		{
+			if (rx_fifo.num_bytes == BFR_SIZE)
+			{
+				/* Read COMRX to clear interrupt */
+				rx_fifo.status = (uart_status)COMRX;
+				rx_fifo.status = UBFR_OVERFLOW;
+			}
+			else
+			{	
+				/* Add byte to software uart buffer */
+				rx_fifo.buffer [rx_fifo.tail] = COMRX;
+				rx_fifo.tail = (rx_fifo.tail + 1)%BFR_SIZE;
+				rx_fifo.num_bytes ++;
+			}
+			
 		}
-		rx_fifo.buffer [rx_fifo.tail] = COMRX;
-		rx_fifo.tail = (rx_fifo.tail + 1)%BFR_SIZE;
-		rx_fifo.num_bytes ++;
 	}
 }
 
-/*
+u8 uart_get_num_bytes (void)
+{
+	return rx_fifo.num_bytes;
+}
+
+uart_status uart_get_status (void)
+{
+	return rx_fifo.status;
+}
+
+u8 uart_reset_status (void)
+{
+	if (rx_fifo.status != UART_OK)
+	{
+		rx_fifo.status = UART_OK;
+		return 0;
+	}
+	return 1;
+}
+
+/* Non-blocking call */
 u8 uart_get_char (void)
 {
 	u8 data;
@@ -80,6 +119,7 @@ u8 uart_get_char (void)
 	return data;
 }
 
+/* Blocking call */
 u8 uart_wait_get_char (void)
 {
 	u8 data;
@@ -90,13 +130,18 @@ u8 uart_wait_get_char (void)
 	return data;
 }
 
-u8 uart_wait_get_bytes (void)
+/* Blocking call */
+u32 uart_wait_get_bytes (u8 * buffer, u32 num_bytes)
 {
-	u8 data;
-} */
-
-u8 uart_get_num_bytes (){
-	return rx_fifo.num_bytes;
+	u32 len = 0;
+	while (len < num_bytes)
+	{
+		while (rx_fifo.num_bytes <= 0);
+		buffer [len++] = rx_fifo.buffer [rx_fifo.head];
+		rx_fifo.head = (rx_fifo.head + 1)%BFR_SIZE;
+		rx_fifo.num_bytes --;
+	}
+	return (len);
 }
 
 u32 uart_write (u8 *ptr) 
@@ -123,39 +168,24 @@ u32 uart_write_bytes (u8* ptr, u32 size)
 	return (len - size);
 }
 
-// Non-blocking call
-u8 uart_get_char (void)
+void uart_set_char (u8 ch)
 {
-	return (COMRX);
+	while(!(0x020==(COMSTA0 & 0x020))) {};
+ 
+ 	COMTX = ch;	
 }
 
-// Blocking call
-u8 uart_wait_get_char (void)
+bool is_received(void)
 {
-	while (!((COMSTA0 & BIT0) == 0x01)) {}
-	return (COMRX);
+
+	return (bool)(rx_fifo.num_bytes > 0);
+
 }
 
-// Blocking call
-u32 uart_wait_get_bytes (u8 * buffer, u32 num_bytes)
-{
-	u32 len = 0;
-	while (len < num_bytes)
-	{
-		while (!((COMSTA0 & BIT0) == 0x01)) {}
-		buffer[len++] = (COMRX);
-	}
-	return (len);
-}
-
-void uart_set_num(s16 num) 
-{
-	set_char(48+(num%10000)/1000);
-	set_char(48+(num%1000)/100);
-	set_char(48+(num%100)/10);
-	set_char(48+num%10);
-}
-
+/* 	---------------------------
+	Internal functions for UART 
+	--------------------------- */
+							
 static s16 set_char (s16 ch)
 {
 
@@ -174,21 +204,12 @@ static s16 set_char (s16 ch)
 	
 }
 
-void uart_set_char (u8 ch)
+static u8 init_buffer (void)
 {
-	while(!(0x020==(COMSTA0 & 0x020))) {};
- 
- 	COMTX = ch;	
-}
+	rx_fifo.head = 0;
+	rx_fifo.tail = 0;
+	rx_fifo.num_bytes = 0;
+	rx_fifo.status = UART_OK;
 
-bool is_received(void)
-{
-
-	return (bool)(COMSTA0 & 0x01);
-
-}
-
-void wait_receive(void)
-{
-	while (!((COMSTA0 & BIT0) == 0x01)) {}
+	return 0;
 }

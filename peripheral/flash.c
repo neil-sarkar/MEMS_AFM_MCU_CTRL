@@ -10,7 +10,6 @@
 
 u8 flash_Init (void)
 {
-	int val = FEE1HID;
 	FEE0MOD = 0x09;
 	FEE1MOD = 0x09;
 	return(FEE1HID);
