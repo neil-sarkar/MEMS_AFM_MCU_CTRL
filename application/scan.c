@@ -200,32 +200,38 @@ static u8 generate_line (const us16 vmin_line,
 	const us16 vmid_l = (us16)volt(l_act, LINE_PWR/2.0);
 	const us16 vmid_r = (us16)volt(r_act, LINE_PWR/2.0);
 
+	us16 left_volt, right_volt, pts;
 	u32 j = 0, k = 0, adr = BLOCK0_BASE;
 	float power = 0;
 	float i = 0;
-	float step = 1.0f*(vmax-vmid_l)/((float)numpts/2.0f);
+	float step = -1.0f*(vmax-vmid_l)/((float)numpts/2.0f-1.0f);
 
 	// Ensures constant power while actuator values are swept over line
- 	for (i = vmax; i >= vmid_l; i -=step)
+	i = vmax;
+	k = 0;
+ 	for (pts = 0; pts < (numpts/2.0f); pts++)
 	{
-		power = pwr(l_act, i) + pwr(r_act, vmin_line + k);
-		while (power < LINE_PWR)
+		while (true)
 		{
 			// DAC value calculations
-			buffer[j]=((us16)i);
-			buffer[j+1]=(vmin_line+k);
+			left_volt = (us16)i;
+			right_volt = (us16)(vmin_line+k);
+
+			buffer[j]= left_volt;
+			buffer[j+1]=right_volt;
 			// Check power of next interpolation point
-			power = pwr(l_act,buffer[j]) + pwr(r_act,buffer[j+1]);
+			power = pwr(l_act,left_volt) + pwr(r_act,right_volt);
 
 			// This check is necessary when the calibration
 			// data for the 2 actuators is verrry different
-			if (buffer[j+1] >= DAC_MAX)
+			if (right_volt >= DAC_MAX)
 				return 1; 
 
 			// Write bit to signify z-actuator read point
 			if (power >= LINE_PWR){
 				buffer [j]|=MEASURE_BIT;
 				buffer [j+1]|=MEASURE_BIT;
+				break;
 			}
 
 			k += 1;
@@ -240,20 +246,24 @@ static u8 generate_line (const us16 vmin_line,
 				j = 0;
 			}
 		}
+		i +=step;
 	}
 	scan_state.baseline_points = k;
 
 	// Generates the opposite scan pattern. Need to clean this up
-	step = 1.0f*(vmax-vmid_r)/((float)numpts/2.0f);
+	step = 1.0f*(vmax-vmid_r)/((float)numpts/2.0f-1.0f);
 	k = 0;
-	for (i = vmid_r; i <= vmax; i += step)
+	i = vmid_r;
+	for (pts = 0; pts < (numpts/2.0f); pts++)
 	{
-		power = pwr(l_act,vmid_l - k) + pwr(r_act,i);
-		while (power > LINE_PWR)
-		{											   
-			buffer [j]=(vmid_l-k);
-			buffer [j+1]=((us16)i);
-			power = pwr (l_act,buffer[j]) + pwr (r_act,buffer[j+1]);
+		while (true)
+		{				
+			left_volt = (us16)(vmid_l-k);
+			right_volt = (us16)i;
+										   
+			buffer [j]=left_volt;
+			buffer [j+1]=right_volt;
+			power = pwr (l_act,left_volt) + pwr (r_act,right_volt);
 
 			if (vmid_l < k){
 				return 1;
@@ -262,6 +272,7 @@ static u8 generate_line (const us16 vmin_line,
 			if (power <= LINE_PWR){
 				buffer [j]|=MEASURE_BIT;
 				buffer [j+1]|=MEASURE_BIT;
+				break;
 			}
 			
 			k += 1;
@@ -275,6 +286,7 @@ static u8 generate_line (const us16 vmin_line,
 				j = 0;
 			}
 		}
+		i += step;
 	}
 	scan_state.baseline_points += k;
 
