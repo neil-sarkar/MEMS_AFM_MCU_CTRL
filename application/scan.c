@@ -242,8 +242,10 @@ static u8 generate_line (const us16 vmin_line,
 			// Write to flash on full buffer
 			if (j >= BFR_SIZE)
 			{
-				flash_EraseSector (adr);
-				flash_WriteAdr (adr, PAGE_SIZE, (u8*)buffer);				
+				if (flash_EraseSector (adr))
+					return 1;
+				if (flash_WriteAdr (adr, PAGE_SIZE, (u8*)buffer))
+					return 1;				
 				adr += PAGE_SIZE; 
 				j = 0;
 			}
@@ -283,8 +285,10 @@ static u8 generate_line (const us16 vmin_line,
 			
 			if (j >= BFR_SIZE)
 			{
-				flash_EraseSector (adr);
-				flash_WriteAdr (adr, PAGE_SIZE, (u8*)buffer);
+				if (flash_EraseSector (adr))
+					return 1;
+				if (flash_WriteAdr (adr, PAGE_SIZE, (u8*)buffer))
+					return 1;
 				adr += PAGE_SIZE;
 				j = 0;
 			}

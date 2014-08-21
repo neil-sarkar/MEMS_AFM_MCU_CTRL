@@ -84,14 +84,21 @@ u8 flash_EraseChip (void)
  *	block. => >= 64K implies block 0
  */
 
-u8 flash_IsBlk0Addr (u32 adr)
+u8 flash_IsBlk0Addr (u32 adr, u32 size)
 {
-	if ((adr & FLASH_MASK) >= _64K)
-		return (1);
-	else
-		return (0);
+	if ((adr+size) < (BLOCK0_END) && adr >= BLOCK0_BASE){
+		return 1;			
+	}
+	return 0;
 }
 
+u8 flash_IsBlk1Addr (u32 adr, u32 size)
+{
+	if ((adr+size) < (BLOCK1_END) && adr >= BLOCK1_BASE){
+		return 1;			
+	}
+	return 0;
+}
 
 /*
  *	Erase Sector in Flash Memory
@@ -101,11 +108,11 @@ u8 flash_IsBlk0Addr (u32 adr)
 
 u8 flash_EraseSector (u32 adr)
 {
-	u16 result;
+	u16 result = 1;
 	
-	if (flash_IsBlk0Addr(adr))
+	if (flash_IsBlk0Addr(adr, 0))
 		result = flash_EraseSectorBlk0(adr & BLOCK_MASK);
-	else
+	else if (flash_IsBlk1Addr (adr, 0))
 		result = flash_EraseSectorBlk1(adr & BLOCK_MASK);
 	return result;
 }
@@ -156,11 +163,11 @@ static u8 flash_EraseSectorBlk1(u16 adr)
  */
 u8 flash_WriteAdr (u32 adr, u32 sz, u8 *buf)
 {
-	u8 result;
+	u8 result = 1;
 	
-	if (flash_IsBlk0Addr(adr))
+	if (flash_IsBlk0Addr(adr, sz))
 		result = flash_ProgramPageBlk0(adr,sz,buf);
-	else
+	else if (flash_IsBlk1Addr (adr, sz))
 		result = flash_ProgramPageBlk1(adr,sz,buf);
 	
 	return result;
@@ -200,6 +207,7 @@ static u8 flash_ProgramPageBlk1 (u16 adr, u32 sz, u8 *buf)
 	{ 										 //  Write (sz+1)/2 times
 		// Start Program Command				 We write in half words
 		FEE1ADR = adr + i * 2;				 //  Set Address to write too
+
 		FEE1DAT = *((u16 *) buf); //  Load Data to write
 		FEE1CON = WRITE_HALF_WORD;			 //  Execute Write
 		buf += 2;							 //  Increment Buffer location by 2
@@ -226,11 +234,11 @@ static u8 flash_ProgramPageBlk1 (u16 adr, u32 sz, u8 *buf)
  */
 u8 flash_ReadAdr (u32 adr, u32 sz, u8 *buf)
 {
-	u8 result;
+	u8 result = 1;
 	
-	if (flash_IsBlk0Addr(adr))
+	if (flash_IsBlk0Addr(adr, sz))
 		result = flash_ReadPageBlk0(adr, sz, buf);
-	else
+	else if (flash_IsBlk1Addr(adr, sz))
 		result = flash_ReadPageBlk1(adr,sz,buf);
 	
 	return result;
