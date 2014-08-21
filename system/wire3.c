@@ -68,7 +68,6 @@ void wire3_write_wait (u32 data, u8 len){
 	(*wire3_config.cs_dat_reg) |= wire3_config.cs_bit;
 
 	// Enable FIQ for timer and start timer
-	FIQEN |= BIT6;
 	T4CON |= BIT7;
 
 	clk_cnt = 0;
@@ -121,7 +120,6 @@ static void wire3_end_write (void)
 	(*wire3_config.cs_dat_reg) |= wire3_config.cs_bit;
 
 	// Stop timer and timer FIQs
-	FIQCLR |= BIT6;
 	T4CON &= ~BIT7;
 
 	status = wire3_ok;

@@ -285,6 +285,6 @@ static void mtr_disengage (void)
 void mtr_handler (void)
 {
 	T0CON &= ~BIT7;
-	T0CLRI = 0x55;				// Clear the currently active Timer0 Irq
+	T0CLRI = 0x01;				// Clear the currently active Timer0 Irq
 	step_cmp_flag = true;
 }
