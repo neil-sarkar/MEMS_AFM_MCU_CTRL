@@ -21,6 +21,7 @@ tyVctHndlr    FILTER   	= (tyVctHndlr)filter_handler;
 tyVctHndlr    PID     	= (tyVctHndlr)pid_handler;
 tyVctHndlr 	  UART		= (tyVctHndlr)uart_handler;
 tyVctHndlr	  MTR		= (tyVctHndlr)mtr_handler;
+tyVctHndlr	  WIRE3		= (tyVctHndlr)wire3_handler;
 extern int dds_inc_cnt;
 
 static Actuator left_act;
@@ -672,13 +673,13 @@ void FIQ_Handler(void) __irq
 	// Timer 4 FIQs
 	if ((FIQSTATUS & BIT6) == BIT6)	//Timer 0 interrupt source
 	{
-		wire3_handler ();
+		WIRE3();
 	}					
 
 	if ((FIQSTATUS & BIT13) == BIT13)
 	{
-		UART ();
-		// Interrupt caused by RX/TX buffer being full, cleared when
+		// Interrupt caused by hardware RX/TX buffer being full, cleared when
 		// RX/TX buffer is read
+		UART ();
 	}
 }

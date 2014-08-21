@@ -36,6 +36,8 @@ void pga_4ch_set (pga channel, u8 db)
 {
 	bool cpol=false;
 	u32 data = 0;
+	u32 cs_bit = PGA_4CH_CS;
+	volatile unsigned long * cs_dat_reg = &PGA_4CH_DAT_REG;
 
 	switch (channel)
 	{
@@ -59,7 +61,7 @@ void pga_4ch_set (pga channel, u8 db)
 			+ (channel_db.y2<<(8*PGA_CHNL_Y2));
 	
 	wire3_set_cpol (cpol);
-	wire3_set_cs (&PGA_4CH_DAT_REG, PGA_4CH_CS);
+	wire3_set_cs (cs_dat_reg, cs_bit);
 	wire3_write_wait (data, 4);
 }
 
