@@ -200,6 +200,7 @@ static u8 generate_line (const us16 vmin_line,
 	const us16 vmid_l = (us16)volt(l_act, LINE_PWR/2.0);
 	const us16 vmid_r = (us16)volt(r_act, LINE_PWR/2.0);
 
+	bool output_val;
 	us16 left_volt, right_volt, pts;
 	u32 j = 0, k = 0, adr = BLOCK0_BASE;
 	float power = 0;
@@ -211,7 +212,8 @@ static u8 generate_line (const us16 vmin_line,
 	k = 0;
  	for (pts = 0; pts < (numpts/2.0f); pts++)
 	{
-		while (true)
+		output_val = false;
+		while (!output_val)
 		{
 			// DAC value calculations
 			left_volt = (us16)i;
@@ -231,7 +233,7 @@ static u8 generate_line (const us16 vmin_line,
 			if (power >= LINE_PWR){
 				buffer [j]|=MEASURE_BIT;
 				buffer [j+1]|=MEASURE_BIT;
-				break;
+				output_val = true;
 			}
 
 			k += 1;
@@ -256,7 +258,8 @@ static u8 generate_line (const us16 vmin_line,
 	i = vmid_r;
 	for (pts = 0; pts < (numpts/2.0f); pts++)
 	{
-		while (true)
+		output_val = false;
+		while (!output_val)
 		{				
 			left_volt = (us16)(vmid_l-k);
 			right_volt = (us16)i;
@@ -272,7 +275,7 @@ static u8 generate_line (const us16 vmin_line,
 			if (power <= LINE_PWR){
 				buffer [j]|=MEASURE_BIT;
 				buffer [j+1]|=MEASURE_BIT;
-				break;
+				output_val = true;
 			}
 			
 			k += 1;
