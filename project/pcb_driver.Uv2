@@ -96,7 +96,7 @@ Options 1,0,0  // Target 'Target 1'
  StopCode=3
  CustArgs ()
  LibMods ()
- ADSLDFG { 17,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
+ ADSLDFG { 1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
  ADSLDTA (0x00080000)
  ADSLDDA (0x00040000)
  ADSLDSC (pcb_driver.sct)

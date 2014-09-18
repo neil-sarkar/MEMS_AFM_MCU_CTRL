@@ -170,9 +170,9 @@ us16 z_sample (void)
 
 void z_write_data (void)
 {
-	us16 z_amp = (us16)z_data.z_amp_samples/z_data.num_samples;
-	us16 z_off = (us16)z_data.z_off_samples/z_data.num_samples;
-	us16 z_phs = (us16)z_data.z_phs_samples/z_data.num_samples;
+	us16 z_amp = (us16)(z_data.z_amp_samples/z_data.num_samples);
+	us16 z_off = (us16)(z_data.z_off_samples/z_data.num_samples);
+	us16 z_phs = (us16)(z_data.z_phs_samples/z_data.num_samples);
 
 	uart_set_char((u8)((z_amp) & 0xFF));
 	uart_set_char((u8)((z_amp >> 8) & 0xFF));
