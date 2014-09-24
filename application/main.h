@@ -6,17 +6,17 @@
 /*
 TODO
 
- - Change u16 from unsigned int to unsigned short
- - Split up files properly
- - Change busy-wait functions to include _wait_ in definition
- - Understand interrupt priorities and ensure they're not a problem
- - use memcpy instead for handling floats
- - create macros for terminal characters
- - add config file to specify pin assignments
- - remove uart/adc/dac.h from pid?
- - Handle all input in a single TERMINAL file
- - put every single macro definition in the config file
- - add a gpio driver
+ - iss01: Change u16 from unsigned int to unsigned short
+ - iss02: Split up files properly
+ - iss03: Change busy-wait functions to include _wait_ in definition
+ - iss04: Understand interrupt priorities and ensure they're not a problem
+ - iss05: use memcpy instead for handling floats
+ - iss06: create macros for terminal characters
+ - iss07: add config file to specify pin assignments
+ - iss08: remove uart/adc/dac.h from pid?
+ - iss09: Handle all input in a single TERMINAL file
+ - iss10: put every single macro definition in the config file
+ - iss11: add a gpio driver
 */
 
 /***** function definitions *****/
