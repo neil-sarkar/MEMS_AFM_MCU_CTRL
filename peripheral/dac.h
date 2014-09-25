@@ -40,12 +40,12 @@ void dac_set_range (dac channel, dac_range range);
 
 void dac_init (dac channel, dac_state state);
 
-u8 dac_set_limit (dac channel, us16 new_limit);
+u8 dac_set_limit (dac channel, u16 new_limit);
 
-us16 dac_get_limit (dac channel);
+u16 dac_get_limit (dac channel);
 
 void dac_set_val (dac channel, u16 new_value);
 
-unsigned short dac_get_val (dac channel);
+u16 dac_get_val (dac channel);
 
 #endif

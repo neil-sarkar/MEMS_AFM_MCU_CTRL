@@ -21,7 +21,7 @@
 #define TMR_DFLT  2926
 
 #define COARSE_SCALE 20
-unsigned short coarse_pw[COARSE_SCALE] = {TMR_DFLT,
+u16 coarse_pw[COARSE_SCALE] = {TMR_DFLT,
 								TMR_DFLT*2,
 								TMR_DFLT*3,
 								TMR_DFLT*4,
@@ -58,8 +58,8 @@ static volatile bool step_cmp_flag = false;
 #define FINE_Z_STEP_DWELL 2000
 #define MTR_DISENGAGE_STEPS 2
 
-static u8 coarse_approach (us16 z_amp_limit);
-static u8 fine_approach (us16 z_amp_limit, us16 setpoint, us16 setpoint_error);
+static u8 coarse_approach (u16 z_amp_limit);
+static u8 fine_approach (u16 z_amp_limit, u16 setpoint, u16 setpoint_error);
 static void mtr_disengage (void);
 
 void mtr_init (void)
@@ -123,10 +123,10 @@ __inline u8 mtr_step (void)
 }
 
 
-u8 mtr_auto_approach (us16 setpoint, us16 setpoint_error)
+u8 mtr_auto_approach (u16 setpoint, u16 setpoint_error)
 {
 	u8 cmd_fail;
-	us16 z_amp_start;
+	u16 z_amp_start;
 	s32 i = 0;
 	volatile u32 wait_time;
 
@@ -165,9 +165,9 @@ u8 mtr_auto_approach (us16 setpoint, us16 setpoint_error)
 }
 
 /* Begin coarse approach */
-static u8 coarse_approach (us16 z_amp_limit)
+static u8 coarse_approach (u16 z_amp_limit)
 {
-	us16 z_amp, z_amp_min;
+	u16 z_amp, z_amp_min;
 	volatile u32 wait_time;
 
 	z_amp_min = ADC_MAX;
@@ -200,12 +200,12 @@ static u8 coarse_approach (us16 z_amp_limit)
 		back and forth with the tip using z-offset voltage. If we get too
 		close, step the motor back and then reapproach. Repeat method until
 		setpoint value is achieved through adjustment of z-offset. */ 
-static u8 fine_approach (us16 z_amp_limit, us16 setpoint, us16 setpoint_error)
+static u8 fine_approach (u16 z_amp_limit, u16 setpoint, u16 setpoint_error)
 {
 	bool mov_compl = false;
-	us16 z_amp, z_amp_min;
-	us16 coarse_max;
-	us16 fine_z_speed;
+	u16 z_amp, z_amp_min;
+	u16 coarse_max;
+	u16 fine_z_speed;
 	s32 i;
 	volatile u32 wait_time;
 

@@ -14,7 +14,7 @@ typedef struct {
 	dac out_dac;
 	adc in_adc;
 	adc z_adc;
-	us16 max_voltage;
+	u16 max_voltage;
 	float pv_rel [3];
 	float vp_rel [3];
 	float rv_indirect_rel [3];
@@ -26,7 +26,7 @@ float pwr (Actuator* act, float volt);
 float volt (Actuator* act, float pwr);
 
 void init_act (Actuator* act, dac out_dac, adc in_adc, adc z_adc);
-void calibrate_actuator (Actuator* actuator, us16 max_voltage);
-void calibrate_z_actuator (Actuator* actuator, us16 max_voltage);
+void calibrate_actuator (Actuator* actuator, u16 max_voltage);
+void calibrate_z_actuator (Actuator* actuator, u16 max_voltage);
 
 

@@ -51,6 +51,6 @@ void pga_1ch_set (pga channel, u8 db)
 	
 	wire3_set_cpol (cpol);
 	wire3_set_cs (cs_dat_reg, cs_bit);
-	wire3_write_wait ((us16)data, 2);
+	wire3_write_wait ((u16)data, 2);
 }
 

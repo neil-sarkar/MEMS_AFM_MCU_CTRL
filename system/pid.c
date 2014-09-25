@@ -9,24 +9,24 @@ output: the output of the PID (DAC reading)
 setPoint: reference signal (set manually)
 */
 
-extern volatile unsigned short pid_input;
+extern volatile u16 pid_input;
 extern bool isAvgOn;
 
-volatile unsigned short input, 
+volatile u16 			input, 
 						lastInput, 
 						output, 
 						setPoint = 0x7FF;
 volatile int error;
-volatile unsigned short dInput;
+volatile u16 dInput;
 volatile int iTerm;
 volatile float  kp = 1.6, 
 				ki = 0, 
 				kd = 0;
 
 // Sample time is in ms for now (could be changed to us)
-unsigned short sampleTime = 1;
+u16 sampleTime = 1;
 
-volatile us16 outMin = 0, 
+volatile u16 outMin = 0, 
 			   outMax = 3000;
 
 static volatile bool pid_update_flag = false;
@@ -57,7 +57,7 @@ void pid_set_d (float param)
 	kd = param / sampleTimeInSec;
 }
 
-void pid_set_setpoint (us16 new_setpoint)
+void pid_set_setpoint (u16 new_setpoint)
 {
 	setPoint = new_setpoint;
 }

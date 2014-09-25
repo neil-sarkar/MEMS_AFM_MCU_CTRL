@@ -6,16 +6,16 @@
 #define AVG_TMR_DFLT	4178
 
 #define BUF_SIZE 1
-volatile unsigned short filter_buf[BUF_SIZE];
-volatile static unsigned short start_i = 0, end_i = 511;
+volatile u16 filter_buf[BUF_SIZE];
+volatile static u16 start_i = 0, end_i = 511;
 volatile static u32 sum;
 
 volatile unsigned short pid_input;
 bool isAvgOn;
 
 // in units if us
-volatile static unsigned short sample_time = AVG_TMR_DFLT;
-volatile static unsigned short sample_cnt = 512;
+volatile static u16 sample_time = AVG_TMR_DFLT;
+volatile static u16 sample_cnt = 512;
 
 void filter_adc()
 {

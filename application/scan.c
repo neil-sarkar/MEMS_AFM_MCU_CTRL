@@ -1,6 +1,6 @@
 #include "scan.h"
 
-static us16 buffer [BFR_SIZE];
+static u16 buffer [BFR_SIZE];
 
 static Actuator* l_act;
 static Actuator* r_act;																								 
@@ -8,7 +8,7 @@ static Actuator* z_act;
 
 /* Z-actuator sampling data to be returned over UART */
 static struct sample_data {
-	us16 num_samples;
+	u16 num_samples;
 	u32 z_off_samples;
 	u32 z_amp_samples;
 	u32 z_phs_samples;
@@ -18,12 +18,12 @@ static struct sample_data {
 	from last point of scanning */
 // TODO: make this better?
 static struct scan_params {
-	us16 z_samples_req;
-	us16 vmin_line;
-	us16 vmin_scan;
-	us16 vmax;
-	us16 numpts;																							
-	us16 numlines;
+	u16 z_samples_req;
+	u16 vmin_line;
+	u16 vmin_scan;
+	u16 vmax;
+	u16 numpts;																							
+	u16 numlines;
 	u32 baseline_points;
 	u32 i;
 	u32 j;
@@ -33,8 +33,8 @@ static struct scan_params {
 	dac right_act;
 } scan_state;
 
-static u8 generate_line (const us16 vmin_line, const us16 vmax, const us16 numpts);
-static float get_max_linepwr (const us16 vmin_line, const us16 vmax);
+static u8 generate_line (const u16 vmin_line, const u16 vmax, const u16 numpts);
+static float get_max_linepwr (const u16 vmin_line, const u16 vmax);
 
 void init_scanner (Actuator* left_act, Actuator* right_act, Actuator* z_act){
 	l_act = left_act;
@@ -42,11 +42,11 @@ void init_scanner (Actuator* left_act, Actuator* right_act, Actuator* z_act){
 	z_act = z_act;
 }
 
-u8 scan_configure (const us16 vmin_line,
-			const us16 vmin_scan,
-			const us16 vmax,
-			const us16 numpts,
-			const us16 numlines)
+u8 scan_configure (const u16 vmin_line,
+			const u16 vmin_scan,
+			const u16 vmax,
+			const u16 numpts,
+			const u16 numlines)
 {
 	if (vmin_line > vmax || vmin_scan > vmax)
 		return 1;
@@ -83,7 +83,7 @@ void scan_step ()
 	// temp variables that don't carry state information
 	u8 measure_point;
 	u32 num_outputted = 0;
-	us16 left_dac_val = 0, right_dac_val = 0, nsamples;
+	u16 left_dac_val = 0, right_dac_val = 0, nsamples;
 	float scale_factor = MAX_LINE_VOLT;
 	dac swap;
 
@@ -150,12 +150,12 @@ void z_init_sample (void)
 	z_data.z_phs_samples = 0;	
 }
 
-void z_set_samples (us16 num_samples)
+void z_set_samples (u16 num_samples)
 {
 	scan_state.z_samples_req = num_samples;
 }
 
-us16 z_sample (void)
+u16 z_sample (void)
 {
 	adc_start_conv (ADC_ZAMP);
 	z_data.z_amp_samples += adc_get_val (); 
@@ -170,9 +170,9 @@ us16 z_sample (void)
 
 void z_write_data (void)
 {
-	us16 z_amp = (us16)(z_data.z_amp_samples/z_data.num_samples);
-	us16 z_off = (us16)(z_data.z_off_samples/z_data.num_samples);
-	us16 z_phs = (us16)(z_data.z_phs_samples/z_data.num_samples);
+	u16 z_amp = (u16)(z_data.z_amp_samples/z_data.num_samples);
+	u16 z_off = (u16)(z_data.z_off_samples/z_data.num_samples);
+	u16 z_phs = (u16)(z_data.z_phs_samples/z_data.num_samples);
 
 	uart_set_char((u8)((z_amp) & 0xFF));
 	uart_set_char((u8)((z_amp >> 8) & 0xFF));
@@ -192,16 +192,16 @@ void z_write_data (void)
 	floating point calculations with minimal changes in overall scan
 	time.
 */
-static u8 generate_line (const us16 vmin_line,
-							const us16 vmax, const us16 numpts){
+static u8 generate_line (const u16 vmin_line,
+							const u16 vmax, const u16 numpts){
 
 	// Generate dac output levels for max power isothermal
 	const float LINE_PWR = get_max_linepwr (vmin_line, vmax);
-	const us16 vmid_l = (us16)volt(l_act, LINE_PWR/2.0);
-	const us16 vmid_r = (us16)volt(r_act, LINE_PWR/2.0);
+	const u16 vmid_l = (u16)volt(l_act, LINE_PWR/2.0);
+	const u16 vmid_r = (u16)volt(r_act, LINE_PWR/2.0);
 
 	bool output_val;
-	us16 left_volt, right_volt, pts;
+	u16 left_volt, right_volt, pts;
 	u32 j = 0, k = 0, adr = BLOCK0_BASE;
 	float power = 0;
 	float i = 0;
@@ -216,8 +216,8 @@ static u8 generate_line (const us16 vmin_line,
 		while (!output_val)
 		{
 			// DAC value calculations
-			left_volt = (us16)i;
-			right_volt = (us16)(vmin_line+k);
+			left_volt = (u16)i;
+			right_volt = (u16)(vmin_line+k);
 
 			buffer[j]= left_volt;
 			buffer[j+1]=right_volt;
@@ -263,8 +263,8 @@ static u8 generate_line (const us16 vmin_line,
 		output_val = false;
 		while (!output_val)
 		{				
-			left_volt = (us16)(vmid_l-k);
-			right_volt = (us16)i;
+			left_volt = (u16)(vmid_l-k);
+			right_volt = (u16)i;
 										   
 			buffer [j]=left_volt;
 			buffer [j+1]=right_volt;
@@ -307,7 +307,7 @@ static u8 generate_line (const us16 vmin_line,
 	return 0; 
 }
 
-static float get_max_linepwr (const us16 vmin_line, const us16 vmax)
+static float get_max_linepwr (const u16 vmin_line, const u16 vmax)
 {
 	float left_lean = pwr(l_act, vmin_line) + pwr(r_act, vmax);
 	float right_lean = pwr(l_act, vmax) + pwr(r_act, vmin_line);

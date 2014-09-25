@@ -1,6 +1,6 @@
 #include "dac.h"
 
-static us16 dac_limit [NUM_DACS] = {0};
+static u16 dac_limit [NUM_DACS] = {0};
 
 void dac_set_range (dac channel, dac_range range)
 {
@@ -199,7 +199,7 @@ void dac_init (dac channel, dac_state state)
 	}	
 }
 
-u8 dac_set_limit (dac channel, us16 new_limit)
+u8 dac_set_limit (dac channel, u16 new_limit)
 {
 	// Uses enum as array index to set DAC limit
 	if (new_limit <= DAC_MAX){
@@ -209,7 +209,7 @@ u8 dac_set_limit (dac channel, us16 new_limit)
 	return 1;
 }
 
-us16 dac_get_limit (dac channel)
+u16 dac_get_limit (dac channel)
 {
 	return dac_limit [channel];
 }
@@ -303,9 +303,9 @@ void dac_set_val (dac channel, u16 new_value)
 
 }
 
-unsigned short dac_get_val (dac channel)
+u16 dac_get_val (dac channel)
 {
-	unsigned short dac_val;
+	u16 dac_val;
 
 	switch (channel)
 	{

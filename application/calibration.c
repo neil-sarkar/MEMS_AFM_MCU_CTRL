@@ -51,9 +51,9 @@ void init_act (Actuator* act, dac out_dac, adc in_adc, adc z_adc)
 	act->z_adc = z_adc;
 } 
 
-void calibrate_actuator (Actuator* act, us16 max_voltage){
+void calibrate_actuator (Actuator* act, u16 max_voltage){
 	u8 buffer [12];
-	us16 i = 0;
+	u16 i = 0;
 	u32 j = 0, adc_val = 0;
 
 	for (i = 0; i < max_voltage; i++)

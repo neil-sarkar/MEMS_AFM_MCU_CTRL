@@ -47,8 +47,8 @@ u16 adc_get_val(void);
 
 void adc_set_pga(adc channel, u8 gain);
 
-us16 adc_get_avg_val (const us16 samples);
+u16 adc_get_avg_val (const u16 samples);
 
-us16 adc_get_avgw_val (const us16 samples, const us16 wait);
+u16 adc_get_avgw_val (const u16 samples, const u16 wait);
 
 #endif

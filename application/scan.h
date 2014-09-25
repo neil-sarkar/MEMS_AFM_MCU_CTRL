@@ -21,15 +21,15 @@ typedef struct sample_data sample_data;
 typedef struct scan_params scan_params;
 
 void init_scanner (Actuator* left_act, Actuator* right_act, Actuator* z_act);
-u8 scan_configure (const us16 vmin_line,
-			const us16 vmin_scan,
-			const us16 vmax,
-			const us16 numpts,
-			const us16 numlines);
+u8 scan_configure (const u16 vmin_line,
+			const u16 vmin_scan,
+			const u16 vmax,
+			const u16 numpts,
+			const u16 numlines);
 void scan_start (void);
 void scan_step (void);
 
 void z_init_sample (void);
-void z_set_samples (us16 num_samples);
-us16 z_sample (void);
+void z_set_samples (u16 num_samples);
+u16 z_sample (void);
 void z_write_data (void);

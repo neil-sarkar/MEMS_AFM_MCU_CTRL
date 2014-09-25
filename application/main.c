@@ -241,7 +241,7 @@ int main(void)
 void set_dac_max (void)
 {
 	dac dac_ch;
-	us16 new_dac_limit;
+	u16 new_dac_limit;
 
 	// Get DAC channel
 	dac_ch = (dac)uart_wait_get_char();
@@ -293,7 +293,7 @@ void read_adc(void)
 void read_dac(void)
 {
 	dac dac_ch;
-	unsigned short dac_val;
+	u16 dac_val;
 
 	// Get DAC channel
 	dac_ch = (dac)uart_wait_get_char();
@@ -427,7 +427,7 @@ void freq_sweep(void)
 void freq_sweep_dds(void)
 {
 	u32 i;
-	us16 adc_val;
+	u16 adc_val;
 	long int delay;
 
 	//dds_power_up();
@@ -505,8 +505,8 @@ void cont_pulse(void)
 void auto_approach (void)
 {
 	u8 approach_fail;
-	us16 setpoint_req, setpoint_error;
-	us16 coarse_voltage;
+	u16 setpoint_req, setpoint_error;
+	u16 coarse_voltage;
 
 	pid_enable (false);
 
@@ -528,7 +528,7 @@ void auto_approach (void)
 void device_calibration (void)
 {
 	u8 actuator_cal;
-	us16 max_voltage;
+	u16 max_voltage;
 
 	actuator_cal = uart_wait_get_char();
 	uart_wait_get_bytes ((u8*)(&max_voltage), 2);
@@ -549,7 +549,7 @@ void device_calibration (void)
 
 void set_scan_wait (void)
 {
-	us16 nsamples = 0;
+	u16 nsamples = 0;
 	uart_wait_get_bytes ((u8*)(&nsamples), 2);
 
 	z_set_samples (nsamples);
@@ -561,7 +561,7 @@ void configure_scan (void)
 {
 	// read scan parameters over UART
 	u8 temp_buffer [2];
-	us16 vmin_line, vmin_scan, vmax, numpts, numlines;
+	u16 vmin_line, vmin_scan, vmax, numpts, numlines;
 
 	uart_wait_get_bytes (temp_buffer, 2);
 	vmin_line = (temp_buffer[0]) | (temp_buffer[1] << 8);
