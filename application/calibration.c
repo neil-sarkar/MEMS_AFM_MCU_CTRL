@@ -1,6 +1,14 @@
 #include "calibration.h"
 
+#define CALC_COEFF_0(a, b) 		(-0.5f*b/a)
+#define CALC_COEFF_1(a, b, c) 	((b*b-4.0f*a*c)/4.0f/(a*a))
+#define CALC_COEFF_2(a)			(1.0f/a)
+
+// local function definition	
 static void set_pv_rel (Actuator* act, float a, float b, float c);
+static void set_indirect_rel (Actuator* act, float a, float b, float c);
+
+extern scan_params scan_state;
 
 /* Function converts power to voltage (in DAC bits).
 	Hides calculation so changes can be made to P-V relationship */
@@ -22,26 +30,28 @@ float volt (Actuator* act, float pwr){
 	#endif
 }
 
-static void set_pv_rel (Actuator* act, float a, float b, float c)
+void set_pv_rel_a (Actuator* act, float a)
 {
-	act->pv_rel [0] = a;
-	act->pv_rel [1] = b;
-	act->pv_rel [2] = c;
-	
-	act->vp_rel[0] = -0.5f*b/a;
-	act->vp_rel[1] = (b*b-4.0f*a*c)/4.0f/(a*a);
-	act->vp_rel[2] = 1.0f/a;
+	act->pv_rel[0] = a;
+	act->vp_rel[0] = CALC_COEFF_0(a, act->pv_rel[1]);
+	act->vp_rel[1] = CALC_COEFF_1(a, act->pv_rel[1], act->pv_rel[2]);
+	act->vp_rel[2] = CALC_COEFF_2(a);
+	generate_line (scan_state.vmin_line, scan_state.vmax, scan_state.numpts);		
 }
 
-static void set_indirect_rel (Actuator* act, float a, float b, float c)
+void set_pv_rel_b (Actuator* act, float b)
 {
-	act->rv_indirect_rel [0] = a;
-	act->rv_indirect_rel [1] = b;
-	act->rv_indirect_rel [2] = c;
-	
-	act->vr_indirect_rel[0] = -0.5f*b/a;
-	act->vr_indirect_rel[1] = (b*b-4.0f*a*c)/4.0f/(a*a);
-	act->vr_indirect_rel[2] = 1.0f/a;
+	act->pv_rel[1] = b;
+	act->vp_rel[0] = CALC_COEFF_0(act->pv_rel[0], b);
+	act->vp_rel[1] = CALC_COEFF_1(act->pv_rel[0], b, act->pv_rel[2]);
+	generate_line (scan_state.vmin_line, scan_state.vmax, scan_state.numpts);		
+}
+
+void set_pv_rel_c (Actuator* act, float c)
+{
+	act->pv_rel[2] = c;
+	act->vp_rel[1] = CALC_COEFF_1(act->pv_rel[0], act->pv_rel[1], c);
+	generate_line (scan_state.vmin_line, scan_state.vmax, scan_state.numpts);		
 }
 
 void init_act (Actuator* act, dac out_dac, adc in_adc, adc z_adc)
@@ -106,4 +116,31 @@ void calibrate_actuator (Actuator* act, u16 max_voltage){
 
 	// Convert to single precision floating point
 	set_indirect_rel (act, ((float*)buffer)[0],((float*)buffer)[1],((float*)buffer)[2]);
+}
+
+/************************** 
+LOCAL FUNCTION DEFINITIONS
+**************************/
+
+static void set_pv_rel (Actuator* act, float a, float b, float c)
+{
+	act->pv_rel [0] = a;
+	act->pv_rel [1] = b;
+	act->pv_rel [2] = c;
+	
+	act->vp_rel[0] = CALC_COEFF_0(a, b);
+	act->vp_rel[1] = CALC_COEFF_1(a, b, c);
+	act->vp_rel[2] = CALC_COEFF_2(a);
+}
+
+// TODO: WHAT IS THE POINT OF THIS IF IT IS NEVER USED?
+static void set_indirect_rel (Actuator* act, float a, float b, float c)
+{
+	act->rv_indirect_rel [0] = a;
+	act->rv_indirect_rel [1] = b;
+	act->rv_indirect_rel [2] = c;
+	
+	act->vr_indirect_rel[0] = CALC_COEFF_0(a, b);
+	act->vr_indirect_rel[1] = CALC_COEFF_1(a, b, c);
+	act->vr_indirect_rel[2] = CALC_COEFF_2(a);
 }

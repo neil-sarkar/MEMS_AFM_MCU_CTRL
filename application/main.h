@@ -73,4 +73,8 @@ void step_scan (void);
 
 void set_pga (void);
 
+void set_pv_rel_manual_a (void);
+void set_pv_rel_manual_b (void);
+void set_pv_rel_manual_c (void);
+
 #endif

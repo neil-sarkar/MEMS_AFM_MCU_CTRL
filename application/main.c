@@ -234,8 +234,101 @@ int main(void)
 			case '*':
 				set_pga ();
 				break;
+			case 'A':
+				set_pv_rel_manual_a ();
+				break;
+			case 'B':
+				set_pv_rel_manual_b ();
+				break;
+			case 'C':
+				set_pv_rel_manual_c ();
+				break;
 		}
 	}
+}
+
+void set_pv_rel_manual_a (void) 
+{
+	float coeff_a;
+	u8 actuator;
+	
+	// determine which actuator is to be calibrated
+   	actuator = uart_wait_get_char();
+
+	// get calibration coefficients
+	*((u8*)(&coeff_a) + 0) = uart_wait_get_char();
+	*((u8*)(&coeff_a) + 1) = uart_wait_get_char();
+	*((u8*)(&coeff_a) + 2) = uart_wait_get_char();	
+	*((u8*)(&coeff_a) + 3) = uart_wait_get_char();
+
+	switch (actuator)
+	{
+		case ('l'):
+			set_pv_rel_a (&left_act, coeff_a); 
+			break;
+		case ('r'):
+			set_pv_rel_a (&right_act, coeff_a);
+			break;
+		case ('z'):
+			set_pv_rel_a (&z_act, coeff_a);
+			break;
+	}	
+}
+
+void set_pv_rel_manual_b (void) 
+{
+	float coeff_b;
+	u8 actuator;
+	
+	// determine which actuator is to be calibrated
+   	actuator = uart_wait_get_char();
+
+	// get calibration coefficients
+	*((u8*)(&coeff_b) + 0) = uart_wait_get_char();
+	*((u8*)(&coeff_b) + 1) = uart_wait_get_char();
+	*((u8*)(&coeff_b) + 2) = uart_wait_get_char();	
+	*((u8*)(&coeff_b) + 3) = uart_wait_get_char();
+
+	switch (actuator)
+	{
+		case ('l'):
+			set_pv_rel_b (&left_act, coeff_b); 
+			break;
+		case ('r'):
+			set_pv_rel_b (&right_act, coeff_b);
+			break;
+		case ('z'):
+			set_pv_rel_b (&z_act, coeff_b);
+			break;
+	}	
+}
+
+void set_pv_rel_manual_c (void) 
+{
+	float coeff_c;
+	u8 actuator;
+	
+	// determine which actuator is to be calibrated
+   	actuator = uart_wait_get_char();
+
+	// get calibration coefficient
+	*((u8*)(&coeff_c) + 0) = uart_wait_get_char();
+	*((u8*)(&coeff_c) + 1) = uart_wait_get_char();
+	*((u8*)(&coeff_c) + 2) = uart_wait_get_char();	
+	*((u8*)(&coeff_c) + 3) = uart_wait_get_char();
+
+	switch (actuator)
+	{
+		case ('l'):
+			set_pv_rel_c (&left_act, coeff_c); 
+			break;
+		case ('r'):
+			set_pv_rel_c (&right_act, coeff_c);
+			break;
+		case ('z'):
+			set_pv_rel_c (&z_act, coeff_c);
+			break;
+	}	
 }
 
 void set_dac_max (void)

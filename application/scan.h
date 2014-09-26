@@ -18,7 +18,6 @@
 #define BFR_SIZE PAGE_SIZE/2 
 
 typedef struct sample_data sample_data;
-typedef struct scan_params scan_params;
 
 void init_scanner (Actuator* left_act, Actuator* right_act, Actuator* z_act);
 u8 scan_configure (const u16 vmin_line,

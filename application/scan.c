@@ -12,28 +12,10 @@ static struct sample_data {
 	u32 z_off_samples;
 	u32 z_amp_samples;
 	u32 z_phs_samples;
-} z_data;
+} z_data; 
 
-/* State information about scanning. Used to restart scan
-	from last point of scanning */
-// TODO: make this better?
-static struct scan_params {
-	u16 z_samples_req;
-	u16 vmin_line;
-	u16 vmin_scan;
-	u16 vmax;
-	u16 numpts;																							
-	u16 numlines;
-	u32 baseline_points;
-	u32 i;
-	u32 j;
-	u32 k;
-	u32 adr;
-	dac left_act;
-	dac right_act;
-} scan_state;
+scan_params scan_state;
 
-static u8 generate_line (const u16 vmin_line, const u16 vmax, const u16 numpts);
 static float get_max_linepwr (const u16 vmin_line, const u16 vmax);
 
 void init_scanner (Actuator* left_act, Actuator* right_act, Actuator* z_act){
@@ -69,6 +51,7 @@ void scan_start ()
 	scan_state.j = PAGE_SIZE;
 	scan_state.k = 0;
 	scan_state.adr = BLOCK0_BASE;
+	// TODO: what values are the lateral actuators being set to?
 	scan_state.left_act = l_act->out_dac;
 	scan_state.right_act = r_act->out_dac;
 
@@ -192,7 +175,7 @@ void z_write_data (void)
 	floating point calculations with minimal changes in overall scan
 	time.
 */
-static u8 generate_line (const u16 vmin_line,
+u8 generate_line (const u16 vmin_line,
 							const u16 vmax, const u16 numpts){
 
 	// Generate dac output levels for max power isothermal
