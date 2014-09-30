@@ -22,7 +22,7 @@ tyVctHndlr    PID     	= (tyVctHndlr)pid_handler;
 tyVctHndlr 	  UART		= (tyVctHndlr)uart_handler;
 tyVctHndlr	  MTR		= (tyVctHndlr)mtr_handler;
 tyVctHndlr	  WIRE3		= (tyVctHndlr)wire3_handler;
-extern int dds_inc_cnt;
+extern u16 dds_inc_cnt;
 
 static Actuator left_act;
 static Actuator right_act;
@@ -58,7 +58,6 @@ int main(void)
 
    	/* Initialize SPI/DDS */
 	dds_spi_init();
-	//dds_power_up();
 
 	/* Initialize UART */
 	uart_init();  
@@ -523,18 +522,15 @@ void freq_sweep_dds(void)
 	u16 adc_val;
 	long int delay;
 
-	//dds_power_up();
 	dds_write();
-	//dds_set_ctrl();
+
 	for (i = 0; i < dds_inc_cnt; i++)
 	{
 		// read adc
 		adc_start_conv(ADC_ZAMP);
 		adc_val = adc_get_val();
 
-	 	// Send data out
-		//uart_set_char((u8)(adc_val & 0xFF));
-		//uart_set_char((u8)((adc_val >> 8) & 0xFF));
+	 	// send data out
 		uart_set_char((adc_val));
 		uart_set_char(((adc_val >> 8)));
 
@@ -543,7 +539,7 @@ void freq_sweep_dds(void)
 		adc_start_conv(ADC_PHASE);
 		adc_val = adc_get_val();
 
-	 	// Send data out
+	 	// send data out
 		uart_set_char((adc_val));
 		uart_set_char(((adc_val >> 8)));
 

@@ -7,6 +7,8 @@ void dds_spi_init(void);
 void dds_write(void);
 void dds_increment(void);
 void dds_get_data(void);
+void dds_zoom(void);
 
 void dds_handler(void);
+
 #endif

@@ -10,7 +10,7 @@ volatile u16 filter_buf[BUF_SIZE];
 volatile static u16 start_i = 0, end_i = 511;
 volatile static u32 sum;
 
-volatile unsigned short pid_input;
+volatile u16 pid_input;
 bool isAvgOn;
 
 // in units if us

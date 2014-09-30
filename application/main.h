@@ -34,6 +34,7 @@ Functional TODOs
  - todo07: 	DDS control: once an operating frequency has been selected set the DDS range to +/- 250Hz from the selected 
  			frequency, then maximize the frequency resolution in that range. The frequency can then be adjusted by known 
 			increments.
+ - todo08:	add comments to all function prototypes
 */
 
 
