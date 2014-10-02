@@ -37,6 +37,9 @@ Functional TODOs
  - todo08:	add comments to all function prototypes
 */
 
+/* Nice to haves and enhancements
+ - enh01:	cast all macro definitions.
+*/
 
 /***** function definitions *****/
 

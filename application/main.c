@@ -242,6 +242,9 @@ int main(void)
 			case 'C':
 				set_pv_rel_manual_c ();
 				break;
+			case 'D':
+				dds_zoom();
+				break;
 		}
 	}
 }

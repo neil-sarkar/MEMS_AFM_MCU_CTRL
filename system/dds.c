@@ -1,5 +1,9 @@
-#include "dds.h"
+/***************************************************************************
+This is the driver for controlling the AD5932 DDS chip.
+Note that for writing the DDS registers, the MSB has to be sent out first.
+***************************************************************************/
 
+#include "dds.h"
 #include "../peripheral/uart.h"
 
 #ifdef BOARD_m_assem
@@ -14,20 +18,29 @@
 	#error "DDS GPIO not defined"
 #endif
 
-// DDS registers
-#define	REG_CTRL		0x0
-#define REG_N_INCR		0x1
-#define REG_FDELTA_L	0x2
-#define REG_FDELTA_H	0x3
-#define REG_T_INT		0x4
-#define REG_FSTART_L	0xC
-#define REG_FSTART_H	0xD
+// DDS register addresses
+#define	REG_CTRL		(u8)0x0u
+#define REG_N_INCR		(u8)0x1u
+#define REG_FDELTA_L	(u8)0x2u
+#define REG_FDELTA_H	(u8)0x3u
+#define REG_T_INT		(u8)0x4u
+#define REG_FSTART_L	(u8)0xCu
+#define REG_FSTART_H	(u8)0xDu
 
-#define DDS_MAX_ABS		(u32)16777215
-#define DDS_MCLK_HZ		(u32)25000000
-#define DDS_250HZ_ABS	168
-		
-u16 dds_inc_cnt = 0;
+// DDS 
+#define DDS_MAX_ABS		(u32)16777215u
+#define DDS_MCLK_HZ		(u32)25000000u
+#define DDS_250HZ_ABS	(u8)168u
+#define DDS_MHZ_TO_ABS	(float)0.67f
+
+// Macro helper functions
+#define GET_BYTE_MS4B(val)	(u8)((val & 0xF0) >> 4)
+#define GET_BYTE_LS4B(val)	(u8)(val & 0x0F)
+#define GET_VAL(reg)		(u16)(((REG[reg].MSB & 0x0F) << 8) | REG[reg].LSB)
+#define WRITE_REG(reg)		\
+			SPITX = REG[reg].addr | (REG[reg].MSB 0x0F); \
+			SPITX = REG[reg].LSB
+						
 
 // array mirrors the state of DDS registers
 // initial (default) values are shown here
@@ -57,24 +70,53 @@ u8 dds_data[14] = {
 	0x02
 };
 
-// TODO: this is for improving this driver
-struct dds_reg
+// this is for improving this driver
+typedef struct
 {
-	u8 	addr;
-	u16 val;
-};
+	u8 addr;
+	// most significant byte of the register value
+	// note that the 4 most significant bits are the register address
+	u8  MSB;
+	// least significant byte of the register value   
+	u8	LSB;
+} DDS_REG;
 
+// The order here MUST be maintained
 typedef enum {
-	REG_CTRL=0,
-	REG_N_INCR,
-	REG_FDELTA_L,
-	REG_FDELTA_H,
-	REG_T_INT,
-	REG_FSTART_L,
-	REG_FSTART_H
-} dds_reg_name;
+	// control register
+	CTRL=0,
 
-volatile static u8 writeCnt = 0;
+	// frequency start registers
+	FSTART_L,
+	FSTART_H,
+
+	// frequency increment (delta) register
+	FDELTA_L,
+	FDELTA_H,
+
+	// frequency scan step count register
+	N_INCR,
+
+	// time delay register
+	T_INT_MSB,
+   	
+	// total number of bytes in all registers
+	REG_CNT
+} REG_NAME;
+
+volatile static u8 regCnt = 0;
+u16 dds_inc_cnt = 0;
+
+static DDS_REG REG[REG_CNT] = {
+	// addr				   MSB	  	LSB
+	{(REG_CTRL     << 4),  0x0F, 	0xFF},
+	{(REG_FSTART_L << 4),  0x00, 	0x00},
+	{(REG_FSTART_H << 4),  0x00, 	0x00},
+	{(REG_FDELTA_L << 4),  0x00, 	0x00},
+	{(REG_FDELTA_H << 4),  0x00, 	0x00},
+	{(REG_N_INCR   << 4),  0x00, 	0x00},
+	{(REG_T_INT    << 4),  0x00, 	0x00},
+};
 
 void dds_spi_init()
 {
@@ -90,7 +132,7 @@ void dds_spi_init()
 		   + BIT3
 		   + BIT6							// Initiate transfer on write to Tx FIFO
 		   + BIT11							// Continuous transfer mode
-		   + BIT14;
+		   + BIT14;							// Tx interrupt occurs when 2-bytes have been transferred
 
 	SPIDIV  = 0xC7;	   	         			// Select 101kHz clock rate
 	IRQEN |= BIT14;							// Enable SPI interrupt
@@ -99,25 +141,39 @@ void dds_spi_init()
 void dds_get_data()
 {
 	u8 val_l, val_h;		  
-			
-	val_l = uart_wait_get_char();
-	val_h = uart_wait_get_char();
 	
-	dds_data[2] = 0xC0 | (val_h & 0x0F);
-	dds_data[3] = val_l;
-	dds_data[5] = ((val_h & 0xF0) >> 4);
-	
-	val_l = uart_wait_get_char();
-	val_h = uart_wait_get_char();
-		 
-	dds_data[6] = 0x20 | (val_h & 0x0F); 
-	dds_data[7] = val_l;
-
+	// data for frequency start		
 	val_l = uart_wait_get_char();
 	val_h = uart_wait_get_char();
 
-	dds_data[10] = 0x10 | (val_h & 0x0F);
-	dds_data[11] = val_l;
+	REG[FSTART_L].LSB 	= val_l;
+	REG[FSTART_L].MSB  	= val_h;
+	REG[FSTART_H].LSB	= GET_BYTE_MS4B(val_h);
+
+//	dds_regs	
+//	dds_data[2] = 0xC0 | (val_h & 0x0F);
+//	dds_data[3] = val_l;
+//	dds_data[5] = ((val_h & 0xF0) >> 4);
+
+	// data for frequency increment	
+	val_l = uart_wait_get_char();
+	val_h = uart_wait_get_char();
+	
+	REG[FDELTA_L].LSB	= val_l;
+	REG[FDELTA_L].MSB	= val_h; 
+//	dds_data[6] = 0x20 | (val_h & 0x0F); 
+//	dds_data[7] = val_l;
+
+	// data for the number of scan steps
+	val_l = uart_wait_get_char();
+	val_h = uart_wait_get_char();
+
+	REG[N_INCR].LSB		= val_l;
+	REG[N_INCR].MSB		= val_h;
+//	dds_data[10] = 0x10 | (val_h & 0x0F);
+//	dds_data[11] = val_l;
+
+	//dds_inc_cnt 		= ((val_h & 0x0F) << 8) | val_l;
 
 	// configure the dds based on the new data
 	dds_write();
@@ -126,28 +182,16 @@ void dds_get_data()
 void dds_write() 
 {
 	// 1. Write to control register
-	/* Control Register
-	D0 = 1
-	D1 = 1
-	D2 = 1 SYNCOUT disabled
-	D3 = 1
-	D4 = 1
-	D5 = 1 Frequency increments triggered ext
-	D6 = 1
-	D7 = 1
-	D8 = 1 MSBOUT enabled
-	D9 = 1 tri = 0, sine = 1
-	D10 = 1 DAC enable
-	D11 = 1 cont. write
-	*/
 
 	//TODO: what is this?
-	dds_inc_cnt = ((dds_data[10] & 0x0F) << 8) | dds_data[11];
+	//dds_inc_cnt = GET_BYTE_LS4B(REG[N_INCR].MSB) << 8 | REG[N_INCR].LSB;
+	//dds_inc_cnt = (u16)((dds_data[10] & 0x0F) << 8) | dds_data[11];
+	dds_inc_cnt = GET_VAL(N_INCR);
 
-   	writeCnt = 0;
-	//TODO: why are 2 bytes being written to the tx buffer? 
-	SPITX = dds_data[writeCnt++];
-	SPITX = dds_data[writeCnt++];	
+   	regCnt = 0;
+
+   	WRITE_REG(regCnt);
+	regCnt++;	
 }
 
 void dds_increment()
@@ -162,25 +206,28 @@ void dds_increment()
 
 void dds_zoom()
 {
+/*
 	u32 current_f, start_f, end_f;
-	current_freq = (u32)((dds_data[2] << 24) | (dds_data[3] << 16) | (dds_data[4] << 8) | dds_data[5]);
+	current_f = (u32)(((dds_data[2] & 0x0F) << 24) | (dds_data[3] << 16) | (dds_data[4] << 8) | dds_data[5]);
 	start_f = current_f - DDS_250HZ_ABS;
 	end_f = current_f + DDS_250HZ_ABS;
+	dds_data[2] = ((start_f & 0x0F000000) >> 24) | 0xC0;
+*/
 }
 
 void dds_handler()
 {
 	if ((SPISTA & BIT5) == BIT5)    		// If SPI Master Tx IRQ
 	{
-		if (writeCnt == 14)
+		if ( regCnt < REG_CNT)				// Have 14 bytes been sent?
+		{
+			WRITE_REG(regCnt);
+			regCnt++;
+		}
+		else if (regCnt == REG_CNT)
 		{
 			dds_increment();
-			writeCnt = 0;			
-		}
-		else if ( writeCnt < 14)					// Have 14 bytes been sent?
-		{
-			SPITX = dds_data[writeCnt++];		// Load Tx buffer
-			SPITX = dds_data[writeCnt++];		// Load Tx buffer
+			regCnt = 0;			
 		}
 	}		
 }
