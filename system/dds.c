@@ -31,44 +31,16 @@ Note that for writing the DDS registers, the MSB has to be sent out first.
 #define DDS_MAX_ABS		(u32)16777215u
 #define DDS_MCLK_HZ		(u32)25000000u
 #define DDS_250HZ_ABS	(u8)168u
-#define DDS_MHZ_TO_ABS	(float)0.67f
+#define DDS_HZ_TO_ABS	(float)0.67f
 
 // Macro helper functions
 #define GET_BYTE_MS4B(val)	(u8)((val & 0xF0) >> 4)
 #define GET_BYTE_LS4B(val)	(u8)(val & 0x0F)
-#define GET_VAL(reg)		(u16)(((REG[reg].MSB & 0x0F) << 8) | REG[reg].LSB)
-#define WRITE_REG(reg)		\
-			SPITX = REG[reg].addr | (REG[reg].MSB 0x0F); \
-			SPITX = REG[reg].LSB
-						
+#define GET_VAL(reg)		(u16)(((REG[reg].MSB & 0x0F) << 8) | REG[reg].LSB)						
+#define GET_FREQ_VAL(reg_L, reg_H) \
+							(u32)(((GET_VAL(reg_H)) << 12) | GET_VAL(reg_L)) 
 
-// array mirrors the state of DDS registers
-// initial (default) values are shown here
-u8 dds_data[14] = {
-	// Write ctrl register 	
-    0x0F,
-	0xFF,
-	
-	// Write start frequency
-	0xC2,
-	0xFF,
-	0xD0,
-	0x00, 
-	
-	// Write frequency increment
-	0x20,
-	0xFF,
-	0x30,
-	0x00,
-	
-	// Write number of increments
-	0x10,
-	0x0F,
-	
-	// Write increment interval
-	0x50,
-	0x02
-};
+extern void freq_sweep_dds(void);
 
 // this is for improving this driver
 typedef struct
@@ -87,7 +59,7 @@ typedef enum {
 	CTRL=0,
 
 	// frequency start registers
-	FSTART_L,
+	FSTART_L, 
 	FSTART_H,
 
 	// frequency increment (delta) register
@@ -140,11 +112,12 @@ void dds_spi_init()
 
 void dds_get_data()
 {
-	u8 val_l, val_h;		  
+	u8 val_l, val_h, u16 freq_hz;		  
 	
 	// data for frequency start		
 	val_l = uart_wait_get_char();
 	val_h = uart_wait_get_char();
+
 
 	REG[FSTART_L].LSB 	= val_l;
 	REG[FSTART_L].MSB  	= val_h;
@@ -190,7 +163,8 @@ void dds_write()
 
    	regCnt = 0;
 
-   	WRITE_REG(regCnt);
+	SPITX = REG[regCnt].addr | (REG[regCnt].MSB & 0x0F); 
+	SPITX = REG[regCnt].LSB;
 	regCnt++;	
 }
 
@@ -206,13 +180,24 @@ void dds_increment()
 
 void dds_zoom()
 {
-/*
-	u32 current_f, start_f, end_f;
-	current_f = (u32)(((dds_data[2] & 0x0F) << 24) | (dds_data[3] << 16) | (dds_data[4] << 8) | dds_data[5]);
+	u32 current_f, start_f;
+	current_f = GET_FREQ_VAL(FSTART_L, FSTART_H);
 	start_f = current_f - DDS_250HZ_ABS;
-	end_f = current_f + DDS_250HZ_ABS;
-	dds_data[2] = ((start_f & 0x0F000000) >> 24) | 0xC0;
-*/
+
+	REG[FSTART_L].LSB = (u8)(start_f & 0xFF);
+	REG[FSTART_L].MSB = (u8)((start_f & 0xFF00) >> 8);
+	REG[FSTART_H].LSB = (u8)((start_f & 0xFF0000) >> 16);
+	REG[FSTART_H].MSB = (u8)((start_f & 0xFF000000) >> 24);
+   	
+	REG[FDELTA_L].LSB = 0x02;
+	REG[FDELTA_L].MSB = 0x00;
+	REG[FDELTA_H].LSB = 0x00;
+	REG[FDELTA_H].MSB = 0x00;
+
+	REG[N_INCR].LSB	  = (u8)(DDS_250HZ_ABS >> 1);
+	REG[N_INCR].MSB   = 0x00;
+
+	freq_sweep_dds();
 }
 
 void dds_handler()
@@ -221,7 +206,8 @@ void dds_handler()
 	{
 		if ( regCnt < REG_CNT)				// Have 14 bytes been sent?
 		{
-			WRITE_REG(regCnt);
+			SPITX = REG[regCnt].addr | (REG[regCnt].MSB & 0x0F); 
+			SPITX = REG[regCnt].LSB;
 			regCnt++;
 		}
 		else if (regCnt == REG_CNT)

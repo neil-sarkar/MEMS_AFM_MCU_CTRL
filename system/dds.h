@@ -11,4 +11,32 @@ void dds_zoom(void);
 
 void dds_handler(void);
 
+/* TODO: REMOVE
+u8 dds_data[14] = {
+	// Write ctrl register 	
+    0x0F,
+	0xFF,
+	
+	// Write start frequency
+	0xC2,
+	0xFF,
+	0xD0,
+	0x00, 
+	
+	// Write frequency increment
+	0x20,
+	0xFF,
+	0x30,
+	0x00,
+	
+	// Write number of increments
+	0x10,
+	0x0F,
+	
+	// Write increment interval
+	0x50,
+	0x02
+};
+*/
+
 #endif
