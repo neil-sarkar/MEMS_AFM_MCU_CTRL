@@ -16,6 +16,8 @@
 #include "calibration.h"
 #include "scan.h"
 
+#define ACK(ack_char)	uart_set_char(ack_char)
+
 tyVctHndlr    DDS     	= (tyVctHndlr)dds_handler;
 tyVctHndlr    FILTER   	= (tyVctHndlr)filter_handler;
 tyVctHndlr    PID     	= (tyVctHndlr)pid_handler;
@@ -244,6 +246,8 @@ int main(void)
 				set_pv_rel_manual_c ();
 				break;
 		}
+		// return an acknowledge character
+		ACK(rx_char);
 	}
 }
 
