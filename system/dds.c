@@ -112,12 +112,12 @@ void dds_spi_init()
 
 void dds_get_data()
 {
-	u8 val_l, val_h, u16 freq_hz;		  
+	u8 val_l, val_h;
+	u16 freq_hz;		  
 	
 	// data for frequency start		
 	val_l = uart_wait_get_char();
 	val_h = uart_wait_get_char();
-
 
 	REG[FSTART_L].LSB 	= val_l;
 	REG[FSTART_L].MSB  	= val_h;
@@ -147,6 +147,39 @@ void dds_get_data()
 //	dds_data[11] = val_l;
 
 	//dds_inc_cnt 		= ((val_h & 0x0F) << 8) | val_l;
+
+	// configure the dds based on the new data
+	dds_write();
+}
+
+void dds_get_all_data()
+{
+	u8 val_l, val_h, val_h2;
+	u16 freq_hz;		  
+	
+	// data for frequency start		
+	val_l = uart_wait_get_char();
+	val_h = uart_wait_get_char();
+	val_h2 = uart_wait_get_char();
+
+	REG[FSTART_L].LSB 	= val_l;
+	REG[FSTART_L].MSB  	= val_h;
+	REG[FSTART_H].LSB	= (GET_BYTE_LS4B(val_h2) << 4) | GET_BYTE_MS4B(val_h);
+	REG[FSTART_H].MSB	= GET_BYTE_MS4B(val_h2);
+
+	// data for frequency increment	
+	val_l = uart_wait_get_char();
+	val_h = uart_wait_get_char();
+	
+	REG[FDELTA_L].LSB	= val_l;
+	REG[FDELTA_L].MSB	= val_h; 
+
+	// data for the number of scan steps
+	val_l = uart_wait_get_char();
+	val_h = uart_wait_get_char();
+
+	REG[N_INCR].LSB		= val_l;
+	REG[N_INCR].MSB		= val_h;
 
 	// configure the dds based on the new data
 	dds_write();

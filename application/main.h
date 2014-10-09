@@ -35,6 +35,7 @@ Functional TODOs
  			frequency, then maximize the frequency resolution in that range. The frequency can then be adjusted by known 
 			increments.
  - todo08:	add comments to all function prototypes
+ - todo09:	tage a number to each version of the code and an accessor method for the client to retrieve the version #
 */
 
 /* Nice to haves and enhancements

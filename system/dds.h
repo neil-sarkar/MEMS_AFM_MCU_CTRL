@@ -10,6 +10,7 @@ void dds_get_data(void);
 void dds_zoom(void);
 
 void dds_handler(void);
+void dds_get_all_data(void);
 
 /* TODO: REMOVE
 u8 dds_data[14] = {
