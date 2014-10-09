@@ -245,6 +245,9 @@ int main(void)
 			case 'D':
 				dds_zoom();
 				break;
+			case 'E':
+				calib_get_freq_amp ();
+				break;
 		}
 	}
 }

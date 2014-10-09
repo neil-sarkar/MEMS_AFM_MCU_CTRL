@@ -112,8 +112,7 @@ void dds_spi_init()
 
 void dds_get_data()
 {
-	u8 val_l, val_h;
-	u16 freq_hz;		  
+	u8 val_l, val_h;		  
 	
 	// data for frequency start		
 	val_l = uart_wait_get_char();
@@ -154,8 +153,7 @@ void dds_get_data()
 
 void dds_get_all_data()
 {
-	u8 val_l, val_h, val_h2;
-	u16 freq_hz;		  
+	u8 val_l, val_h, val_h2;		  
 	
 	// data for frequency start		
 	val_l = uart_wait_get_char();
