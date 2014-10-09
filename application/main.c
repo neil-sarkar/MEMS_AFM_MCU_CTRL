@@ -41,6 +41,19 @@ static Actuator z_act;
 //volatile bool flag;	
 //void set_dir(char);
 
+/*****************AMP-FREQ COMPENSATION******************/
+#define COMP_POINT_CNT	16u
+
+struct act_comp{
+	// 24-bit frequency value
+	u32 freq;
+	// 12-bit amplitude value
+	u16 amp;
+};
+
+struct act_comp comp[COMP_POINT_CNT];
+/********************************************************/
+ 
 int main(void)
 {
 	u8 rx_char;
@@ -249,6 +262,28 @@ int main(void)
 				calib_get_freq_amp ();
 				break;
 		}
+	}
+}
+
+void calib_get_freq_amp (void)
+{
+	u16 i;
+	u16 val;
+	u16 increment;
+	u16 data;
+
+	increment = 4095 / COMP_POINT_CNT;
+
+	// ramp-up voltage 16 times
+	for (i = 0, val = 0; i < COMP_POINT_CNT; i++, val += increment)
+	{
+		dac_set_val(DAC_ZOFFSET_FINE, val);
+
+		// Read ADC
+		adc_start_conv(adc_ch);
+		adc_val = adc_get_val();
+
+		comp[i].amp = adc_val;
 	}
 }
 
@@ -520,6 +555,40 @@ void freq_sweep(void)
 		uart_set_char(((adc_val >> 8)));
 
 	}
+}
+
+void freq_sweep_dds(void)
+{
+	u32 i;
+	u16 adc_val;
+	long int delay;
+
+	dds_write();
+
+	for (i = 0; i < dds_inc_cnt; i++)
+	{
+		// read adc
+		adc_start_conv(ADC_ZAMP);
+		adc_val = adc_get_val();
+
+	 	// send data out
+		uart_set_char((adc_val));
+		uart_set_char(((adc_val >> 8)));
+
+
+		// read adc for phase data
+		adc_start_conv(ADC_PHASE);
+		adc_val = adc_get_val();
+
+	 	// send data out
+		uart_set_char((adc_val));
+		uart_set_char(((adc_val >> 8)));
+
+		delay = 12500;
+		while(delay--){};
+
+		dds_increment();		
+	} 		
 }
 
 void freq_sweep_dds(void)
