@@ -83,5 +83,6 @@ void set_pv_rel_manual_b (void);
 void set_pv_rel_manual_c (void);
 
 void calib_get_freq_amp (void);
+void calib_freq_amp(u16* amp_max, u32* freq);
 
 #endif

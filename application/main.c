@@ -270,21 +270,59 @@ void calib_get_freq_amp (void)
 	u16 i;
 	u16 val;
 	u16 increment;
-	u16 data;
 
 	increment = 4095 / COMP_POINT_CNT;
 
-	// ramp-up voltage 16 times
+	// step Z_FINE and get calibration values
 	for (i = 0, val = 0; i < COMP_POINT_CNT; i++, val += increment)
 	{
 		dac_set_val(DAC_ZOFFSET_FINE, val);
 
-		// Read ADC
-		adc_start_conv(adc_ch);
+		calib_freq_amp(&comp[i].amp, &comp[i].freq);
+	}
+}
+
+void calib_freq_amp(u16* amp_max, u32* freq)
+{
+	u32 i;
+	u16 adc_val;
+	long int delay;
+	
+	amp_max = 0;
+
+	dds_write();
+
+	for (i = 0; i < dds_inc_cnt; i++)
+	{
+		// read adc
+		adc_start_conv(ADC_ZAMP);
 		adc_val = adc_get_val();
 
-		comp[i].amp = adc_val;
+	 	// send data out
+		uart_set_char(adc_val);
+		uart_set_char(adc_val >> 8);
+
+		// get resonant amplitude
+		if (adc_val > *amp_max) 
+		{
+			// caluclate frequency?
+			*amp_max = adc_val;
+		}
+
+		// read adc for phase data
+		adc_start_conv(ADC_PHASE);
+		adc_val = adc_get_val();
+
+	 	// send data out
+		uart_set_char((adc_val));
+		uart_set_char(((adc_val >> 8)));
+
+		delay = 12500;
+		while(delay--){};
+
+		dds_increment();		
 	}
+		
 }
 
 void set_pv_rel_manual_a (void) 
@@ -555,40 +593,6 @@ void freq_sweep(void)
 		uart_set_char(((adc_val >> 8)));
 
 	}
-}
-
-void freq_sweep_dds(void)
-{
-	u32 i;
-	u16 adc_val;
-	long int delay;
-
-	dds_write();
-
-	for (i = 0; i < dds_inc_cnt; i++)
-	{
-		// read adc
-		adc_start_conv(ADC_ZAMP);
-		adc_val = adc_get_val();
-
-	 	// send data out
-		uart_set_char((adc_val));
-		uart_set_char(((adc_val >> 8)));
-
-
-		// read adc for phase data
-		adc_start_conv(ADC_PHASE);
-		adc_val = adc_get_val();
-
-	 	// send data out
-		uart_set_char((adc_val));
-		uart_set_char(((adc_val >> 8)));
-
-		delay = 12500;
-		while(delay--){};
-
-		dds_increment();		
-	} 		
 }
 
 void freq_sweep_dds(void)
