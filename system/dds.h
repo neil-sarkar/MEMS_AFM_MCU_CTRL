@@ -11,6 +11,8 @@ void dds_zoom(void);
 
 void dds_handler(void);
 void dds_get_all_data(void);
+u32 dds_get_freq_abs(void);
+u32 dds_get_freq_hz(void);
 
 /* TODO: REMOVE
 u8 dds_data[14] = {

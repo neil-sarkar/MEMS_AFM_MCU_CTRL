@@ -277,8 +277,16 @@ void calib_get_freq_amp (void)
 	for (i = 0, val = 0; i < COMP_POINT_CNT; i++, val += increment)
 	{
 		dac_set_val(DAC_ZOFFSET_FINE, val);
-
 		calib_freq_amp(&comp[i].amp, &comp[i].freq);
+		
+		// send frequency (24-bit)
+		uart_set_char((comp[i].freq & 0xFF0000) >> 16);
+		uart_set_char((comp[i].freq & 0xFF00) >> 8);
+		uart_set_char((comp[i].freq & 0xFF));
+
+		// send amplitude
+		uart_set_char((comp[i].amp & 0xFF00) >> 8);
+		uart_set_char((comp[i].amp & 0xFF)); 
 	}
 }
 
@@ -306,6 +314,7 @@ void calib_freq_amp(u16* amp_max, u32* freq)
 		if (adc_val > *amp_max) 
 		{
 			// caluclate frequency?
+			*freq = dds_get_freq_hz();
 			*amp_max = adc_val;
 		}
 

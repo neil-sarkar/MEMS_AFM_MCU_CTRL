@@ -1,6 +1,10 @@
 /***************************************************************************
 This is the driver for controlling the AD5932 DDS chip.
 Note that for writing the DDS registers, the MSB has to be sent out first.
+
+Note:
+Can only do a 12-bit delta frequency (max 4096 points). Could be changed
+to 24-bit if needed.
 ***************************************************************************/
 
 #include "dds.h"
@@ -32,6 +36,7 @@ Note that for writing the DDS registers, the MSB has to be sent out first.
 #define DDS_MCLK_HZ		(u32)25000000u
 #define DDS_250HZ_ABS	(u8)168u
 #define DDS_HZ_TO_ABS	(float)0.67f
+#define DDS_ABS_TO_HZ	(float)1.49f
 
 // Macro helper functions
 #define GET_BYTE_MS4B(val)	(u8)((val & 0xF0) >> 4)
@@ -41,6 +46,12 @@ Note that for writing the DDS registers, the MSB has to be sent out first.
 							(u32)(((GET_VAL(reg_H)) << 12) | GET_VAL(reg_L)) 
 
 extern void freq_sweep_dds(void);
+
+static u32 freq_current;
+static u16 freq_delta;
+
+#define GET_ABS_TO_HZ(freq)	(u32)(freq * DDS_ABS_TO_HZ);	
+#define GET_HZ_TO_ABS(freq)	(u32)(freq * DDS_HZ_TO_ABS);
 
 // this is for improving this driver
 typedef struct
@@ -121,8 +132,7 @@ void dds_get_data()
 	REG[FSTART_L].LSB 	= val_l;
 	REG[FSTART_L].MSB  	= val_h;
 	REG[FSTART_H].LSB	= GET_BYTE_MS4B(val_h);
-
-//	dds_regs	
+	
 //	dds_data[2] = 0xC0 | (val_h & 0x0F);
 //	dds_data[3] = val_l;
 //	dds_data[5] = ((val_h & 0xF0) >> 4);
@@ -190,7 +200,10 @@ void dds_write()
 	//TODO: what is this?
 	//dds_inc_cnt = GET_BYTE_LS4B(REG[N_INCR].MSB) << 8 | REG[N_INCR].LSB;
 	//dds_inc_cnt = (u16)((dds_data[10] & 0x0F) << 8) | dds_data[11];
-	dds_inc_cnt = GET_VAL(N_INCR);
+
+	freq_current = GET_FREQ_VAL(FSTART_L, FSTART_H);
+	freq_delta	 = GET_VAL(FDELTA_L);
+	dds_inc_cnt  = GET_VAL(N_INCR);
 
    	regCnt = 0;
 
@@ -201,12 +214,15 @@ void dds_write()
 
 void dds_increment()
 {
-	// TODO: Do we need a delay here? 
+	// TODO: Do we need a delay here? what can we do with it?
 	// try the 0-1 transition without the delay and see if it works.
 	u8 cnt = 0xFF;
 	DDS_DAT_REG &= ~DDS_CTRL;
 	while (cnt--) {};
 	DDS_DAT_REG |= DDS_CTRL;
+
+	// keep track of the current frequency (output of dds)
+	freq_current += freq_delta;
 }
 
 void dds_zoom()
@@ -247,4 +263,14 @@ void dds_handler()
 			regCnt = 0;			
 		}
 	}		
+}
+
+u32 dds_get_freq_abs()
+{
+	return freq_current;			
+}
+
+u32 dds_get_freq_hz()
+{
+	return GET_ABS_TO_HZ(freq_current);
 }
