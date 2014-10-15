@@ -24,6 +24,7 @@ tyVctHndlr	  MTR		= (tyVctHndlr)mtr_handler;
 tyVctHndlr	  WIRE3		= (tyVctHndlr)wire3_handler;
 extern u16 dds_inc_cnt;
 
+// TODO: make these global and pass by reference
 static Actuator left_act;
 static Actuator right_act;
 static Actuator z_act;
@@ -255,9 +256,16 @@ int main(void)
 			case 'H':
 				dds_dec();
 				break;
+			case 'I':
+				dds_set_freq_out_uart();
+				break;
+			case 'J':
+				z_act_set_offset();
+				break;			
+
 			case 'V':
 				get_mcu_version ();
-				break;	  
+				break;		  
 		}
 	}
 }
@@ -281,8 +289,28 @@ struct act_comp{
 	u16 amp;
 };
 
-struct act_comp comp[COMP_POINT_CNT];
+// Incorporate this into the z_act calibration struct
+struct z_calibration
+{
+	u32 freq_offset;
+	u16 amp_offset;
+	struct act_comp comp[COMP_POINT_CNT];
+};
+
+struct z_calibration z_calib;
+
 /********************************************************/
+
+void z_act_set_offset()
+{
+	u8 val_l, val_h;
+	val_l = uart_wait_get_char();
+	val_h = uart_wait_get_char();
+
+	z_calib.freq_offset = (val_h << 8) | val_l;
+
+	// TODO: Set amp offset based on freq_offset
+}
 
 void calib_get_freq_amp (void)
 {
@@ -296,17 +324,27 @@ void calib_get_freq_amp (void)
 	for (i = 0, val = 0; i < COMP_POINT_CNT; i++, val += increment)
 	{
 		dac_set_val(DAC_ZOFFSET_FINE, val);
-		calib_freq_amp(&comp[i].amp, &comp[i].freq);
+		calib_freq_amp(&z_calib.comp[i].amp, &z_calib.comp[i].freq);
 		
 		// send max frequency (24-bit)
-		uart_set_char((comp[i].freq & 0xFF));
-		uart_set_char((comp[i].freq & 0xFF00) >> 8);
-		uart_set_char((comp[i].freq & 0xFF0000) >> 16);
+		uart_set_char((z_calib.comp[i].freq & 0xFF));
+		uart_set_char((z_calib.comp[i].freq & 0xFF00) >> 8);
+		uart_set_char((z_calib.comp[i].freq & 0xFF0000) >> 16);
 		
 		// send max amplitude
-		uart_set_char((comp[i].amp & 0xFF));
-		uart_set_char((comp[i].amp & 0xFF00) >> 8); 
+		uart_set_char((z_calib.comp[i].amp & 0xFF));
+		uart_set_char((z_calib.comp[i].amp & 0xFF00) >> 8); 
 	}
+}
+
+void z_act_compensate (u16 raw_val)
+{
+	u8 index;
+	index = (raw_val & 0x0F00) >> 8;
+
+	dds_set_freq_out(z_calib.comp[index].freq);	
+	
+	// TODO: HOW TO APPLY OFFSET AND WHAT TO DO WITH AMP DATA?
 }
 
 void calib_freq_amp(u16* amp_max, u32* freq)

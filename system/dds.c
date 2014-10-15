@@ -88,6 +88,7 @@ typedef enum {
 } REG_NAME;
 
 volatile static u8 regCnt = 0;
+volatile static u8 regCntToWrite = 0;
 u16 dds_inc_cnt = 0;
 
 static DDS_REG REG[REG_CNT] = {
@@ -100,6 +101,26 @@ static DDS_REG REG[REG_CNT] = {
 	{(REG_N_INCR   << 4),  0x00, 	0x00},
 	{(REG_T_INT    << 4),  0x00, 	0x00},
 };
+
+void dds_set_freq_out(u32 freq)
+{
+	
+}
+
+void dds_set_freq_out_uart()
+{
+	u8 val_l, val_h;		  
+	
+	// data for frequency start		
+	val_l = uart_wait_get_char();
+	val_h = uart_wait_get_char();
+
+	REG[FSTART_L].LSB 	= val_l;
+	REG[FSTART_L].MSB  	= val_h;
+	REG[FSTART_H].LSB	= GET_BYTE_MS4B(val_h);
+	
+	regCntToWrite = 3;	
+}
 
 void dds_spi_init()
 {
@@ -132,10 +153,6 @@ void dds_get_data()
 	REG[FSTART_L].LSB 	= val_l;
 	REG[FSTART_L].MSB  	= val_h;
 	REG[FSTART_H].LSB	= GET_BYTE_MS4B(val_h);
-	
-//	dds_data[2] = 0xC0 | (val_h & 0x0F);
-//	dds_data[3] = val_l;
-//	dds_data[5] = ((val_h & 0xF0) >> 4);
 
 	// data for frequency increment	
 	val_l = uart_wait_get_char();
@@ -143,8 +160,6 @@ void dds_get_data()
 	
 	REG[FDELTA_L].LSB	= val_l;
 	REG[FDELTA_L].MSB	= val_h; 
-//	dds_data[6] = 0x20 | (val_h & 0x0F); 
-//	dds_data[7] = val_l;
 
 	// data for the number of scan steps
 	val_l = uart_wait_get_char();
@@ -152,12 +167,9 @@ void dds_get_data()
 
 	REG[N_INCR].LSB		= val_l;
 	REG[N_INCR].MSB		= val_h;
-//	dds_data[10] = 0x10 | (val_h & 0x0F);
-//	dds_data[11] = val_l;
-
-	//dds_inc_cnt 		= ((val_h & 0x0F) << 8) | val_l;
 
 	// configure the dds based on the new data
+	regCntToWrite = REG_CNT;
 	dds_write();
 }
 
@@ -195,10 +207,7 @@ void dds_get_all_data()
 
 void dds_write() 
 {
-	//TODO: what is this?
-	//dds_inc_cnt = GET_BYTE_LS4B(REG[N_INCR].MSB) << 8 | REG[N_INCR].LSB;
-	//dds_inc_cnt = (u16)((dds_data[10] & 0x0F) << 8) | dds_data[11];
-
+	// retrieve the the DDS settings locally
 	freq_current = GET_FREQ_VAL(FSTART_L, FSTART_H);
 	freq_delta	 = GET_VAL(FDELTA_L);
 	dds_inc_cnt  = GET_VAL(N_INCR);
@@ -207,6 +216,7 @@ void dds_write()
 
 	SPITX = REG[regCnt].addr | (REG[regCnt].MSB & 0x0F); 
 	SPITX = REG[regCnt].LSB;
+
 	regCnt++;	
 }
 
@@ -260,13 +270,13 @@ void dds_handler()
 {
 	if ((SPISTA & BIT5) == BIT5)    		// If SPI Master Tx IRQ
 	{
-		if ( regCnt < REG_CNT)				// Have 14 bytes been sent?
+		if (regCnt < regCntToWrite)				// Have 14 bytes been sent?
 		{
 			SPITX = REG[regCnt].addr | (REG[regCnt].MSB & 0x0F); 
 			SPITX = REG[regCnt].LSB;
 			regCnt++;
 		}
-		else if (regCnt == REG_CNT)
+		else if (regCnt == regCntToWrite)
 		{
 			dds_step();
 			regCnt = 0;			

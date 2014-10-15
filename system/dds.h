@@ -16,6 +16,8 @@ u32 dds_get_freq_hz(void);
 
 void dds_inc(void);
 void dds_dec(void);
+void dds_set_freq_out_uart(void);
+void dds_set_freq_out(u32 freq);
 
 /* TODO: REMOVE
 u8 dds_data[14] = {

@@ -40,6 +40,8 @@ Functional TODOs
 
 /* Nice to haves and enhancements
  - enh01:	cast all macro definitions.
+ - enh02:	for each driver add a [driver].term.c to handle all uart communication. 
+ 			This helps to keep the logic seperate from the communication side of things and help create cleaner drivers
 */
 
 /***** function definitions *****/
@@ -85,6 +87,9 @@ void set_pv_rel_manual_c (void);
 void calib_get_freq_amp (void);
 void calib_freq_amp (u16* amp_max, u32* freq);
 void dds_set_freq_delay_ms (void);
+
+void z_act_compensate (u16 raw_val);
+void z_act_set_offset(void);
 
 void get_mcu_version (void);
 
