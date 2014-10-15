@@ -195,8 +195,6 @@ void dds_get_all_data()
 
 void dds_write() 
 {
-	// 1. Write to control register
-
 	//TODO: what is this?
 	//dds_inc_cnt = GET_BYTE_LS4B(REG[N_INCR].MSB) << 8 | REG[N_INCR].LSB;
 	//dds_inc_cnt = (u16)((dds_data[10] & 0x0F) << 8) | dds_data[11];
@@ -212,10 +210,10 @@ void dds_write()
 	regCnt++;	
 }
 
-void dds_increment()
+void dds_step()
 {
-	// TODO: Do we need a delay here? what can we do with it?
-	// try the 0-1 transition without the delay and see if it works.
+	// TODO: Do we need a delay here? what can we do with it? Remove?
+	// TODO: try the 0-1 transition without the delay and see if it works.
 	u8 cnt = 0xFF;
 	DDS_DAT_REG &= ~DDS_CTRL;
 	while (cnt--) {};
@@ -227,6 +225,7 @@ void dds_increment()
 
 void dds_zoom()
 {
+	// TODO: Just use global freq_current?
 	u32 current_f, start_f;
 	current_f = GET_FREQ_VAL(FSTART_L, FSTART_H);
 	start_f = current_f - DDS_250HZ_ABS;
@@ -241,10 +240,20 @@ void dds_zoom()
 	REG[FDELTA_H].LSB = 0x00;
 	REG[FDELTA_H].MSB = 0x00;
 
-	REG[N_INCR].LSB	  = (u8)(DDS_250HZ_ABS >> 1);
+	REG[N_INCR].LSB	  = (u8)(DDS_250HZ_ABS);
 	REG[N_INCR].MSB   = 0x00;
 
 	freq_sweep_dds();
+}
+
+void dds_inc()
+{
+	
+}
+
+void dds_dec()
+{
+	
 }
 
 void dds_handler()
@@ -259,7 +268,7 @@ void dds_handler()
 		}
 		else if (regCnt == REG_CNT)
 		{
-			dds_increment();
+			dds_step();
 			regCnt = 0;			
 		}
 	}		

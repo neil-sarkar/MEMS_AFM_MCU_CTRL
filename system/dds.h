@@ -5,7 +5,7 @@
 
 void dds_spi_init(void);
 void dds_write(void);
-void dds_increment(void);
+void dds_step(void);
 void dds_get_data(void);
 void dds_zoom(void);
 
@@ -13,6 +13,9 @@ void dds_handler(void);
 void dds_get_all_data(void);
 u32 dds_get_freq_abs(void);
 u32 dds_get_freq_hz(void);
+
+void dds_inc(void);
+void dds_dec(void);
 
 /* TODO: REMOVE
 u8 dds_data[14] = {

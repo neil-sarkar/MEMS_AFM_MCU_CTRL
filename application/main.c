@@ -37,22 +37,7 @@ static Actuator z_act;
 // Macro function to clear terminal screen
 #define CLEAR() uart_write("\033c")
 
-// coarse approach ISR flag
-//volatile bool flag;	
-//void set_dir(char);
-
-/*****************AMP-FREQ COMPENSATION******************/
-#define COMP_POINT_CNT	16u
-
-struct act_comp{
-	// 24-bit frequency value
-	u32 freq;
-	// 12-bit amplitude value
-	u16 amp;
-};
-
-struct act_comp comp[COMP_POINT_CNT];
-/********************************************************/
+u16 dds_sweep_delay_ms = 1;
  
 int main(void)
 {
@@ -208,7 +193,7 @@ int main(void)
 				freq_sweep_dds();
 				break;
 			case 't':
-				dds_increment();
+				dds_step();
 				break;
 			case 'u':
 				dds_get_data();
@@ -261,9 +246,43 @@ int main(void)
 			case 'E':
 				calib_get_freq_amp ();
 				break;
+			case 'F':
+				dds_set_freq_delay_ms ();
+				break;
+			case 'G':
+				dds_inc();
+				break;
+			case 'H':
+				dds_dec();
+				break;
+			case 'V':
+				get_mcu_version ();
+				break;	  
 		}
 	}
 }
+
+void dds_set_freq_delay_ms (void)
+{
+	u8 val_l, val_h;
+	val_l = uart_wait_get_char();
+	val_h = uart_wait_get_char();
+
+	dds_sweep_delay_ms = (val_h << 8) | val_l;
+}
+
+/*****************AMP-FREQ COMPENSATION******************/
+#define COMP_POINT_CNT	16u
+
+struct act_comp{
+	// 24-bit frequency value
+	u32 freq;
+	// 12-bit amplitude value
+	u16 amp;
+};
+
+struct act_comp comp[COMP_POINT_CNT];
+/********************************************************/
 
 void calib_get_freq_amp (void)
 {
@@ -279,14 +298,14 @@ void calib_get_freq_amp (void)
 		dac_set_val(DAC_ZOFFSET_FINE, val);
 		calib_freq_amp(&comp[i].amp, &comp[i].freq);
 		
-		// send frequency (24-bit)
-		uart_set_char((comp[i].freq & 0xFF0000) >> 16);
-		uart_set_char((comp[i].freq & 0xFF00) >> 8);
+		// send max frequency (24-bit)
 		uart_set_char((comp[i].freq & 0xFF));
-
-		// send amplitude
-		uart_set_char((comp[i].amp & 0xFF00) >> 8);
-		uart_set_char((comp[i].amp & 0xFF)); 
+		uart_set_char((comp[i].freq & 0xFF00) >> 8);
+		uart_set_char((comp[i].freq & 0xFF0000) >> 16);
+		
+		// send max amplitude
+		uart_set_char((comp[i].amp & 0xFF));
+		uart_set_char((comp[i].amp & 0xFF00) >> 8); 
 	}
 }
 
@@ -294,7 +313,6 @@ void calib_freq_amp(u16* amp_max, u32* freq)
 {
 	u32 i;
 	u16 adc_val;
-	long int delay;
 	
 	amp_max = 0;
 
@@ -313,7 +331,6 @@ void calib_freq_amp(u16* amp_max, u32* freq)
 		// get resonant amplitude
 		if (adc_val > *amp_max) 
 		{
-			// caluclate frequency?
 			*freq = dds_get_freq_hz();
 			*amp_max = adc_val;
 		}
@@ -326,12 +343,10 @@ void calib_freq_amp(u16* amp_max, u32* freq)
 		uart_set_char((adc_val));
 		uart_set_char(((adc_val >> 8)));
 
-		delay = 12500;
-		while(delay--){};
+		delay_ms(dds_sweep_delay_ms);
 
-		dds_increment();		
-	}
-		
+		dds_step();		
+	}		
 }
 
 void set_pv_rel_manual_a (void) 
@@ -558,52 +573,6 @@ void set_pid_setpoint (void)
 	pid_set_setpoint (setpoint);
 }
 
-void freq_sweep(void)
-{
-	u16 i, val;
-	u16 steps;
-	u16 diff;
-	u16 adc_val;
-	u8 steps_l;
-	u8 steps_h;
-	//u8 sweep[SWEEP_MAX * 2];
-	long int delay;
-
-	steps_l = uart_wait_get_char();
-	steps_h = uart_wait_get_char();
-
-	steps = ((steps_h << 8)| steps_l) & 0x0FFF;
-
-	diff = SWEEP_MAX / steps;
-	
-	// sweep and write table
-	for (i = 0, val = 0; i < (steps*2); i += 2, val += diff)
-	{
-		dac_set_val(DAC_ZVCO, val);
-
-		// delay is about ~4.60ms
-		delay = 20000;
-		while(delay--){};
-
-		// read adc
-		adc_start_conv(ADC_ZAMP);
-		adc_val = adc_get_val();
-
-	 	// Send data out
-		uart_set_char((adc_val));
-		uart_set_char(((adc_val >> 8)));
-
-		// read adc for phase data
-		adc_start_conv(ADC_PHASE);
-		adc_val = adc_get_val();
-
-	 	// Send data out
-		uart_set_char((adc_val));
-		uart_set_char(((adc_val >> 8)));
-
-	}
-}
-
 void freq_sweep_dds(void)
 {
 	u32 i;
@@ -622,7 +591,6 @@ void freq_sweep_dds(void)
 		uart_set_char((adc_val));
 		uart_set_char(((adc_val >> 8)));
 
-
 		// read adc for phase data
 		adc_start_conv(ADC_PHASE);
 		adc_val = adc_get_val();
@@ -634,7 +602,7 @@ void freq_sweep_dds(void)
 		delay = 12500;
 		while(delay--){};
 
-		dds_increment();		
+		dds_step();		
 	} 		
 }
 
@@ -858,5 +826,51 @@ void FIQ_Handler(void) __irq
 		// Interrupt caused by hardware RX/TX buffer being full, cleared when
 		// RX/TX buffer is read
 		UART ();
+	}
+}
+
+void freq_sweep(void)
+{
+	u16 i, val;
+	u16 steps;
+	u16 diff;
+	u16 adc_val;
+	u8 steps_l;
+	u8 steps_h;
+	//u8 sweep[SWEEP_MAX * 2];
+	long int delay;
+
+	steps_l = uart_wait_get_char();
+	steps_h = uart_wait_get_char();
+
+	steps = ((steps_h << 8)| steps_l) & 0x0FFF;
+
+	diff = SWEEP_MAX / steps;
+	
+	// sweep and write table
+	for (i = 0, val = 0; i < (steps*2); i += 2, val += diff)
+	{
+		dac_set_val(DAC_ZVCO, val);
+
+		// delay is about ~4.60ms
+		delay = 20000;
+		while(delay--){};
+
+		// read adc
+		adc_start_conv(ADC_ZAMP);
+		adc_val = adc_get_val();
+
+	 	// Send data out
+		uart_set_char((adc_val));
+		uart_set_char(((adc_val >> 8)));
+
+		// read adc for phase data
+		adc_start_conv(ADC_PHASE);
+		adc_val = adc_get_val();
+
+	 	// Send data out
+		uart_set_char((adc_val));
+		uart_set_char(((adc_val >> 8)));
+
 	}
 }
