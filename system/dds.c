@@ -45,13 +45,29 @@ to 24-bit if needed.
 #define GET_FREQ_VAL(reg_L, reg_H) \
 							(u32)(((GET_VAL(reg_H)) << 12) | GET_VAL(reg_L)) 
 
+#define GET_ABS_TO_HZ(freq)	(u32)(freq * DDS_ABS_TO_HZ);	
+#define GET_HZ_TO_ABS(freq)	(u32)(freq * DDS_HZ_TO_ABS);
+
+#define SET_SCAN_UP				REG[FDELTA_H].MSB &= ~BIT11;
+#define SET_SCAN_DOWN			REG[FDELTA_H].MSB |= ~BIT11;
+
+#define SET_FREQ_DELTA(delta)	REG[FDELTA_L].LSB = (delta & 0xFF); \
+								REG[FDELTA_L].MSB = ((delta & 0x0F00) >> 8);
+
+#define SET_FREQ_INC(inc)		REG[N_INCR].LSB = (inc & 0xFF); \
+								REG[N_INCR].MSB = ((inc & 0x0F00) >> 8);
+
+#define WRITE_DDS_REG			SPITX = (REG[regCnt].addr | (REG[regCnt].MSB & 0x0F)); \
+								SPITX = REG[regCnt].LSB;		
+
 extern void freq_sweep_dds(void);
 
 static u32 freq_current;
 static u16 freq_delta;
 
-#define GET_ABS_TO_HZ(freq)	(u32)(freq * DDS_ABS_TO_HZ);	
-#define GET_HZ_TO_ABS(freq)	(u32)(freq * DDS_HZ_TO_ABS);
+volatile static u8 regCnt = 0;
+volatile static u8 regCntToWrite = 0;
+u16 dds_inc_cnt = 0;
 
 // this is for improving this driver
 typedef struct
@@ -86,10 +102,6 @@ typedef enum {
 	// total number of bytes in all registers
 	REG_CNT
 } REG_NAME;
-
-volatile static u8 regCnt = 0;
-volatile static u8 regCntToWrite = 0;
-u16 dds_inc_cnt = 0;
 
 static DDS_REG REG[REG_CNT] = {
 	// addr				   MSB	  	LSB
@@ -209,6 +221,7 @@ void dds_get_all_data()
 	REG[N_INCR].MSB		= val_h;
 
 	// configure the dds based on the new data
+	regCntToWrite = REG_CNT;
 	dds_write();
 }
 
@@ -221,8 +234,7 @@ void dds_write()
 
    	regCnt = 0;
 
-	SPITX = REG[regCnt].addr | (REG[regCnt].MSB & 0x0F); 
-	SPITX = REG[regCnt].LSB;
+	WRITE_DDS_REG;
 
 	regCnt++;	
 }
@@ -265,22 +277,31 @@ void dds_zoom()
 
 void dds_inc()
 {
-			
+	SET_SCAN_UP;
+	SET_FREQ_DELTA(1);
+	SET_FREQ_INC(DDS_250HZ_ABS << 1);
+	
+	regCntToWrite = 6;
+	dds_write();				
 }
 
 void dds_dec()
 {
+	SET_SCAN_DOWN;
+	SET_FREQ_DELTA(1);
+	SET_FREQ_INC(DDS_250HZ_ABS << 1);
 	
+	regCntToWrite = 6;
+	dds_write();	
 }
 
 void dds_handler()
 {
-	if ((SPISTA & BIT5) == BIT5)    		// If SPI Master Tx IRQ
+	if ((SPISTA & BIT5) == BIT5)    			// If SPI Master Tx IRQ
 	{
-		if (regCnt < regCntToWrite)				// Have 14 bytes been sent?
+		if (regCnt < regCntToWrite)				// Have all registers been written
 		{
-			SPITX = REG[regCnt].addr | (REG[regCnt].MSB & 0x0F); 
-			SPITX = REG[regCnt].LSB;
+			WRITE_DDS_REG;
 			regCnt++;
 		}
 		else if (regCnt == regCntToWrite)
