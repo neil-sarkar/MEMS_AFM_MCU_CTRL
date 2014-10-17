@@ -41,14 +41,12 @@ typedef enum
 
 void adc_init(void);
 
-void adc_start_conv(adc channel);
-
-u16 adc_get_val(void);
-
 void adc_set_pga(adc channel, u8 gain);
 
 u16 adc_get_avg_val (const u16 samples);
 
-u16 adc_get_avgw_val (const u16 samples, const u16 wait);
+u16 adc_wait_get_avgw_val (adc channel, const u16 samples, const u16 wait);
+
+u16 adc_wait_get_reading(adc channel);
 
 #endif

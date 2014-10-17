@@ -106,8 +106,7 @@ void pid_handler(void)
 	}
 	else
 	{
-		adc_start_conv(PID_INPUT);
-		input = adc_get_val();
+		input = adc_wait_get_reading(PID_INPUT);
 	}
 
 	error = setPoint - input;

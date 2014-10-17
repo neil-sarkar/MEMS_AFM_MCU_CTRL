@@ -140,13 +140,11 @@ void z_set_samples (u16 num_samples)
 
 u16 z_sample (void)
 {
-	adc_start_conv (ADC_ZAMP);
-	z_data.z_amp_samples += adc_get_val (); 
+	z_data.z_amp_samples += adc_wait_get_reading(ADC_ZAMP);
 	
 	z_data.z_off_samples += dac_get_val(DAC_ZOFFSET_FINE);
 
-	adc_start_conv(ADC_PHASE);
-	z_data.z_phs_samples += adc_get_val();
+	z_data.z_phs_samples += adc_wait_get_reading(ADC_PHASE);
 	
 	return (++z_data.num_samples);
 }

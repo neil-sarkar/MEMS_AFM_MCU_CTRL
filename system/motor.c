@@ -148,8 +148,7 @@ u8 mtr_auto_approach (u16 setpoint, u16 setpoint_error)
 	}
 	wait_time = 800000;
 	while (wait_time--);
-	adc_start_conv (ADC_ZAMP);
-	z_amp_start = adc_get_avgw_val (Z_SAMPLES, Z_SAMPLE_DELAY);
+	z_amp_start = adc_wait_get_avgw_val (ADC_ZAMP, Z_SAMPLES, Z_SAMPLE_DELAY);
 
 	cmd_fail = coarse_approach (COARSE_CHANGE*z_amp_start);
 	if (cmd_fail)
@@ -186,8 +185,7 @@ static u8 coarse_approach (u16 z_amp_limit)
 
 		/* Use thermal coupling between z-actuator and sample
 			to determine when to stop coarse approach */
-		adc_start_conv (ADC_ZAMP);
-		z_amp = adc_get_avgw_val(Z_SAMPLES, Z_SAMPLE_DELAY);
+		z_amp = adc_wait_get_avgw_val(ADC_ZAMP, Z_SAMPLES, Z_SAMPLE_DELAY);
 		/* Done to prevent noise from masking tip-sample proximty */
 		if (z_amp < z_amp_min) {
 			z_amp_min = z_amp;
@@ -245,8 +243,7 @@ static u8 fine_approach (u16 z_amp_limit, u16 setpoint, u16 setpoint_error)
 				while (wait_time--);
 
 				/* Read bridge voltage */
-				adc_start_conv (ADC_ZAMP);
-				z_amp = adc_get_avgw_val(Z_SAMPLES, Z_SAMPLE_DELAY);
+				z_amp = adc_wait_get_avgw_val(ADC_ZAMP, Z_SAMPLES, Z_SAMPLE_DELAY);
 				if (z_amp < z_amp_min) {
 					z_amp_min = z_amp;
 				}
@@ -258,8 +255,7 @@ static u8 fine_approach (u16 z_amp_limit, u16 setpoint, u16 setpoint_error)
 					wait_time = 200000;
 					while (wait_time--);
 					/* Resample to confirm we are within required setpoint */
-					adc_start_conv (ADC_ZAMP);
-					z_amp = adc_get_avgw_val(Z_SAMPLES, Z_SAMPLE_DELAY);
+					z_amp = adc_wait_get_avgw_val(ADC_ZAMP, Z_SAMPLES, Z_SAMPLE_DELAY);
 					if (abs(z_amp-setpoint)<=setpoint_error)
 					{
 						/* Auto approach is finished */

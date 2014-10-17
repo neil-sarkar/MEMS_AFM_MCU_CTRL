@@ -42,6 +42,7 @@ Functional TODOs
  - enh01:	cast all macro definitions.
  - enh02:	for each driver add a [driver].term.c to handle all uart communication. 
  			This helps to keep the logic seperate from the communication side of things and help create cleaner drivers
+ - enh03:	create a wrapper such that there's only a single call for obtaining an adc reading.	
 */
 
 /***** function definitions *****/

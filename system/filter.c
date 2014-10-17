@@ -66,8 +66,7 @@ void filter_handler()
 
 	end_i = ((end_i + 1) % BUF_SIZE);
 
-	adc_start_conv(PID_INPUT);
-	filter_buf[end_i] = adc_get_val();
+	filter_buf[end_i] = adc_wait_get_reading(PID_INPUT);
 
 	sum -= filter_buf[start_i];
 	sum += filter_buf[end_i];

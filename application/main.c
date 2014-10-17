@@ -339,8 +339,15 @@ void calib_get_freq_amp (void)
 
 void z_act_compensate (u16 raw_val)
 {
-	u8 index;
-	index = (raw_val & 0x0F00) >> 8;
+	static u8 prev_index;
+	u8 index = (raw_val & 0x0F00) >> 8;
+
+	if (prev_index == index) {
+		prev_index = index;
+		return;
+	}
+
+   	prev_index = index;
 
 	dds_set_freq_out(z_calib.comp[index].freq);	
 	
@@ -359,8 +366,7 @@ void calib_freq_amp(u16* amp_max, u32* freq)
 	for (i = 0; i < dds_inc_cnt; i++)
 	{
 		// read adc
-		adc_start_conv(ADC_ZAMP);
-		adc_val = adc_get_val();
+		adc_val = adc_wait_get_reading(ADC_ZAMP);
 
 	 	// send data out
 		uart_set_char(adc_val);
@@ -374,8 +380,7 @@ void calib_freq_amp(u16* amp_max, u32* freq)
 		}
 
 		// read adc for phase data
-		adc_start_conv(ADC_PHASE);
-		adc_val = adc_get_val();
+		adc_val = adc_wait_get_reading(ADC_PHASE);
 
 	 	// send data out
 		uart_set_char((adc_val));
@@ -515,9 +520,8 @@ void read_adc(void)
 	// Get ADC channel
 	adc_ch = (adc)uart_wait_get_char();
 
-	// Read ADC
-	adc_start_conv(adc_ch);
-	adc_val = adc_get_val();
+	// Read ADC	
+	adc_val = adc_wait_get_reading(adc_ch);
 	
 	uart_set_char(adc_val & 0xFF);
 	uart_set_char((adc_val >> 8) & 0xFF);
@@ -622,16 +626,14 @@ void freq_sweep_dds(void)
 	for (i = 0; i < dds_inc_cnt; i++)
 	{
 		// read adc
-		adc_start_conv(ADC_ZAMP);
-		adc_val = adc_get_val();
+		adc_val = adc_wait_get_reading(ADC_ZAMP);
 
 	 	// send data out
 		uart_set_char((adc_val));
 		uart_set_char(((adc_val >> 8)));
 
 		// read adc for phase data
-		adc_start_conv(ADC_PHASE);
-		adc_val = adc_get_val();
+		adc_val = adc_wait_get_reading(ADC_PHASE);
 
 	 	// send data out
 		uart_set_char((adc_val));
@@ -895,16 +897,14 @@ void freq_sweep(void)
 		while(delay--){};
 
 		// read adc
-		adc_start_conv(ADC_ZAMP);
-		adc_val = adc_get_val();
-
+		adc_val = adc_wait_get_reading(ADC_ZAMP);
+					  
 	 	// Send data out
 		uart_set_char((adc_val));
 		uart_set_char(((adc_val >> 8)));
 
 		// read adc for phase data
-		adc_start_conv(ADC_PHASE);
-		adc_val = adc_get_val();
+		adc_val = adc_wait_get_reading(ADC_PHASE);
 
 	 	// Send data out
 		uart_set_char((adc_val));

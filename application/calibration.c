@@ -79,8 +79,7 @@ void calibrate_actuator (Actuator* act, u16 max_voltage){
 		adc_val = 0;
 		for (j = 0; j < ADC_SAMPLES; j ++)
 		{
-			adc_start_conv(act->in_adc);
-			adc_val += adc_get_val ();	
+			adc_val += adc_wait_get_reading(act->in_adc);	
 		}
 		adc_val /= ADC_SAMPLES;				
 		uart_set_char ((u8)(adc_val&0xFF));
@@ -88,9 +87,9 @@ void calibrate_actuator (Actuator* act, u16 max_voltage){
 
 		// Measurment of z-coupling with lateral actuator ramp
 		adc_val = 0;
-		for (j = 0; j < ADC_SAMPLES; j++){
-			adc_start_conv (act->z_adc);
-			adc_val += adc_get_val();
+		for (j = 0; j < ADC_SAMPLES; j++)
+		{
+			adc_val += adc_wait_get_reading(act->z_adc);
 		}
 		adc_val /= ADC_SAMPLES;
 		uart_set_char ((u8)(adc_val&0xFF));

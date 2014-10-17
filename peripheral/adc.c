@@ -1,5 +1,12 @@
 #include "adc.h"
 
+/* TODO:
+ * Offset is not applied to the average values
+ */
+
+static void adc_start_conv(adc channel);
+static u16 adc_wait_get_val(void);
+
 void adc_init() 
 {
 	u16 delay = 2000;
@@ -13,13 +20,22 @@ void adc_init()
    	REFCON |= BIT1;
 }
 
-void adc_start_conv(adc channel)
+volatile static bool apply_amp_offset = false;
+
+static void adc_start_conv(adc channel)
 {
    	// single software conversion
 	// ADCCON |= BIT0 | BIT1 | BIT5 | BIT7 | BIT9 | BIT11;
 
 	u16 reg_val = 0x00;
 	reg_val |= BIT2 | BIT5 | BIT7 | BIT9 | BIT11;
+
+#ifdef APPLY_OFFSET
+	if (channel == ADC_ZAMP)
+	{
+		apply_amp_offset = true;		
+	}
+#endif 
 
 	switch (channel) {
 		case adc0:
@@ -95,11 +111,24 @@ void adc_set_pga(adc channel, u8 gain)
 	}
 }
 
-u16 adc_get_val()
+static u16 adc_wait_get_val()
 {
+	u16 adc_val;
+
 	// Busy-wait for conversion completion
 	while (ADCSTA == 0x00) {};
-	return (ADCDAT >> 16);
+
+	// Grab adc value
+	adc_val = (u16)(ADCDAT >> 16);
+
+#ifdef APPLY_OFFSET
+	if (apply_amp_offset)
+	{
+		//TODO: apply offset here
+	}
+#endif
+
+	return (adc_val);
 }
 
 // Continuous software conversion must be enabled
@@ -109,24 +138,32 @@ u16 adc_get_avg_val (const u16 num_samples)
 	static u32 val;
 	val = 0;
 	for (i = 0; i < num_samples; i ++){
-		while (ADCSTA == 0x00){};
-		val += (ADCDAT >> 16);
+		val += adc_wait_get_val();
 	}
 	return (u16)(val/num_samples);
 }
 
+// TODO: having a way of ensuring that the continuous conversion is enabled.
 // Continuous software conversion must be enabled
-u16 adc_get_avgw_val (const u16 num_samples, const u16 wait_time)
+u16 adc_wait_get_avgw_val (adc channel, const u16 num_samples, const u16 wait_time)
 {
 	static u16 i;
 	static u32 val;
 	static u16 cnt;
+
+	adc_start_conv(channel);
+
 	val = 0;
 	for (i = 0; i < num_samples; i ++){
 		cnt = wait_time;		
 		while (cnt--);
-		while (ADCSTA == 0x00){};
-		val += (ADCDAT >> 16);		
+		val += adc_wait_get_val();		
 	}
 	return (u16)(val/num_samples);
+}
+
+u16 adc_wait_get_reading(adc channel)
+{
+	adc_start_conv(channel);
+	return adc_wait_get_val(); 		
 }

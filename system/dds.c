@@ -104,7 +104,13 @@ static DDS_REG REG[REG_CNT] = {
 
 void dds_set_freq_out(u32 freq)
 {
-	
+	REG[FSTART_L].LSB	= (u8)(freq & 0xFF);
+	REG[FSTART_L].MSB	= (u8)((freq & 0x0F00) >> 8);
+	REG[FSTART_H].LSB	= (u8)((freq & 0xF000) >> 12) | (u8)((freq & 0x0F0000) >> 12);
+	REG[FSTART_H].MSB	= (u8)((freq & 0xF00000) >> 20);
+
+	regCntToWrite = 3;	
+	dds_write();
 }
 
 void dds_set_freq_out_uart()
@@ -119,7 +125,8 @@ void dds_set_freq_out_uart()
 	REG[FSTART_L].MSB  	= val_h;
 	REG[FSTART_H].LSB	= GET_BYTE_MS4B(val_h);
 	
-	regCntToWrite = 3;	
+	regCntToWrite = 3;
+	dds_write();	
 }
 
 void dds_spi_init()
@@ -258,7 +265,7 @@ void dds_zoom()
 
 void dds_inc()
 {
-	
+			
 }
 
 void dds_dec()

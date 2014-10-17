@@ -4,6 +4,8 @@
 #include <ADuC7122.h>
 #include "config.h"
 
+//#define APPLY_OFFSET
+
 // Bit Definitions
 #define BIT0   0x01u
 #define BIT1   0x02u
