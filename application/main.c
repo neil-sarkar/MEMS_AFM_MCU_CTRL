@@ -329,7 +329,7 @@ void calib_get_freq_amp (void)
 		// send max frequency (24-bit)
 		uart_set_char((z_calib.comp[i].freq & 0xFF));
 		uart_set_char((z_calib.comp[i].freq & 0xFF00) >> 8);
-		uart_set_char((z_calib.comp[i].freq & 0xFF0000) >> 16);
+		//uart_set_char((z_calib.comp[i].freq & 0xFF0000) >> 16);
 		
 		// send max amplitude
 		uart_set_char((z_calib.comp[i].amp & 0xFF));
@@ -348,6 +348,8 @@ void z_act_compensate (u16 raw_val)
 	}
 
    	prev_index = index;
+	
+	// TODO: GET DAC READING OF AMP and save it
 
 	dds_set_freq_out(z_calib.comp[index].freq);	
 	
@@ -358,8 +360,9 @@ void calib_freq_amp(u16* amp_max, u32* freq)
 {
 	u32 i;
 	u16 adc_val;
-	
-	amp_max = 0;
+	long int delay;
+
+	*amp_max = 0;
 
 	dds_write();
 
@@ -375,9 +378,43 @@ void calib_freq_amp(u16* amp_max, u32* freq)
 		// get resonant amplitude
 		if (adc_val > *amp_max) 
 		{
-			*freq = dds_get_freq_hz();
+			*freq = dds_get_freq_abs();
 			*amp_max = adc_val;
 		}
+
+		// read adc for phase data
+		/*
+		adc_val = adc_wait_get_reading(ADC_PHASE);
+
+	 	// send data out
+		uart_set_char((adc_val));
+		uart_set_char(((adc_val >> 8)));
+		*/
+
+		//delay_ms(dds_sweep_delay_ms);
+		delay = 12500;
+		while(delay--){};
+
+		dds_step();		
+	}		
+}
+
+void freq_sweep_dds(void)
+{
+	u32 i;
+	u16 adc_val;
+	long int delay;
+
+	dds_write();
+
+	for (i = 0; i < dds_inc_cnt; i++)
+	{
+		// read adc
+		adc_val = adc_wait_get_reading(ADC_ZAMP);
+
+	 	// send data out
+		uart_set_char((adc_val));
+		uart_set_char(((adc_val >> 8)));
 
 		// read adc for phase data
 		adc_val = adc_wait_get_reading(ADC_PHASE);
@@ -386,10 +423,11 @@ void calib_freq_amp(u16* amp_max, u32* freq)
 		uart_set_char((adc_val));
 		uart_set_char(((adc_val >> 8)));
 
-		delay_ms(dds_sweep_delay_ms);
+		delay = 12500;
+		while(delay--){};
 
 		dds_step();		
-	}		
+	} 		
 }
 
 void set_pv_rel_manual_a (void) 
@@ -613,37 +651,6 @@ void set_pid_setpoint (void)
 	setpoint = (byte_h << 8) | byte_l;
 
 	pid_set_setpoint (setpoint);
-}
-
-void freq_sweep_dds(void)
-{
-	u32 i;
-	u16 adc_val;
-	long int delay;
-
-	dds_write();
-
-	for (i = 0; i < dds_inc_cnt; i++)
-	{
-		// read adc
-		adc_val = adc_wait_get_reading(ADC_ZAMP);
-
-	 	// send data out
-		uart_set_char((adc_val));
-		uart_set_char(((adc_val >> 8)));
-
-		// read adc for phase data
-		adc_val = adc_wait_get_reading(ADC_PHASE);
-
-	 	// send data out
-		uart_set_char((adc_val));
-		uart_set_char(((adc_val >> 8)));
-
-		delay = 12500;
-		while(delay--){};
-
-		dds_step();		
-	} 		
 }
 
 void set_dir(char dirchar)
