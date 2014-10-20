@@ -77,4 +77,6 @@ void set_pv_rel_manual_a (void);
 void set_pv_rel_manual_b (void);
 void set_pv_rel_manual_c (void);
 
+void act_res_test (void);
+
 #endif

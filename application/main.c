@@ -243,8 +243,58 @@ int main(void)
 			case 'C':
 				set_pv_rel_manual_c ();
 				break;
+			case 'J':
+				act_res_test ();
+				break;
 		}
 	}
+}
+
+#define MV_TO_ABS_200	248
+void act_res_test (void)
+{
+	u16 x1, x2, y1, y2;
+	u16 adc_val;
+
+	x1 = dac_get_val(DAC_X1);
+	x2 = dac_get_val(DAC_X2);
+	y1 = dac_get_val(DAC_Y1);
+	y2 = dac_get_val(DAC_Y2);
+	
+	dac_set_val(DAC_X1, MV_TO_ABS_200);
+	dac_set_val(DAC_X2, MV_TO_ABS_200);
+	dac_set_val(DAC_Y1, MV_TO_ABS_200);
+	dac_set_val(DAC_Y2, MV_TO_ABS_200);
+	
+	adc_start_conv(ADC_X1);
+	adc_val = adc_get_val();
+	
+	uart_set_char(adc_val & 0xFF);
+	uart_set_char((adc_val & 0x0F00) >> 8);
+
+	adc_start_conv(ADC_X2);
+	adc_val = adc_get_val();
+	
+	uart_set_char(adc_val & 0xFF);
+	uart_set_char((adc_val & 0x0F00) >> 8);
+
+	adc_start_conv(ADC_Y1);
+	adc_val = adc_get_val();
+	
+	uart_set_char(adc_val & 0xFF);
+	uart_set_char((adc_val & 0x0F00) >> 8);
+
+	adc_start_conv(ADC_Y2);
+	adc_val = adc_get_val();
+	
+	uart_set_char(adc_val & 0xFF);
+	uart_set_char((adc_val & 0x0F00) >> 8);
+
+	// set actuator values to what they were originally	
+	dac_set_val(DAC_X1, x1);
+	dac_set_val(DAC_X2, x2);
+	dac_set_val(DAC_Y1, y1);
+	dac_set_val(DAC_Y2, y2);							
 }
 
 void set_pv_rel_manual_a (void) 
