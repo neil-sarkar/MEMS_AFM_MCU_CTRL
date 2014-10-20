@@ -256,16 +256,19 @@ void act_res_test (void)
 	u16 x1, x2, y1, y2;
 	u16 adc_val;
 
+	// save the actuator dac values
 	x1 = dac_get_val(DAC_X1);
 	x2 = dac_get_val(DAC_X2);
 	y1 = dac_get_val(DAC_Y1);
 	y2 = dac_get_val(DAC_Y2);
-	
+
+	// set all actuator dac values to 200mv	
 	dac_set_val(DAC_X1, MV_TO_ABS_200);
 	dac_set_val(DAC_X2, MV_TO_ABS_200);
 	dac_set_val(DAC_Y1, MV_TO_ABS_200);
 	dac_set_val(DAC_Y2, MV_TO_ABS_200);
-	
+
+	// retrieve actuators' resistance values	
 	adc_start_conv(ADC_X1);
 	adc_val = adc_get_val();
 	
@@ -289,6 +292,8 @@ void act_res_test (void)
 	
 	uart_set_char(adc_val & 0xFF);
 	uart_set_char((adc_val & 0x0F00) >> 8);
+
+	// TODO: CONVERT FROM VOLTAGE TO RESISTANCE 
 
 	// set actuator values to what they were originally	
 	dac_set_val(DAC_X1, x1);
