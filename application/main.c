@@ -243,11 +243,9 @@ int main(void)
 			case 'C':
 				set_pv_rel_manual_c ();
 				break;
-
 			case 'J':
 				act_res_test ();
 				break;
-
 			case 'K':
 				if (set_fine_speed(uart_wait_get_char()) == true)
 					uart_set_char('o');
@@ -259,6 +257,9 @@ int main(void)
 					uart_set_char('o');
 				else
 					uart_set_char('f');
+				break;
+			case 'M':
+				reset_mcu ();
 				break;
 		}
 	}
@@ -812,6 +813,14 @@ void set_pga (void)
 	uart_write ("o");
 }
 
+void reset_mcu ()
+{
+	RSTSTA |= BIT2; 	
+}
+
+/**********************************
+		interrupt handlers
+**********************************/
 void IRQ_Handler(void)  __irq  
 {
     u32 IRQSTATUS = 0;
