@@ -93,7 +93,6 @@ void calib_freq_amp (u16* amp_max, u32* freq);
 void dds_set_freq_delay_ms (void);
 
 void z_act_compensate (u16 raw_val);
-void z_act_set_offset(void);
 
 void get_mcu_version (void);
 

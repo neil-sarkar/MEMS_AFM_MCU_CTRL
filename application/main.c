@@ -258,10 +258,6 @@ int main(void)
 				break;
 			case 'I':
 				dds_set_freq_out_uart();
-				break;
-			// TODO: is 'J' already used????
-			case 'J':
-				z_act_set_offset();
 				break;			
 
 			case 'V':
@@ -284,17 +280,6 @@ void dds_set_freq_delay_ms (void)
 z_calibration z_calib;
 
 /********************************************************/
-
-void z_act_set_offset()
-{
-	u8 val_l, val_h;
-	val_l = uart_wait_get_char();
-	val_h = uart_wait_get_char();
-
-	z_calib.freq_offset = (val_h << 8) | val_l;
-
-	// TODO: Set amp offset based on freq_offset
-}
 
 void calib_get_freq_amp (void)
 {
