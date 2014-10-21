@@ -281,32 +281,7 @@ void dds_set_freq_delay_ms (void)
 }
 
 /*****************AMP-FREQ COMPENSATION******************/
-#define COMP_POINT_CNT	16u
-
-struct act_comp{
-	// 24-bit frequency value
-	u32 freq_max;
-	// 12-bit amplitude value
-	u16 amp_max;
-	// 12-bit amplitude offset
-	u16 amp_offset;
-};
-
-// Incorporate this into the z_act calibration struct
-struct z_calibration
-{
-	u32 freq_offset;
-	u16 amp_offset;
-
-	u16 prev_index;
-	u16 index;
-
-	bool compensate;
-
-	struct act_comp comp[COMP_POINT_CNT];
-};
-
-struct z_calibration z_calib;
+z_calibration z_calib;
 
 /********************************************************/
 

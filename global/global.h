@@ -4,7 +4,7 @@
 #include <ADuC7122.h>
 #include "config.h"
 
-//#define APPLY_OFFSET
+#define APPLY_OFFSET
 
 // Bit Definitions
 #define BIT0   0x01u
@@ -56,6 +56,31 @@ typedef unsigned int 	u32;
 typedef int 		 	s32;	
 
 void delay_ms(u16 delay);
+
+#define COMP_POINT_CNT	16u
+
+struct act_comp{
+	// 24-bit frequency value
+	u32 freq_max;
+	// 12-bit amplitude value
+	u16 amp_max;
+	// 12-bit amplitude offset
+	u16 amp_offset;
+};
+
+// Incorporate this into the z_act calibration struct
+typedef struct
+{
+	u32 freq_offset;
+	u16 amp_offset;
+
+	u16 prev_index;
+	u16 index;
+
+	bool compensate;
+
+	struct act_comp comp[COMP_POINT_CNT];
+} z_calibration;
 
 /***** type definitions *****/
 /*

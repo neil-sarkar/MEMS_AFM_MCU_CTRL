@@ -7,7 +7,7 @@
 static void adc_start_conv(adc channel);
 static u16 adc_wait_get_val(void);
 
-extern struct z_calibration z_calib;
+extern z_calibration z_calib;
 
 void adc_init() 
 {

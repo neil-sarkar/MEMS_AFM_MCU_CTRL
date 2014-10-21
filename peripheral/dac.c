@@ -4,7 +4,7 @@ extern void z_act_compensate(u16 raw_value);
 
 static u16 dac_limit [NUM_DACS] = {0};
 
-extern struct z_calibration z_calib;
+extern z_calibration z_calib;
 
 void dac_set_range (dac channel, dac_range range)
 {
