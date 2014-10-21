@@ -25,3 +25,5 @@ u8 mtr_auto_approach (u16 setpoint, u16 setpoint_error);
 
 void mtr_handler (void);
 
+bool set_fine_speed (u8 pw);
+bool set_coarse_speed (u8 pw);

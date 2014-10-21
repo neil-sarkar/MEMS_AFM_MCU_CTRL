@@ -243,8 +243,22 @@ int main(void)
 			case 'C':
 				set_pv_rel_manual_c ();
 				break;
+
 			case 'J':
 				act_res_test ();
+				break;
+
+			case 'K':
+				if (set_fine_speed(uart_wait_get_char()) == true)
+					uart_set_char('o');
+				else
+					uart_set_char('f');
+				break;
+			case 'L':
+				if (set_coarse_speed(uart_wait_get_char()) == true)
+					uart_set_char('o');
+				else
+					uart_set_char('f');
 				break;
 		}
 	}
@@ -643,6 +657,7 @@ void set_pw (void)
 {
 	u8 pw = uart_wait_get_char ();
 	u8 set_pw_fail = mtr_set_pw (pw);
+	
 	if (!set_pw_fail){
 		uart_write ("o");
 	} else {
