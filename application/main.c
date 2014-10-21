@@ -251,9 +251,11 @@ int main(void)
 }
 
 #define MV_TO_ABS_200	248
+#define FUDGE_FACTOR_X1	1047/0.038
+
 void act_res_test (void)
 {
-	u16 x1, x2, y1, y2;
+	u16 x1, x2, y1, y2, z_c, z_amp;
 	u16 adc_val;
 
 	// save the actuator dac values
@@ -261,34 +263,49 @@ void act_res_test (void)
 	x2 = dac_get_val(DAC_X2);
 	y1 = dac_get_val(DAC_Y1);
 	y2 = dac_get_val(DAC_Y2);
+	z_c = dac_get_val(DAC_ZOFFSET_COARSE);
+	z_amp = dac_get_val(DAC_ZAMP);
 
-	// set all actuator dac values to 200mv	
+	// set all actuator dac values to 200mv
+	dac_set_val(DAC_ZAMP, 0);	
 	dac_set_val(DAC_X1, MV_TO_ABS_200);
 	dac_set_val(DAC_X2, MV_TO_ABS_200);
 	dac_set_val(DAC_Y1, MV_TO_ABS_200);
 	dac_set_val(DAC_Y2, MV_TO_ABS_200);
+	dac_set_val(DAC_ZOFFSET_COARSE, 62);
 
 	// retrieve actuators' resistance values	
 	adc_start_conv(ADC_X1);
-	adc_val = adc_get_val();
-	
+//	adc_val = adc_get_val();
+	adc_val = adc_get_avgw_val(32, 500);
+		
 	uart_set_char(adc_val & 0xFF);
 	uart_set_char((adc_val & 0x0F00) >> 8);
 
 	adc_start_conv(ADC_X2);
-	adc_val = adc_get_val();
+//	adc_val = adc_get_val();
+	adc_val = adc_get_avgw_val(32, 500);
 	
 	uart_set_char(adc_val & 0xFF);
 	uart_set_char((adc_val & 0x0F00) >> 8);
 
 	adc_start_conv(ADC_Y1);
-	adc_val = adc_get_val();
+//	adc_val = adc_get_val();
+	adc_val = adc_get_avgw_val(32, 500);
 	
 	uart_set_char(adc_val & 0xFF);
 	uart_set_char((adc_val & 0x0F00) >> 8);
 
 	adc_start_conv(ADC_Y2);
-	adc_val = adc_get_val();
+//	adc_val = adc_get_val();
+	adc_val = adc_get_avgw_val(32, 500);
+	
+	uart_set_char(adc_val & 0xFF);
+	uart_set_char((adc_val & 0x0F00) >> 8);
+
+	adc_start_conv(ADC_ZOFFSET);
+//	adc_val = adc_get_val();
+	adc_val = adc_get_avgw_val(32, 500);
 	
 	uart_set_char(adc_val & 0xFF);
 	uart_set_char((adc_val & 0x0F00) >> 8);
@@ -299,7 +316,9 @@ void act_res_test (void)
 	dac_set_val(DAC_X1, x1);
 	dac_set_val(DAC_X2, x2);
 	dac_set_val(DAC_Y1, y1);
-	dac_set_val(DAC_Y2, y2);							
+	dac_set_val(DAC_Y2, y2);
+	dac_set_val(DAC_ZAMP, z_amp);
+	dac_set_val(DAC_ZOFFSET_COARSE, z_c);							
 }
 
 void set_pv_rel_manual_a (void) 
