@@ -42,26 +42,31 @@ u16 coarse_pw[COARSE_SCALE] = {TMR_DFLT,
 								TMR_DFLT*19,
 								TMR_DFLT*20};
 
-static volatile bool step_cmp_flag = false;
-
-#define Z_SAMPLES 8
-#define Z_SAMPLE_DELAY 20
-#define COARSE_CHANGE 0.98f
-#define COARSE_SPEED 2
-#define COARSE_STEP_DWELL 40000
-#define BWD_STEPS 32
-#define FINE_CHANGE 0.4f
-#define FINE_SPEED 1
-#define FINE_STEP_DWELL 800
-#define FINE_Z_MAX_SCALER 0.2f
-#define FINE_Z_STEPS 100.0f
-#define FINE_Z_STEP_DWELL 2000
+#define Z_SAMPLES 			8
+#define Z_SAMPLE_DELAY 		20
+#define COARSE_CHANGE 		0.98f
+#define COARSE_SPEED_DFLT 	2
+#define COARSE_STEP_DWELL 	40000
+#define BWD_STEPS 			32
+#define FINE_CHANGE 		0.4f
+#define FINE_SPEED_DFLT 	1
+#define FINE_STEP_DWELL 	800
+#define FINE_Z_MAX_SCALER 	0.2f
+#define FINE_Z_STEPS 		100.0f
+#define FINE_Z_STEP_DWELL 	2000
 #define MTR_DISENGAGE_STEPS 2
 
+static volatile bool step_cmp_flag = false;
 static u8 coarse_approach (u16 z_amp_limit);
 static u8 fine_approach (u16 z_amp_limit, u16 setpoint, u16 setpoint_error);
 static void mtr_disengage (void);
 
+static u8 fine_speed 	= FINE_SPEED_DFLT;
+static u8 coarse_speed 	= COARSE_SPEED_DFLT;
+
+/**************************************
+	 PUBLIC FUNCTION DEFINITIONS
+**************************************/
 void mtr_init (void)
 {
 	// Set as output
@@ -133,7 +138,7 @@ u8 mtr_auto_approach (u16 setpoint, u16 setpoint_error)
 	/* Take arbritary but significant number of step backwards
 		to ensure we are not close to the tip */
 	mtr_set_dir (mtr_bwd);
-	mtr_set_pw (COARSE_SPEED);
+	mtr_set_pw (coarse_speed);
 	for (i = 0; i < BWD_STEPS*10; i++){
 		mtr_step ();
 		wait_time = FINE_STEP_DWELL;
@@ -164,37 +169,42 @@ u8 mtr_auto_approach (u16 setpoint, u16 setpoint_error)
 	return 0;
 }
 
-/* Begin coarse approach */
-static u8 coarse_approach (u16 z_amp_limit)
+bool set_fine_speed (u8 pw)
 {
-	u16 z_amp, z_amp_min;
-	volatile u32 wait_time;
-
-	z_amp_min = ADC_MAX;
-	mtr_set_dir (mtr_fwd);
-	mtr_set_pw (COARSE_SPEED);
-	while (z_amp_min > z_amp_limit){
-		/* Kill auto approach if stop requested */
-		if (is_received () && uart_get_char () == BRK_CHAR){
-			return 1;
-		}
-
-		/* Step motor closer */
-		mtr_step ();
-		wait_time = COARSE_STEP_DWELL;
-		while (wait_time--);
-
-		/* Use thermal coupling between z-actuator and sample
-			to determine when to stop coarse approach */
-		adc_start_conv (ADC_ZAMP);
-		z_amp = adc_get_avgw_val(Z_SAMPLES, Z_SAMPLE_DELAY);
-		/* Done to prevent noise from masking tip-sample proximty */
-		if (z_amp < z_amp_min) {
-			z_amp_min = z_amp;
-		}
+	if (pw < 20) 
+	{
+		T0LD = coarse_pw[pw];
+		T0CLRI = 0x55;
+		return true;
 	}
-	return 0;
+	return false;	
 }
+
+bool set_coarse_speed (u8 pw)
+{
+	if (pw < 20) 
+	{
+		T0LD = coarse_pw[pw];
+		T0CLRI = 0x55;
+		return true;
+	}
+	return false;
+}
+
+/**************************************
+			MOTOR ISR
+**************************************/
+void mtr_handler (void)
+{
+	T0CON &= ~BIT7;
+	T0CLRI = 0x01;				// Clear the currently active Timer0 Irq
+	step_cmp_flag = true;
+}
+
+
+/**************************************
+	STATIC FUNCTION DEFINITIONS
+**************************************/
 
 /* Fine approach - Approach with small motor steps while scanning
 		back and forth with the tip using z-offset voltage. If we get too
@@ -213,7 +223,7 @@ static u8 fine_approach (u16 z_amp_limit, u16 setpoint, u16 setpoint_error)
 	fine_z_speed = (coarse_max > FINE_Z_STEPS)?(coarse_max/FINE_Z_STEPS):1;
 
 
-	mtr_set_pw (FINE_SPEED);
+	mtr_set_pw (fine_speed);
 	while (!mov_compl){
 		/* Step motor back */
 		mtr_set_dir (mtr_bwd);
@@ -272,19 +282,44 @@ static u8 fine_approach (u16 z_amp_limit, u16 setpoint, u16 setpoint_error)
 	return 2;
 }
 
+/* Begin coarse approach */
+static u8 coarse_approach (u16 z_amp_limit)
+{
+	u16 z_amp, z_amp_min;
+	volatile u32 wait_time;
+
+	z_amp_min = ADC_MAX;
+	mtr_set_dir (mtr_fwd);
+	mtr_set_pw (coarse_speed);
+	while (z_amp_min > z_amp_limit){
+		/* Kill auto approach if stop requested */
+		if (is_received () && uart_get_char () == BRK_CHAR){
+			return 1;
+		}
+
+		/* Step motor closer */
+		mtr_step ();
+		wait_time = COARSE_STEP_DWELL;
+		while (wait_time--);
+
+		/* Use thermal coupling between z-actuator and sample
+			to determine when to stop coarse approach */
+		adc_start_conv (ADC_ZAMP);
+		z_amp = adc_get_avgw_val(Z_SAMPLES, Z_SAMPLE_DELAY);
+		/* Done to prevent noise from masking tip-sample proximty */
+		if (z_amp < z_amp_min) {
+			z_amp_min = z_amp;
+		}
+	}
+	return 0;
+}
+
 static void mtr_disengage (void)
 {
 	u32 i = 0;
 	mtr_set_dir (mtr_bwd);
-	mtr_set_pw (COARSE_SPEED);
+	mtr_set_pw (coarse_speed);
 	for (i = 0; i < MTR_DISENGAGE_STEPS; i ++){
 		mtr_step ();
 	}
-}
-
-void mtr_handler (void)
-{
-	T0CON &= ~BIT7;
-	T0CLRI = 0x01;				// Clear the currently active Timer0 Irq
-	step_cmp_flag = true;
 }
