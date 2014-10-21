@@ -259,6 +259,7 @@ int main(void)
 			case 'I':
 				dds_set_freq_out_uart();
 				break;
+			// TODO: is 'J' already used????
 			case 'J':
 				z_act_set_offset();
 				break;			
@@ -284,9 +285,11 @@ void dds_set_freq_delay_ms (void)
 
 struct act_comp{
 	// 24-bit frequency value
-	u32 freq;
+	u32 freq_max;
 	// 12-bit amplitude value
-	u16 amp;
+	u16 amp_max;
+	// 12-bit amplitude offset
+	u16 amp_offset;
 };
 
 // Incorporate this into the z_act calibration struct
@@ -294,6 +297,12 @@ struct z_calibration
 {
 	u32 freq_offset;
 	u16 amp_offset;
+
+	u16 prev_index;
+	u16 index;
+
+	bool compensate;
+
 	struct act_comp comp[COMP_POINT_CNT];
 };
 
@@ -320,40 +329,30 @@ void calib_get_freq_amp (void)
 
 	increment = 4095 / COMP_POINT_CNT;
 
+	z_calib.compensate = false;
+
 	// step Z_FINE and get calibration values
 	for (i = 0, val = 0; i < COMP_POINT_CNT; i++, val += increment)
 	{
 		dac_set_val(DAC_ZOFFSET_FINE, val);
-		calib_freq_amp(&z_calib.comp[i].amp, &z_calib.comp[i].freq);
+		calib_freq_amp(&z_calib.comp[i].amp_max, &z_calib.comp[i].freq_max);
 		
 		// send max frequency (24-bit)
-		uart_set_char((z_calib.comp[i].freq & 0xFF));
-		uart_set_char((z_calib.comp[i].freq & 0xFF00) >> 8);
+		uart_set_char((z_calib.comp[i].freq_max & 0xFF));
+		uart_set_char((z_calib.comp[i].freq_max & 0xFF00) >> 8);
 		//uart_set_char((z_calib.comp[i].freq & 0xFF0000) >> 16);
 		
 		// send max amplitude
-		uart_set_char((z_calib.comp[i].amp & 0xFF));
-		uart_set_char((z_calib.comp[i].amp & 0xFF00) >> 8); 
-	}
-}
-
-void z_act_compensate (u16 raw_val)
-{
-	static u8 prev_index;
-	u8 index = (raw_val & 0x0F00) >> 8;
-
-	if (prev_index == index) {
-		prev_index = index;
-		return;
+		uart_set_char((z_calib.comp[i].amp_max & 0xFF));
+		uart_set_char((z_calib.comp[i].amp_max & 0xFF00) >> 8); 
 	}
 
-   	prev_index = index;
-	
-	// TODO: GET DAC READING OF AMP and save it
+	for (i = 0; i < COMP_POINT_CNT; i++)
+	{
+		z_calib.comp[i].amp_offset = z_calib.comp[0].amp_max - z_calib.comp[i].amp_max;
+	}
 
-	dds_set_freq_out(z_calib.comp[index].freq);	
-	
-	// TODO: HOW TO APPLY OFFSET AND WHAT TO DO WITH AMP DATA?
+	z_calib.compensate = true;
 }
 
 void calib_freq_amp(u16* amp_max, u32* freq)
@@ -382,21 +381,26 @@ void calib_freq_amp(u16* amp_max, u32* freq)
 			*amp_max = adc_val;
 		}
 
-		// read adc for phase data
-		/*
-		adc_val = adc_wait_get_reading(ADC_PHASE);
-
-	 	// send data out
-		uart_set_char((adc_val));
-		uart_set_char(((adc_val >> 8)));
-		*/
-
 		//delay_ms(dds_sweep_delay_ms);
 		delay = 12500;
 		while(delay--){};
 
 		dds_step();		
 	}		
+}
+
+void z_act_compensate (u16 raw_val)
+{
+
+	z_calib.index = (raw_val & 0x0F00) >> 8;
+
+	if (z_calib.prev_index == z_calib.index) {
+		return;
+	}
+
+   	z_calib.prev_index = z_calib.index;
+	
+	dds_set_freq_out(z_calib.comp[z_calib.index].freq_max);	
 }
 
 void freq_sweep_dds(void)

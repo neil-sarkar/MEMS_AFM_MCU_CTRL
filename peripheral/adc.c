@@ -7,6 +7,8 @@
 static void adc_start_conv(adc channel);
 static u16 adc_wait_get_val(void);
 
+extern struct z_calibration z_calib;
+
 void adc_init() 
 {
 	u16 delay = 2000;
@@ -124,7 +126,10 @@ static u16 adc_wait_get_val()
 #ifdef APPLY_OFFSET
 	if (apply_amp_offset)
 	{
-		//TODO: apply offset here
+		if (z_calib.compensate) 
+		{
+			adc_val += z_calib.comp[z_calib.index].amp_offset;
+		}
 	}
 #endif
 
