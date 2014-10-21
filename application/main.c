@@ -101,8 +101,8 @@ int main(void)
 	pga_1ch_init (pga_dds);
 	pga_4ch_init ();		   
 	
-	pga_1ch_set (pga_fine, 0);
-	pga_1ch_set (pga_dds, 0);
+	pga_1ch_set (pga_fine, 127);
+	pga_1ch_set (pga_dds, 127);
 	pga_4ch_set (pga_x1, 192);
 	pga_4ch_set (pga_x2, 192);
 	pga_4ch_set (pga_y1, 192);
@@ -116,7 +116,7 @@ int main(void)
 	init_scanner (&left_act, &right_act, &z_act);
 	
 	/* Disable filter and PID */
-	filter_enable(false);
+	//filter_enable(false);
 	pid_enable(false);
 
 	/*
@@ -208,7 +208,8 @@ int main(void)
 				//filter_adc();
 				break;
 			case 'x':
-				filter_enable(true);
+				// TODO: remove
+				//filter_enable(true);
 				break;
 			case 'y':
 				filter_enable(false);
@@ -833,9 +834,10 @@ void IRQ_Handler(void)  __irq
 		DDS();
 	}
 
-	// Timer 0 IRQs
-	if ((IRQSTATUS & BIT2) == BIT2)	//Timer 0 interrupt source
+	// Timer 2 IRQ
+	if ((IRQSTATUS & BIT4) == BIT4)	//Timer 2 interrupt source
 	{
+		T2CLRI = 0x55;
 		MTR ();
 	}
 }
@@ -852,17 +854,9 @@ void FIQ_Handler(void) __irq
 		PID();
 		T1CLRI = 0x01;				// Clear interrupt, reload T1LD
 	}
-
-	if ((FIQSTATUS & BIT4) == BIT4) // Timer4 interrupt source - PID
-	{
-		//GP0DAT |= BIT23;
-		FILTER();
-		T2CLRI = 0x01;				// Clear interrupt, reload T1LD
-		//GP0DAT &= ~BIT23;
-	}
 	
 	// Timer 4 FIQs
-	if ((FIQSTATUS & BIT6) == BIT6)	//Timer 0 interrupt source
+	if ((FIQSTATUS & BIT6) == BIT6)	//Timer4 interrupt source
 	{
 		WIRE3();
 	}					

@@ -17,30 +17,13 @@
 #endif
 
 // Default number of ticks for approach timer 
-// 418 clock ticks --> 41.78 million / 100000 = 10us
-#define TMR_DFLT  2926
+#define TMR_DFLT  5000
 
-#define COARSE_SCALE 20
-u16 coarse_pw[COARSE_SCALE] = {TMR_DFLT,
-								TMR_DFLT*2,
-								TMR_DFLT*3,
-								TMR_DFLT*4,
-								TMR_DFLT*5,
-								TMR_DFLT*6,
-								TMR_DFLT*7,
-								TMR_DFLT*8,
-								TMR_DFLT*9,
-								TMR_DFLT*10,
-								TMR_DFLT*11,
-								TMR_DFLT*12,
-								TMR_DFLT*13,
-								TMR_DFLT*14,
-								TMR_DFLT*15,
-								TMR_DFLT*16,
-								TMR_DFLT*17,
-								TMR_DFLT*18,
-								TMR_DFLT*19,
-								TMR_DFLT*20};
+#define COARSE_SCALE 31
+u32 coarse_pw[COARSE_SCALE] = {TMR_DFLT, TMR_DFLT*2, TMR_DFLT*3, TMR_DFLT*4, TMR_DFLT*5, TMR_DFLT*6, TMR_DFLT*7, TMR_DFLT*8, TMR_DFLT*9, TMR_DFLT*10,
+							   TMR_DFLT*11, TMR_DFLT*12, TMR_DFLT*13, TMR_DFLT*14, TMR_DFLT*15, TMR_DFLT*16, TMR_DFLT*17, TMR_DFLT*18, TMR_DFLT*19, TMR_DFLT*20, 
+							   TMR_DFLT*21, TMR_DFLT*22, TMR_DFLT*23, TMR_DFLT*24, TMR_DFLT*25, TMR_DFLT*26, TMR_DFLT*27, TMR_DFLT*28, TMR_DFLT*29, TMR_DFLT*30,
+							   TMR_DFLT*31};
 
 #define Z_SAMPLES 			8
 #define Z_SAMPLE_DELAY 		20
@@ -77,17 +60,24 @@ void mtr_init (void)
 	MTR_DAT_REG |= MTR_PWR;
 
 	/* Initilize Timer 0 for the coarse approach */
+	/*
 	T0LD  = TMR_DFLT;
-	T0CON = BIT6 + BIT9 + BIT10;			// Periodic mode, HCLK core clock 41.78Mhz
-    IRQEN = BIT2;							// Enable Timer 0 IRQ
+	T0CON = BIT6 + BIT9 + BIT10;				// Periodic mode, HCLK core clock 41.78Mhz
+    IRQEN = BIT2;								// Enable Timer 0 IRQ
+	*/
+
+	/* Initilize Timer 0 for the coarse approach */
+	T2LD  = TMR_DFLT;
+	T2CON = BIT6 + BIT9;						// Periodic mode, core clock
+	IRQEN = BIT4;								// Enable Timer2 fast interrupt
 }
 
 u8 mtr_set_pw(u8 pw)
 {
-	if (pw < 20) 
+	if (pw < COARSE_SCALE) 
 	{
-		T0LD = coarse_pw[pw];
-		T0CLRI = 0x55;
+		T2LD = coarse_pw[pw];
+		T2CLRI = 0x55;
 		return 0;
 	}
 	return 1;
@@ -114,14 +104,14 @@ __inline u8 mtr_step (void)
 {
 	// Reset timer
 	step_cmp_flag = false;
-	T0CLRI = 0x55;
+	T2CLRI = 0x55;
 	// pwr = gnd
 	MTR_DAT_REG &= ~MTR_PWR;	
 	// Begin timing
-	T0CON |= BIT7;
+	T2CON |= BIT7;
 	while (!step_cmp_flag );
 	// disable timer
-	T0CON &= ~BIT7;
+	T2CON &= ~BIT7;
 	// pwr = vcc
 	MTR_DAT_REG |= MTR_PWR;
 	return 0;
@@ -171,10 +161,9 @@ u8 mtr_auto_approach (u16 setpoint, u16 setpoint_error)
 
 bool set_fine_speed (u8 pw)
 {
-	if (pw < 20) 
+	if (pw < COARSE_SCALE) 
 	{
-		T0LD = coarse_pw[pw];
-		T0CLRI = 0x55;
+		fine_speed = pw;
 		return true;
 	}
 	return false;	
@@ -182,10 +171,9 @@ bool set_fine_speed (u8 pw)
 
 bool set_coarse_speed (u8 pw)
 {
-	if (pw < 20) 
+	if (pw < COARSE_SCALE) 
 	{
-		T0LD = coarse_pw[pw];
-		T0CLRI = 0x55;
+		coarse_speed = pw;
 		return true;
 	}
 	return false;
@@ -196,8 +184,6 @@ bool set_coarse_speed (u8 pw)
 **************************************/
 void mtr_handler (void)
 {
-	T0CON &= ~BIT7;
-	T0CLRI = 0x01;				// Clear the currently active Timer0 Irq
 	step_cmp_flag = true;
 }
 
