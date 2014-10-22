@@ -262,8 +262,47 @@ int main(void)
 			case 'M':
 				reset_mcu ();
 				break;
+			case 'N':
+				force_curve ();
+				break;
 		}
 	}
+}
+
+#define FC_INITIAL_Z	2500
+#define FC_STEP			5
+#define FC_AVG_CNT		16
+
+void force_curve (void)
+{
+	u16 dac_val;
+	u16 adc_val;
+	u32 delay = 10000;
+
+   	dac_set_val(DAC_ZOFFSET_FINE, FC_INITIAL_Z);
+	while (delay--) {}
+
+	for (dac_val = FC_INITIAL_Z; dac_val > 0; dac_val -= FC_STEP)
+	{
+		dac_set_val(DAC_ZOFFSET_FINE, dac_val);
+
+	   	adc_start_conv(ADC_ZAMP);
+		adc_val = adc_get_avgw_val(FC_AVG_CNT, 300);
+
+		uart_set_char(adc_val);
+		uart_set_char((adc_val & 0x0F00) >> 8);
+	}
+
+	for (dac_val = 0; dac_val < FC_INITIAL_Z; dac_val += FC_STEP)
+	{
+		dac_set_val(DAC_ZOFFSET_FINE, dac_val);
+	   	
+		adc_start_conv(ADC_ZAMP);
+		adc_val = adc_get_avgw_val(FC_AVG_CNT, 300);
+
+		uart_set_char(adc_val);
+		uart_set_char((adc_val & 0x0F00) >> 8);		
+	}		
 }
 
 #define MV_TO_ABS_200	248
