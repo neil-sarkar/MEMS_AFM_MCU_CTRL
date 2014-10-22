@@ -265,14 +265,20 @@ int main(void)
 			case 'N':
 				force_curve ();
 				break;
+			case 'O':
+				set_calib_delay ();
 		}
 	}
+}
+
+void set_calib_delay (void)
+{
+	
 }
 
 #define FC_INITIAL_Z	2500
 #define FC_STEP			5
 #define FC_AVG_CNT		16
-
 void force_curve (void)
 {
 	u16 dac_val;
