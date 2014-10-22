@@ -9,6 +9,7 @@ static void set_pv_rel (Actuator* act, float a, float b, float c);
 static void set_indirect_rel (Actuator* act, float a, float b, float c);
 
 extern scan_params scan_state;
+u8 calib_delay = 1;		// 25us
 
 /* Function converts power to voltage (in DAC bits).
 	Hides calculation so changes can be made to P-V relationship */
@@ -71,8 +72,8 @@ void calibrate_actuator (Actuator* act, u16 max_voltage){
 		// Ramp the voltage
 		dac_set_val (act->out_dac, i);
 
-		j = 100;	
-		while (j --);	// Makes sure output has settled
+		// Delay
+		delay_25_us(calib_delay);
 
 		// Measures differential voltage across current sense resistor
 		// Averaging loop for lateral actuator TCR measurement and send it across UART

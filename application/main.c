@@ -37,6 +37,9 @@ static Actuator z_act;
 // Macro function to clear terminal screen
 #define CLEAR() uart_write("\033c")
 
+// Delay variable for the calibration routine
+extern u8 calib_delay;
+
 // coarse approach ISR flag
 //volatile bool flag;	
 //void set_dir(char);
@@ -266,14 +269,10 @@ int main(void)
 				force_curve ();
 				break;
 			case 'O':
-				set_calib_delay ();
+				calib_delay = uart_wait_get_char ();
+				break;
 		}
 	}
-}
-
-void set_calib_delay (void)
-{
-	
 }
 
 #define FC_INITIAL_Z	2500

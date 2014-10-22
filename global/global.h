@@ -53,6 +53,9 @@ typedef short 		  	s16;
 typedef unsigned int 	u32;
 typedef int 		 	s32;
 
+void delay_25_us (u8 delay);
+void delay_1_ms (u16 delay);
+
 /***** type definitions *****/
 /*
 Reference:
