@@ -4,7 +4,7 @@ static u16 buffer [BFR_SIZE];
 
 static Actuator* l_act;
 static Actuator* r_act;																								 
-static Actuator* z_act;
+//static Actuator* z_act;
 
 /* Z-actuator sampling data to be returned over UART */
 static struct sample_data {
