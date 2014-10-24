@@ -35,6 +35,9 @@ typedef struct {
 	u32 adr;
 	dac left_act;
 	dac right_act;
+	u8 	freq_hz;
+	u32	freq_ld;
+	u32 step_ld;
 } scan_params;
 
 // Makes this inline to speed up calculations

@@ -17,19 +17,31 @@ static Actuator* r_act;
 
 volatile scan_params scan_state;
 
-static u8 scan_freq_hz = SCAN_DFLT_HZ;
-static u32 scan_freq_ld = SCAN_DFLT_LD;
-
 static float get_max_linepwr (const u16 vmin_line, const u16 vmax);
+
+/*************************
+ HELPER TIMER FUNCTIONS
+*************************/
+
+// periodic, core clock
+#define INIT_TMR			T1CON 	= BIT6 + BIT9; \
+							FIQEN 	= BIT3;
+#define ENABLE_TMR			T1CON 	|= BIT7
+#define DISABLE_TMR			T1CON 	&= ~BIT7
+#define SET_PRD_TMR			T1LD	= scan_state.step_ld; 
+#define LD_START_TMR		T1CLRI 	= 0x01; \
+							ENABLE_TIMER
 
 void init_scanner (Actuator* left_act, Actuator* right_act){
 	l_act = left_act;
 	r_act = right_act;
 
-	// assign actuators
-	scan_state.left_act = l_act->out_dac;
-	scan_state.right_act = r_act->out_dac;
-
+	// initialize scan parameters
+	scan_state.left_act 	= l_act->out_dac;
+	scan_state.right_act 	= r_act->out_dac;
+	scan_state.freq_hz		= SCAN_DFLT_HZ;
+	scan_state.freq_ld		= SCAN_DFLT_LD;
+		
 	// Set GPIOs as output
 	SET_1(SC_GP_REG, SC_FINE_DD | SC_COARSE_DD);
 
@@ -38,9 +50,7 @@ void init_scanner (Actuator* left_act, Actuator* right_act){
 	SET_0(SC_GP_REG, SC_COARSE_HZ);
 
 	// Initialize scanner timer
-//	T1LD  = TMR_DFLT;
-	T1CON = BIT6 + BIT9;						// Periodic mode, core clock
-	FIQEN = BIT3;								// Enable Timer2 fast interrupt
+	INIT_TMR;
 }
 
 u8 scan_configure (const u16 vmin_line,
@@ -61,28 +71,42 @@ u8 scan_configure (const u16 vmin_line,
 	return generate_line (vmin_line, vmax, numpts);
 }
 
-void scan_start ()
+void scan_reset_state (void)
 {
 	// restore default state
 	scan_state.i = 0;
 	scan_state.j = PAGE_SIZE;
 	scan_state.k = 0;
 	scan_state.adr = BLOCK0_BASE;
+
+	if (scan_state.baseline_points != 0u)
+	{
+		scan_state.step_ld = scan_state.freq_ld/scan_state.baseline_points;
+	} else
+
+	SET_PRD_TMR;
 }
 
-void scan_reset_state (void)
+void scan_start ()
 {
+	scan_reset_state ();
+	ENABLE_TMR;
 }
 
 void scan_set_freq (u8 frequency)
 {
+	if (frequency != 0)
+	{
+		scan_state.freq_hz = frequency;
+		scan_state.freq_ld = HCLK_HZ/frequency;
+	}
 }
 
 void scan_handler (void)
 {	
 	dac swap;
 
-	SET_1(SC_GP_REG, SC_FINE_HZ);		
+	GP_TOGGLE(SC_GP_REG, SC_FINE_HZ);		
 	// value of k is incremented before execution of loop to allow for pausing
 	if ((scan_state.k++) < scan_state.baseline_points)
 	{
@@ -100,6 +124,7 @@ void scan_handler (void)
 	}
 	else 
 	{
+		GP_TOGGLE(SC_GP_REG, SC_FINE_HZ);
 		swap = scan_state.left_act;
 		scan_state.left_act = scan_state.right_act;
 		scan_state.right_act = swap;
@@ -108,9 +133,9 @@ void scan_handler (void)
 		scan_state.j = BFR_SIZE;
 		scan_state.k = 0;
 
-		if (uart_wait_get_char) == 'q')
+		if (uart_get_char() == 'q')
 		{	
-			// stop timer and reload value
+			DISABLE_TMR;			
 		}
 	}	
 }
@@ -227,7 +252,7 @@ u8 generate_line (const u16 vmin_line,
 		i += step;
 	}
 	scan_state.baseline_points += k;
-
+	
 	// Writes whatever is left over in the buffer
 	if (j > 0 && j < BFR_SIZE)
 	{		
