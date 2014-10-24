@@ -96,14 +96,7 @@ int main(void)
 	 */
 	while (true)
 	{
-		/* Enable to catch errors in UART
-		if (uart_get_status () != UART_OK)
-		{
-			while (true);
-		} */
-
-		rx_char = uart_wait_get_char();
-		
+		rx_char = uart_wait_get_char();	
 		switch (rx_char)
 		{
 			// Set DAC
@@ -141,10 +134,7 @@ int main(void)
 				configure_scan ();
 				break;
 			case '#':
-				start_scan ();
-				break;
-			case '^':
-				step_scan ();
+				scan_start ();
 				break;
 			case '&':
 				set_dac_max ();
@@ -166,6 +156,12 @@ int main(void)
 				break;
 			case 'O':
 				calib_delay = uart_wait_get_char ();
+				break;
+			case 'm':
+				scan_reset_state ();
+				break;
+			case 'n':
+				scan_set_freq (uart_wait_get_char ());
 				break;
 		}
 	}
@@ -459,7 +455,7 @@ void configure_scan (void)
 {
 	// read scan parameters over UART
 	u8 temp_buffer [2];
-	u16 vmin_line, vmin_scan, vmax, numpts, numlines;
+	u16 vmin_line, vmin_scan, vmax, numpts;
 
 	uart_wait_get_bytes (temp_buffer, 2);
 	vmin_line = (temp_buffer[0]) | (temp_buffer[1] << 8);
@@ -473,25 +469,12 @@ void configure_scan (void)
 	uart_wait_get_bytes (temp_buffer, 2);
 	numpts = (temp_buffer[0]) | (temp_buffer[1] << 8);
 
-	uart_wait_get_bytes (temp_buffer, 2);
-	numlines = (temp_buffer[0]) | (temp_buffer[1] << 8);
-
 	// return 'o' if successful, 'f' if failed
-	if (scan_configure (vmin_line, vmin_scan, vmax, numpts, numlines) == 0) {
+	if (scan_configure (vmin_line, vmin_scan, vmax, numpts) == 0) {
 		uart_write ("o");
 	} else {
 		uart_write ("f");
 	}
-}
-
-void start_scan (void)
-{
-	scan_start ();
-}
-
-void step_scan (void)
-{
-	scan_step ();
 }
 
 void reset_mcu ()

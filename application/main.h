@@ -20,8 +20,6 @@ void device_calibration (void);
 
 void set_scan_wait (void);
 void configure_scan (void);
-void start_scan (void);
-void step_scan (void);
 
 void set_pv_rel_manual_a (void);
 void set_pv_rel_manual_b (void);

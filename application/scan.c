@@ -6,20 +6,29 @@
 #define SC_FINE_DD 		(SC_FINE_HZ<<8)
 #define SC_COARSE_DD 	(SC_COARSE_HZ<<8)
 
-#define HCLK			
+#define HCLK_HZ			41780000
+#define SCAN_DFLT_HZ	30
+#define SCAN_DFLT_LD	HCLK_HZ/SCAN_DFLT_HZ
 
 static u16 buffer [BFR_SIZE];
 
 static Actuator* l_act;
 static Actuator* r_act; 
 
-scan_params scan_state;
+volatile scan_params scan_state;
+
+static u8 scan_freq_hz = SCAN_DFLT_HZ;
+static u32 scan_freq_ld = SCAN_DFLT_LD;
 
 static float get_max_linepwr (const u16 vmin_line, const u16 vmax);
 
 void init_scanner (Actuator* left_act, Actuator* right_act){
 	l_act = left_act;
 	r_act = right_act;
+
+	// assign actuators
+	scan_state.left_act = l_act->out_dac;
+	scan_state.right_act = r_act->out_dac;
 
 	// Set GPIOs as output
 	SET_1(SC_GP_REG, SC_FINE_DD | SC_COARSE_DD);
@@ -37,8 +46,7 @@ void init_scanner (Actuator* left_act, Actuator* right_act){
 u8 scan_configure (const u16 vmin_line,
 			const u16 vmin_scan,
 			const u16 vmax,
-			const u16 numpts,
-			const u16 numlines)
+			const u16 numpts)
 {
 	if (vmin_line > vmax || vmin_scan > vmax)
 		return 1;
@@ -48,7 +56,6 @@ u8 scan_configure (const u16 vmin_line,
 	if (numpts == 0 || (numpts & (numpts-1)))
 		return 1;
 	scan_state.numpts = numpts;
-	scan_state.numlines = numlines;
 
 	// Calculates first line and puts it into flash
 	return generate_line (vmin_line, vmax, numpts);
@@ -61,57 +68,51 @@ void scan_start ()
 	scan_state.j = PAGE_SIZE;
 	scan_state.k = 0;
 	scan_state.adr = BLOCK0_BASE;
-	// TODO: what values are the lateral actuators being set to?
-	scan_state.left_act = l_act->out_dac;
-	scan_state.right_act = r_act->out_dac;
-
 }
 
-void scan_step ()
+void scan_reset_state (void)
 {
-	const float MAX_LINE_PWR = pwr(l_act,scan_state.vmax) + pwr(l_act,scan_state.vmin_line);
-	const float MAX_LINE_VOLT = volt(l_act,MAX_LINE_PWR);
-	const float POWER_INC = (MAX_LINE_PWR - pwr(l_act,scan_state.vmin_scan))/scan_state.numlines;
+}
 
-	u16 left_dac_val = 0, right_dac_val = 0;
-	float scale_factor = MAX_LINE_VOLT;
+void scan_set_freq (u8 frequency)
+{
+}
+
+void scan_handler (void)
+{	
 	dac swap;
 
-	for (; scan_state.i < scan_state.numlines*2; scan_state.i ++)
+	SET_1(SC_GP_REG, SC_FINE_HZ);		
+	// value of k is incremented before execution of loop to allow for pausing
+	if ((scan_state.k++) < scan_state.baseline_points)
 	{
-		scale_factor = volt(l_act,MAX_LINE_PWR - POWER_INC*(scan_state.i/2))/MAX_LINE_VOLT;
-		
-		// value of k is incremented before execution of loop to allow for pausing
-		while ((scan_state.k++) < scan_state.baseline_points)
+		// Read data stored in flash
+		if (scan_state.j >= BFR_SIZE)
 		{
-			// Read data stored in flash
-			if (scan_state.j >= BFR_SIZE)
-			{
-				flash_ReadAdr (scan_state.adr, PAGE_SIZE, (u8*)buffer);
-				scan_state.adr += PAGE_SIZE;
-				scan_state.j = 0;
-			}
-
-			// Scale line voltages stored in flash for largest line power
-			left_dac_val = ((buffer[scan_state.j++])&0xFFF)*scale_factor;
-			right_dac_val = ((buffer[scan_state.j++])&0xFFF)*scale_factor;
-
-			// Output DAC values to move actuators
-			dac_set_val (scan_state.left_act, left_dac_val);
-			dac_set_val (scan_state.right_act, right_dac_val);
+			flash_ReadAdr (scan_state.adr, PAGE_SIZE, (u8*)buffer);
+			scan_state.adr += PAGE_SIZE;
+			scan_state.j = 0;
 		}
 
+		// Output DAC values to move actuators
+		dac_set_val (scan_state.left_act, ((buffer[scan_state.j++])&0xFFF));
+		dac_set_val (scan_state.right_act, ((buffer[scan_state.j++])&0xFFF));
+	}
+	else 
+	{
 		swap = scan_state.left_act;
 		scan_state.left_act = scan_state.right_act;
 		scan_state.right_act = swap;
-
+	
 		scan_state.adr = BLOCK0_BASE;
 		scan_state.j = BFR_SIZE;
 		scan_state.k = 0;
-	}
 
-	dac_set_val (scan_state.left_act, 0);
-	dac_set_val (scan_state.right_act, 0);	
+		if (uart_wait_get_char) == 'q')
+		{	
+			// stop timer and reload value
+		}
+	}	
 }
 
 /* 	Generates line of power coefficients given DAC values in *bits*.
@@ -235,11 +236,6 @@ u8 generate_line (const u16 vmin_line,
 	}
 	
 	return 0; 
-}
-
-void scan_handler (void)
-{
-	SET_1();		
 }
 
 static float get_max_linepwr (const u16 vmin_line, const u16 vmax)
