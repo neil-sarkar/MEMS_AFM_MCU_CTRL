@@ -1,27 +1,35 @@
 #include "scan.h"
 
+#define SC_GP_REG		GP2DAT
+#define SC_FINE_HZ 		BIT22
+#define SC_COARSE_HZ 	BIT23
+#define SC_FINE_DD 		(SC_FINE_HZ<<8)
+#define SC_COARSE_DD 	(SC_COARSE_HZ<<8)
+
 static u16 buffer [BFR_SIZE];
 
 static Actuator* l_act;
-static Actuator* r_act;																								 
-//static Actuator* z_act;
-
-/* Z-actuator sampling data to be returned over UART */
-static struct sample_data {
-	u16 num_samples;
-	u32 z_off_samples;
-	u32 z_amp_samples;
-	u32 z_phs_samples;
-} z_data; 
+static Actuator* r_act; 
 
 scan_params scan_state;
 
 static float get_max_linepwr (const u16 vmin_line, const u16 vmax);
 
-void init_scanner (Actuator* left_act, Actuator* right_act, Actuator* z_act){
+void init_scanner (Actuator* left_act, Actuator* right_act){
 	l_act = left_act;
 	r_act = right_act;
-	z_act = z_act;
+
+	// Set GPIOs as output
+	SET_1(SC_GP_REG, SC_FINE_DD | SC_COARSE_DD);
+
+	// Set default values
+	SET_0(SC_GP_REG, SC_FINE_HZ);
+	SET_0(SC_GP_REG, SC_COARSE_HZ);
+
+	// Initialize scanner timer
+//	T1LD  = TMR_DFLT;
+	T1CON = BIT6 + BIT9;						// Periodic mode, core clock
+	FIQEN = BIT3;								// Enable Timer2 fast interrupt
 }
 
 u8 scan_configure (const u16 vmin_line,
@@ -63,10 +71,7 @@ void scan_step ()
 	const float MAX_LINE_VOLT = volt(l_act,MAX_LINE_PWR);
 	const float POWER_INC = (MAX_LINE_PWR - pwr(l_act,scan_state.vmin_scan))/scan_state.numlines;
 
-	// temp variables that don't carry state information
-	u8 measure_point;
-	u32 num_outputted = 0;
-	u16 left_dac_val = 0, right_dac_val = 0, nsamples;
+	u16 left_dac_val = 0, right_dac_val = 0;
 	float scale_factor = MAX_LINE_VOLT;
 	dac swap;
 
@@ -84,7 +89,6 @@ void scan_step ()
 				scan_state.adr += PAGE_SIZE;
 				scan_state.j = 0;
 			}
-			measure_point = (buffer[scan_state.j]>=MEASURE_BIT);
 
 			// Scale line voltages stored in flash for largest line power
 			left_dac_val = ((buffer[scan_state.j++])&0xFFF)*scale_factor;
@@ -93,22 +97,6 @@ void scan_step ()
 			// Output DAC values to move actuators
 			dac_set_val (scan_state.left_act, left_dac_val);
 			dac_set_val (scan_state.right_act, right_dac_val);
-			
-			// Send point measurement if it is sample point
-		   	if (measure_point) {
-
-				z_init_sample ();
-				for (nsamples = 0; nsamples < scan_state.z_samples_req; nsamples++){
-					pid_wait_update ();
-					z_sample ();
-				}
-				z_write_data ();
-				num_outputted ++;
-				
-				if (num_outputted >= SCAN_OUT_SIZE){
-					return;
-				}
-			}
 		}
 
 		swap = scan_state.left_act;
@@ -122,49 +110,6 @@ void scan_step ()
 
 	dac_set_val (scan_state.left_act, 0);
 	dac_set_val (scan_state.right_act, 0);	
-}
-
-
-void z_init_sample (void)
-{
-	z_data.num_samples = 0;
-	z_data.z_off_samples = 0;
-	z_data.z_amp_samples = 0;
-	z_data.z_phs_samples = 0;	
-}
-
-void z_set_samples (u16 num_samples)
-{
-	scan_state.z_samples_req = num_samples;
-}
-
-u16 z_sample (void)
-{
-	adc_start_conv (ADC_ZAMP);
-	z_data.z_amp_samples += adc_get_val (); 
-	
-	z_data.z_off_samples += dac_get_val(DAC_ZOFFSET_FINE);
-
-	adc_start_conv(ADC_PHASE);
-	z_data.z_phs_samples += adc_get_val();
-	
-	return (++z_data.num_samples);
-}
-
-void z_write_data (void)
-{
-	u16 z_amp = (u16)(z_data.z_amp_samples/z_data.num_samples);
-	u16 z_off = (u16)(z_data.z_off_samples/z_data.num_samples);
-	u16 z_phs = (u16)(z_data.z_phs_samples/z_data.num_samples);
-
-	uart_set_char((u8)((z_amp) & 0xFF));
-	uart_set_char((u8)((z_amp >> 8) & 0xFF));
-
-	uart_set_char((u8)(z_off & 0xFF));
-	uart_set_char((u8)((z_off >> 8) & 0xFF));
-
-	uart_set_char((u8)(z_phs & 0xFF));
-	uart_set_char((u8)((z_phs >> 8) & 0xFF));
 }
 
 /* 	Generates line of power coefficients given DAC values in *bits*.
@@ -288,6 +233,11 @@ u8 generate_line (const u16 vmin_line,
 	}
 	
 	return 0; 
+}
+
+void scan_handler (void)
+{
+		
 }
 
 static float get_max_linepwr (const u16 vmin_line, const u16 vmax)

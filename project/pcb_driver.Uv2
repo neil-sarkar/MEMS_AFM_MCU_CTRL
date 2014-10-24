@@ -9,18 +9,12 @@ File 1,2,<.\ADuC7122.s><ADuC7122.s>
 File 1,1,<..\global\irq_arm.c><irq_arm.c>
 File 1,1,<..\application\main.c><main.c>
 File 1,1,<..\system\dds.c><dds.c>
-File 1,1,<..\system\filter.c><filter.c>
-File 1,1,<..\system\pid.c><pid.c>
 File 1,1,<..\peripheral\adc.c><adc.c>
 File 1,1,<..\peripheral\dac.c><dac.c>
 File 1,1,<..\peripheral\flash.c><flash.c>
 File 1,1,<..\peripheral\uart.c><uart.c>
 File 1,1,<..\application\scan.c><scan.c>
 File 1,1,<..\application\calibration.c><calibration.c>
-File 1,1,<..\system\motor.c><motor.c>
-File 1,1,<..\system\wire3.c><wire3.c>
-File 1,1,<..\peripheral\pga_1ch.c><pga_1ch.c>
-File 1,1,<..\peripheral\pga_4ch.c><pga_4ch.c>
 File 1,1,<..\global\global.c><global.c>
 
 

@@ -56,6 +56,9 @@ typedef int 		 	s32;
 void delay_25_us (u8 delay);
 void delay_1_ms (u16 delay);
 
+#define SET_1(REG, GP)	REG |= GP;		
+#define SET_0(REG, GP)	REG &= ~GP;
+
 /***** type definitions *****/
 /*
 Reference:

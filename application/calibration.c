@@ -55,11 +55,10 @@ void set_pv_rel_c (Actuator* act, float c)
 	generate_line (scan_state.vmin_line, scan_state.vmax, scan_state.numpts);		
 }
 
-void init_act (Actuator* act, dac out_dac, adc in_adc, adc z_adc)
+void init_act (Actuator* act, dac out_dac, adc in_adc)
 {
 	act->out_dac = out_dac;
 	act->in_adc = in_adc;
-	act->z_adc = z_adc;
 } 
 
 void calibrate_actuator (Actuator* act, u16 max_voltage){
@@ -86,16 +85,6 @@ void calibrate_actuator (Actuator* act, u16 max_voltage){
 		adc_val /= ADC_SAMPLES;				
 		uart_set_char ((u8)(adc_val&0xFF));
 		uart_set_char ((u8)((adc_val>>8)&0xFF));
-
-		// Measurment of z-coupling with lateral actuator ramp
-		adc_val = 0;
-		for (j = 0; j < ADC_SAMPLES; j++){
-			adc_start_conv (act->z_adc);
-			adc_val += adc_get_val();
-		}
-		adc_val /= ADC_SAMPLES;
-		uart_set_char ((u8)(adc_val&0xFF));
-		uart_set_char ((u8)((adc_val>>8))&0xFF);
 	}
 
 	dac_set_val (act->out_dac, 0);
