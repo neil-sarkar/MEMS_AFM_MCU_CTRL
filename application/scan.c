@@ -6,6 +6,8 @@
 #define SC_FINE_DD 		(SC_FINE_HZ<<8)
 #define SC_COARSE_DD 	(SC_COARSE_HZ<<8)
 
+#define HCLK			
+
 static u16 buffer [BFR_SIZE];
 
 static Actuator* l_act;
@@ -237,7 +239,7 @@ u8 generate_line (const u16 vmin_line,
 
 void scan_handler (void)
 {
-		
+	SET_1();		
 }
 
 static float get_max_linepwr (const u16 vmin_line, const u16 vmax)
