@@ -6,7 +6,6 @@
 
 // local function definition	
 static void set_pv_rel (Actuator* act, float a, float b, float c);
-static void set_indirect_rel (Actuator* act, float a, float b, float c);
 
 extern scan_params scan_state;
 u8 calib_delay = 1;		// 25us
@@ -97,15 +96,6 @@ void calibrate_actuator (Actuator* act, u16 max_voltage){
 
 	// Convert to single precision floating point
 	set_pv_rel (act, ((float*)buffer)[0],((float*)buffer)[1],((float*)buffer)[2]);
-
-	// Get fitted polynomial coefficients
-	for (i = 0; i < NUM_COEFF*4; i++)
-	{
-		buffer [i] = uart_wait_get_char ();
-	}
-
-	// Convert to single precision floating point
-	set_indirect_rel (act, ((float*)buffer)[0],((float*)buffer)[1],((float*)buffer)[2]);
 }
 
 /************************** 
@@ -121,16 +111,4 @@ static void set_pv_rel (Actuator* act, float a, float b, float c)
 	act->vp_rel[0] = CALC_COEFF_0(a, b);
 	act->vp_rel[1] = CALC_COEFF_1(a, b, c);
 	act->vp_rel[2] = CALC_COEFF_2(a);
-}
-
-// TODO: WHAT IS THE POINT OF THIS IF IT IS NEVER USED?
-static void set_indirect_rel (Actuator* act, float a, float b, float c)
-{
-	act->rv_indirect_rel [0] = a;
-	act->rv_indirect_rel [1] = b;
-	act->rv_indirect_rel [2] = c;
-	
-	act->vr_indirect_rel[0] = CALC_COEFF_0(a, b);
-	act->vr_indirect_rel[1] = CALC_COEFF_1(a, b, c);
-	act->vr_indirect_rel[2] = CALC_COEFF_2(a);
 }

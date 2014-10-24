@@ -30,7 +30,7 @@ static float get_max_linepwr (const u16 vmin_line, const u16 vmax);
 #define DISABLE_TMR			T1CON 	&= ~BIT7
 #define SET_PRD_TMR			T1LD	= scan_state.step_ld; 
 #define LD_START_TMR		T1CLRI 	= 0x01; \
-							ENABLE_TIMER
+							ENABLE_TMR
 
 void init_scanner (Actuator* left_act, Actuator* right_act){
 	l_act = left_act;
@@ -79,6 +79,14 @@ void scan_reset_state (void)
 	scan_state.k = 0;
 	scan_state.adr = BLOCK0_BASE;
 
+	scan_state.left_act 	= l_act->out_dac;
+	scan_state.right_act 	= r_act->out_dac;
+
+	// reset actuators back to their default position
+	dac_set_val (scan_state.left_act, 0);
+	dac_set_val (scan_state.right_act, 0);
+
+	// TODO: hmmm send a byte back to labview if error?
 	if (scan_state.baseline_points != 0u)
 	{
 		scan_state.step_ld = scan_state.freq_ld/scan_state.baseline_points;
@@ -90,7 +98,7 @@ void scan_reset_state (void)
 void scan_start ()
 {
 	scan_reset_state ();
-	ENABLE_TMR;
+	LD_START_TMR;
 }
 
 void scan_set_freq (u8 frequency)
