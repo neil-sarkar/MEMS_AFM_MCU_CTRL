@@ -112,6 +112,8 @@ void scan_set_freq (u8 frequency)
 void scan_handler (void)
 {	
 	dac swap;
+	u16 data_1;
+	u16 data_2;
 
 	//GP_TOGGLE(SC_GP_REG, SC_FINE_HZ);
 	GP2DAT |= SC_FINE_HZ;
@@ -119,17 +121,14 @@ void scan_handler (void)
 	// value of k is incremented before execution of loop to allow for pausing
 	if ((scan_state.k++) < scan_state.baseline_points)
 	{
-		// Read data stored in flash
-		if (scan_state.j >= BFR_SIZE)
-		{
-			flash_ReadAdr (scan_state.adr, PAGE_SIZE, (u8*)buffer);
-			scan_state.adr += PAGE_SIZE;
-			scan_state.j = 0;
-		}
+		flash_Read2Bytes (scan_state.adr, &data_1);
+		scan_state.adr += 2;
+		flash_Read2Bytes (scan_state.adr, &data_2);
+		scan_state.adr += 2;
 
 		// Output DAC values to move actuators
-		dac_set_val (scan_state.left_act, ((buffer[scan_state.j++])&0xFFF));
-		dac_set_val (scan_state.right_act, ((buffer[scan_state.j++])&0xFFF));
+		dac_set_val (scan_state.left_act,  (data_1 & 0xFFF));
+		dac_set_val (scan_state.right_act, (data_2 & 0xFFF));
 	}
 	else 
 	{
@@ -141,12 +140,12 @@ void scan_handler (void)
 			T1CON 	&= ~BIT7;
 			return;			
 		}*/
+
 		swap = scan_state.left_act;
 		scan_state.left_act = scan_state.right_act;
 		scan_state.right_act = swap;
 	
 		scan_state.adr = BLOCK0_BASE;
-		scan_state.j = BFR_SIZE;
 		scan_state.k = 0;
 	}	   
 	GP2DAT &= ~SC_FINE_HZ;	
