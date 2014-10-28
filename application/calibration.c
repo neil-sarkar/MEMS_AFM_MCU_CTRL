@@ -12,7 +12,7 @@ u8 calib_delay = 1;		// 25us
 
 /* Function converts power to voltage (in DAC bits).
 	Hides calculation so changes can be made to P-V relationship */
-float pwr (Actuator* act, float volt){	// assuming integer voltage is minimally affected by rounding voltage
+float pwr (Actuator* act, u16 volt){	// assuming integer voltage is minimally affected by rounding voltage
 	#if NUM_COEFF == 3
 	return act->pv_rel[0]*volt*volt + act->pv_rel[1]*volt + act->pv_rel[2];
 	#else
@@ -35,23 +35,20 @@ void set_pv_rel_a (Actuator* act, float a)
 	act->pv_rel[0] = a;
 	act->vp_rel[0] = CALC_COEFF_0(a, act->pv_rel[1]);
 	act->vp_rel[1] = CALC_COEFF_1(a, act->pv_rel[1], act->pv_rel[2]);
-	act->vp_rel[2] = CALC_COEFF_2(a);
-	generate_line (scan_state.vmin_line, scan_state.vmax, scan_state.numpts);		
+	act->vp_rel[2] = CALC_COEFF_2(a);		
 }
 
 void set_pv_rel_b (Actuator* act, float b)
 {
 	act->pv_rel[1] = b;
 	act->vp_rel[0] = CALC_COEFF_0(act->pv_rel[0], b);
-	act->vp_rel[1] = CALC_COEFF_1(act->pv_rel[0], b, act->pv_rel[2]);
-	generate_line (scan_state.vmin_line, scan_state.vmax, scan_state.numpts);		
+	act->vp_rel[1] = CALC_COEFF_1(act->pv_rel[0], b, act->pv_rel[2]);		
 }
 
 void set_pv_rel_c (Actuator* act, float c)
 {
 	act->pv_rel[2] = c;
-	act->vp_rel[1] = CALC_COEFF_1(act->pv_rel[0], act->pv_rel[1], c);
-	generate_line (scan_state.vmin_line, scan_state.vmax, scan_state.numpts);		
+	act->vp_rel[1] = CALC_COEFF_1(act->pv_rel[0], act->pv_rel[1], c);		
 }
 
 void init_act (Actuator* act, dac out_dac, adc in_adc)

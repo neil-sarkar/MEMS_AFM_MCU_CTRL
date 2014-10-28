@@ -15,10 +15,7 @@
 typedef struct sample_data sample_data;
 
 void init_scanner (Actuator* left_act, Actuator* right_act);
-u8 scan_configure (const u16 vmin_line,
-			const u16 vmin_scan,
-			const u16 vmax,
-			const u16 numpts);
+void scan_configure (const u16 numpts);
 void scan_start (void);
 void scan_step (void);
 

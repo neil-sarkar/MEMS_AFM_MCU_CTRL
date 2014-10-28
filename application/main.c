@@ -464,30 +464,30 @@ void device_calibration (void)
 	}
 }									
 
+u16 scan_l_points[16];
+u16 scan_r_points[16];
 void configure_scan (void)
 {
 	// read scan parameters over UART
 	u8 temp_buffer [2];
-	u16 vmin_line, vmin_scan, vmax, numpts;
-
-	uart_wait_get_bytes (temp_buffer, 2);
-	vmin_line = (temp_buffer[0]) | (temp_buffer[1] << 8);
-
-	uart_wait_get_bytes (temp_buffer, 2);
-	vmin_scan = (temp_buffer[0]) | (temp_buffer[1] << 8);
-
-	uart_wait_get_bytes (temp_buffer, 2);
-	vmax = (temp_buffer[0]) | (temp_buffer[1] << 8);
+	u16 numpts, i;
 
 	uart_wait_get_bytes (temp_buffer, 2);
 	numpts = (temp_buffer[0]) | (temp_buffer[1] << 8);
 
-	// return 'o' if successful, 'f' if failed
-	if (scan_configure (vmin_line, vmin_scan, vmax, numpts) == 0) {
-		uart_write ("o");
-	} else {
-		uart_write ("f");
-	}
+	for (i = 0; i < numpts; i++)
+	{
+		uart_wait_get_bytes (temp_buffer, 2);
+		scan_l_points[i]   =  ((temp_buffer[0]) | (temp_buffer[1] << 8)) & 0x0FFF;
+	} 
+
+	for (i = 0; i < numpts; i++)
+	{
+		uart_wait_get_bytes (temp_buffer, 2);
+		scan_r_points[i]   =  ((temp_buffer[0]) | (temp_buffer[1] << 8)) & 0x0FFF;
+	} 
+
+	scan_configure (numpts);
 }
 
 void set_pga (void)
