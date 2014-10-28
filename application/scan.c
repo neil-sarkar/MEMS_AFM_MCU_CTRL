@@ -24,13 +24,6 @@ static float get_max_linepwr (const u16 vmin_line, const u16 vmax);
 *************************/
 
 // periodic, core clock
-#define INIT_TMR			T1CON 	= BIT6 + BIT9; \
-							FIQEN 	= BIT3;
-#define ENABLE_TMR			T1CON 	|= BIT7
-#define DISABLE_TMR			T1CON 	&= ~BIT7
-#define SET_PRD_TMR			T1LD	= scan_state.step_ld; 
-#define LD_START_TMR		T1CLRI 	= 0x01; \
-							ENABLE_TMR
 
 void init_scanner (Actuator* left_act, Actuator* right_act){
 	l_act = left_act;
@@ -43,14 +36,19 @@ void init_scanner (Actuator* left_act, Actuator* right_act){
 	scan_state.freq_ld		= SCAN_DFLT_LD;
 		
 	// Set GPIOs as output
-	SET_1(SC_GP_REG, SC_FINE_DD | SC_COARSE_DD);
+	//SET_1(SC_GP_REG, SC_FINE_DD | SC_COARSE_DD);
+	GP2DAT = SC_FINE_DD | SC_COARSE_DD;
 
 	// Set default values
-	SET_0(SC_GP_REG, SC_FINE_HZ);
-	SET_0(SC_GP_REG, SC_COARSE_HZ);
+	//SET_0(SC_GP_REG, SC_FINE_HZ);
+	//SET_0(SC_GP_REG, SC_COARSE_HZ);
+	GP2DAT &= ~SC_FINE_HZ;
+	GP2DAT &= ~SC_COARSE_HZ;
 
 	// Initialize scanner timer
-	INIT_TMR;
+	T1LD	= SCAN_DFLT_LD;
+	T1CON 	|= BIT6 | BIT9;
+	IRQEN 	|= BIT3;
 }
 
 u8 scan_configure (const u16 vmin_line,
@@ -87,18 +85,19 @@ void scan_reset_state (void)
 	dac_set_val (scan_state.right_act, 0);
 
 	// TODO: hmmm send a byte back to labview if error?
-	if (scan_state.baseline_points != 0u)
+	if (scan_state.baseline_points != 0)
 	{
-		scan_state.step_ld = scan_state.freq_ld/scan_state.baseline_points;
-	} else
+		scan_state.step_ld = scan_state.freq_ld/(scan_state.baseline_points);
+	}
 
-	SET_PRD_TMR;
+	T1LD = scan_state.step_ld;
 }
-
+			
 void scan_start ()
 {
 	scan_reset_state ();
-	LD_START_TMR;
+	T1CLRI  = 0x55;
+	T1CON  |= BIT7;
 }
 
 void scan_set_freq (u8 frequency)
@@ -114,7 +113,9 @@ void scan_handler (void)
 {	
 	dac swap;
 
-	GP_TOGGLE(SC_GP_REG, SC_FINE_HZ);		
+	//GP_TOGGLE(SC_GP_REG, SC_FINE_HZ);
+	GP2DAT |= SC_FINE_HZ;
+			
 	// value of k is incremented before execution of loop to allow for pausing
 	if ((scan_state.k++) < scan_state.baseline_points)
 	{
@@ -132,7 +133,14 @@ void scan_handler (void)
 	}
 	else 
 	{
-		GP_TOGGLE(SC_GP_REG, SC_FINE_HZ);
+		//GP_TOGGLE(SC_GP_REG, SC_FINE_HZ);
+		GP2DAT ^= SC_COARSE_HZ;
+
+		/*if (uart_get_char() == 'q')
+		{	
+			T1CON 	&= ~BIT7;
+			return;			
+		}*/
 		swap = scan_state.left_act;
 		scan_state.left_act = scan_state.right_act;
 		scan_state.right_act = swap;
@@ -140,12 +148,8 @@ void scan_handler (void)
 		scan_state.adr = BLOCK0_BASE;
 		scan_state.j = BFR_SIZE;
 		scan_state.k = 0;
-
-		if (uart_get_char() == 'q')
-		{	
-			DISABLE_TMR;			
-		}
-	}	
+	}	   
+	GP2DAT &= ~SC_FINE_HZ;	
 }
 
 /* 	Generates line of power coefficients given DAC values in *bits*.

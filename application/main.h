@@ -28,4 +28,6 @@ void set_pv_rel_manual_c (void);
 void act_res_test (void);
 void reset_mcu (void);
 
+void set_pga (void);
+
 #endif

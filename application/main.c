@@ -4,7 +4,10 @@
 #include "../peripheral/adc.h"
 #include "../peripheral/dac.h"
 #include "../peripheral/flash.h"
+#include "../peripheral/wire3.h"
 
+#include "../system/pga_1ch.h"
+#include "../system/pga_4ch.h"
 #include "../system/dds.h"
 #include "calibration.h"
 #include "scan.h"
@@ -12,6 +15,7 @@
 tyVctHndlr	  SCAN		= (tyVctHndlr)scan_handler;
 tyVctHndlr    DDS     	= (tyVctHndlr)dds_handler;
 tyVctHndlr 	  UART		= (tyVctHndlr)uart_handler;
+tyVctHndlr	  WIRE3		= (tyVctHndlr)wire3_handler;
 extern int dds_inc_cnt;
 
 static Actuator left_act;
@@ -35,8 +39,6 @@ extern u8 calib_delay;
 
 int main(void)
 {
-	u8 rx_char;
-
 	/*
 	 * MCU Initialization				  
 	 */
@@ -45,12 +47,13 @@ int main(void)
 	POWCON  = 0x00;
 	POWKEY2 = 0xF4;
 
+	FIQEN = 0;
+
 	/* Initialize flash memory */
 	flash_Init ();
 
    	/* Initialize SPI/DDS */
 	dds_spi_init();
-	//dds_power_up();
 
 	/* Initialize UART */
 	uart_init();  
@@ -85,6 +88,18 @@ int main(void)
 	dac_init (dac10, dac_enable);
 	dac_init (dac11, dac_enable);
 
+	/* Init DAC attenuators */
+	pga_1ch_init (pga_fine);
+	pga_1ch_init (pga_dds);
+	pga_4ch_init ();		   
+	
+	pga_1ch_set (pga_fine, 127);
+	pga_1ch_set (pga_dds, 127);
+	pga_4ch_set (pga_x1, 192);
+	pga_4ch_set (pga_x2, 192);
+	pga_4ch_set (pga_y1, 192);
+	pga_4ch_set (pga_y2, 192);
+
 	/* Init actuators */
 	init_act (&left_act, DAC_Y1, ADC_Y1);
 	init_act (&right_act, DAC_X1, ADC_X1);
@@ -95,23 +110,18 @@ int main(void)
 	 * Main program loop
 	 */
 	while (true)
-	{
-		rx_char = uart_wait_get_char();	
-		switch (rx_char)
+	{	
+		switch (uart_wait_get_char())
 		{
-			// Set DAC
 			case 'a':
 				write_dac();
 				break;
-			// Read DAC
 			case 'b':
 				read_dac();
 				break;
-			// Read ADC
 			case 'c':
 				read_adc();
 				break;
-			// Set Actuator Voltages
 			case 'f':
 				set_actuators();
 				break;			
@@ -138,6 +148,9 @@ int main(void)
 				break;
 			case '&':
 				set_dac_max ();
+				break;
+			case '*':
+				set_pga ();
 				break;
 			case 'A':
 				set_pv_rel_manual_a ();
@@ -324,9 +337,9 @@ void set_dac_max (void)
 	uart_wait_get_bytes((u8*)(&new_dac_limit), 2);
 
 	if (dac_set_limit (dac_ch, new_dac_limit) == 0){
-		uart_write ("o");
+		uart_set_char ('o');
 	} else {
-		uart_write ("f");
+		uart_set_char ('f');
 	}
 }
 
@@ -477,6 +490,40 @@ void configure_scan (void)
 	}
 }
 
+void set_pga (void)
+{
+	u8 pga;
+	u8 db;
+
+	// Get pga and pga's db to set
+	pga = uart_wait_get_char();
+	db = uart_wait_get_char();
+
+	switch (pga)
+	{
+		case ('z'):
+			pga_1ch_set (pga_fine, db);
+			break;
+		case ('a'):
+			pga_1ch_set (pga_dds, db);
+			break;
+		case ('g'):
+			pga_4ch_set (pga_x1, db);
+			break;
+		case ('h'):
+			pga_4ch_set (pga_x2, db);
+			break;
+		case ('i'):
+			pga_4ch_set (pga_y1, db);
+			break;
+		case ('j'):
+			pga_4ch_set (pga_y2, db);
+			break;
+	}
+
+	uart_write ("o");
+}
+
 void reset_mcu ()
 {
 	RSTSTA |= BIT2; 	
@@ -488,13 +535,20 @@ void reset_mcu ()
 void IRQ_Handler(void)  __irq  
 {
     u32 IRQSTATUS = 0;
-
+			
 	IRQSTATUS = IRQSTA;	   			// Read off IRQSTA register
 	
 	// DDS SPI interrupt
 	if ((IRQSTATUS & BIT14) == BIT14)
 	{
 		DDS();
+	}
+
+	// Scanner timer interrupt
+	if ((IRQSTATUS & BIT3) == BIT3) // Timer1 interrupt source
+	{
+		T1CLRI = 0x01;				// Clear interrupt, reload T1LD
+		SCAN ();
 	}
 }
 
@@ -503,14 +557,13 @@ void FIQ_Handler(void) __irq
 
 	u32 FIQSTATUS = 0;
 
-	FIQSTATUS = FIQSTA;
+	FIQSTATUS = FIQSTA;					
 
-	// Scanner timer interrupt
-	if ((FIQSTATUS & BIT3) == BIT3) // Timer1 interrupt source
+	// Timer 4 FIQs
+	if ((FIQSTATUS & BIT6) == BIT6)	//Timer4 interrupt source
 	{
-		T1CLRI = 0x01;				// Clear interrupt, reload T1LD
-		SCAN ();
-	}					
+		WIRE3();
+	}
 
 	// UART buffer interrupt
 	if ((FIQSTATUS & BIT13) == BIT13)
