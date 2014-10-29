@@ -464,8 +464,8 @@ void device_calibration (void)
 	}
 }									
 
-u16 scan_l_points[16];
-u16 scan_r_points[16];
+u16 scan_l_points[1024];
+u16 scan_r_points[1024];
 void configure_scan (void)
 {
 	// read scan parameters over UART

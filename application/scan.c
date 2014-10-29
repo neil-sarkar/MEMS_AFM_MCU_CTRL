@@ -56,6 +56,8 @@ void scan_configure (const u16 numpts)
 
 void scan_reset_state (void)
 {
+	T1CON &= ~BIT7;
+
 	// restore default state
 	scan_state.i = 0;
 	scan_state.j = PAGE_SIZE;
@@ -95,21 +97,25 @@ void scan_set_freq (u8 frequency)
 }
 
 volatile u16 s_i = 0;
-//volatile u16 r_i = 0;
-
 volatile u8 dir = 1;
 
 void scan_handler (void)
-{	
-
-	GP2DAT |= SC_FINE_HZ;
-
-	// Output DAC values to move actuators
+{
+   	if ((s_i == (scan_state.numpts-1)) || (s_i == 0))
+	{
+		GP2DAT ^= SC_COARSE_HZ;
+		if (COMRX == 'q')
+			scan_reset_state ();
+	}
+	
+	GP2DAT ^= SC_FINE_HZ;
+	DAC7DAT = (scan_l_points[s_i] << 16);		 
+	DAC10DAT = (scan_r_points[s_i] << 16);
 
 	if (dir == 1)
 	{
 		s_i++;
-		if (s_i == scan_state.numpts)
+		if (s_i == (scan_state.numpts-1)) 
 			dir = 0;
 	}
 	else
@@ -117,10 +123,5 @@ void scan_handler (void)
 		s_i--;
 		if (s_i == 0)
 			dir = 1;
-	}
-
-	dac_set_val (scan_state.left_act,  scan_l_points[s_i]);
-	dac_set_val (scan_state.right_act, scan_l_points[s_i]);
-	  	   
-	GP2DAT &= ~SC_FINE_HZ;	
+	}	
 }
