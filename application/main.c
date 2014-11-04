@@ -13,8 +13,10 @@
 #include "../system/filter.h"
 #include "../system/motor.h"
 #include "../system/wire3.h"
+
 #include "calibration.h"
 #include "scan.h"
+#include "scan4.h"
 
 tyVctHndlr    DDS     	= (tyVctHndlr)dds_handler;
 tyVctHndlr    FILTER   	= (tyVctHndlr)filter_handler;
@@ -39,6 +41,8 @@ static Actuator z_act;
 
 // Delay variable for the calibration routine
 extern u8 calib_delay;
+
+extern struct scan4 s4;
 
 // coarse approach ISR flag
 //volatile bool flag;	
@@ -121,6 +125,8 @@ int main(void)
 	/* Disable filter and PID */
 	//filter_enable(false);
 	pid_enable(false);
+
+	s4.f.adr = BLOCK0_BASE;
 
 	/*
 	 * Main program loop
@@ -270,6 +276,21 @@ int main(void)
 				break;
 			case 'O':
 				calib_delay = uart_wait_get_char ();
+				break;
+			case 'P':
+				scan4_get_data ();
+				break;
+			case 'Q':
+				scan4_start ();
+				break;
+			case 'R':
+				scan4_step ();
+				break;
+			case 'S':
+				if (scan4_get_dac_data () == true)
+					uart_set_char('o');
+				else
+					uart_set_char('f');
 				break;
 		}
 	}
