@@ -42,8 +42,6 @@ static Actuator z_act;
 // Delay variable for the calibration routine
 extern u8 calib_delay;
 
-extern struct scan4 s4;
-
 // coarse approach ISR flag
 //volatile bool flag;	
 //void set_dir(char);
@@ -126,7 +124,7 @@ int main(void)
 	//filter_enable(false);
 	pid_enable(false);
 
-	s4.f.adr = BLOCK0_BASE;
+	scan4_init();
 
 	/*
 	 * Main program loop
@@ -291,6 +289,9 @@ int main(void)
 					uart_set_char('o');
 				else
 					uart_set_char('f');
+				break;
+			case 'T':
+				scan4_send_dac_data ();
 				break;
 		}
 	}

@@ -166,9 +166,9 @@ u8 flash_WriteAdr (u32 adr, u32 sz, u8 *buf)
 	u8 result = 1;
 	
 	if (flash_IsBlk0Addr(adr, sz))
-		result = flash_ProgramPageBlk0(adr,sz,buf);
+		result = flash_ProgramPageBlk0(adr & BLOCK_MASK, sz, buf);
 	else if (flash_IsBlk1Addr (adr, sz))
-		result = flash_ProgramPageBlk1(adr,sz,buf);
+		result = flash_ProgramPageBlk1(adr & BLOCK_MASK, sz, buf);
 	
 	return result;
 }
@@ -237,9 +237,9 @@ u8 flash_ReadAdr (u32 adr, u32 sz, u8 *buf)
 	u8 result = 1;
 	
 	if (flash_IsBlk0Addr(adr, sz))
-		result = flash_ReadPageBlk0(adr, sz, buf);
+		result = flash_ReadPageBlk0(adr & BLOCK_MASK, sz, buf);
 	else if (flash_IsBlk1Addr(adr, sz))
-		result = flash_ReadPageBlk1(adr,sz,buf);
+		result = flash_ReadPageBlk1(adr & BLOCK_MASK,sz,buf);
 	
 	return result;
 }

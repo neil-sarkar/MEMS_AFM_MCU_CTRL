@@ -2,8 +2,8 @@
 
 #include "../global/global.h"
 
-#define DATA_CNT 4096
-const u16 dacTable[DATA_CNT] = {124, 139,
+#define S4_DATA_CNT 4096
+const u16 dacTable[S4_DATA_CNT] = {124, 139,
 152,
 164,
 175,
