@@ -10,14 +10,12 @@
 
 #include "../system/dds.h"
 #include "../system/pid.h"
-#include "../system/filter.h"
 #include "../system/motor.h"
 #include "../system/wire3.h"
 #include "calibration.h"
 #include "scan.h"
 
 tyVctHndlr    DDS     	= (tyVctHndlr)dds_handler;
-tyVctHndlr    FILTER   	= (tyVctHndlr)filter_handler;
 tyVctHndlr    PID     	= (tyVctHndlr)pid_handler;
 tyVctHndlr 	  UART		= (tyVctHndlr)uart_handler;
 tyVctHndlr	  MTR		= (tyVctHndlr)mtr_handler;
@@ -119,7 +117,6 @@ int main(void)
 	init_scanner (&left_act, &right_act, &z_act);
 	
 	/* Disable filter and PID */
-	//filter_enable(false);
 	pid_enable(false);
 
 	/*
@@ -206,16 +203,6 @@ int main(void)
 				break;
 			case 'v': 
 				auto_approach();
-				break;
-			case 'w':
-				//filter_adc();
-				break;
-			case 'x':
-				// TODO: remove
-				//filter_enable(true);
-				break;
-			case 'y':
-				filter_enable(false);
 				break;
 			case 'z':
 				adc_set_pga(padc0, uart_wait_get_char());
