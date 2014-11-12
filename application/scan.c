@@ -1,6 +1,6 @@
 #include "scan.h"
 
-static u16 buffer [BFR_SIZE];
+static u16 buffer [1];
 
 static Actuator* l_act;
 static Actuator* r_act;																								 

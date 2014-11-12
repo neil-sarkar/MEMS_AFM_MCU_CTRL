@@ -19,7 +19,6 @@
 #include "scan4.h"
 
 tyVctHndlr    DDS     	= (tyVctHndlr)dds_handler;
-tyVctHndlr    FILTER   	= (tyVctHndlr)filter_handler;
 tyVctHndlr    PID     	= (tyVctHndlr)pid_handler;
 tyVctHndlr 	  UART		= (tyVctHndlr)uart_handler;
 tyVctHndlr	  MTR		= (tyVctHndlr)mtr_handler;
@@ -125,6 +124,7 @@ int main(void)
 	pid_enable(false);
 
 	scan4_init();
+ // 	scan4_start();
 
 	/*
 	 * Main program loop
@@ -211,22 +211,12 @@ int main(void)
 			case 'v': 
 				auto_approach();
 				break;
-			case 'w':
-				//filter_adc();
-				break;
-			case 'x':
-				// TODO: remove
-				//filter_enable(true);
-				break;
-			case 'y':
-				filter_enable(false);
-				break;
 			case 'z':
 				adc_set_pga(padc0, uart_wait_get_char());
 				break;
 			case '!':
 				set_scan_wait ();
-				break;
+				break;		 
 			case '@':
 				configure_scan ();
 				break;
@@ -290,8 +280,14 @@ int main(void)
 				else
 					uart_set_char('f');
 				break;
-			case 'T':
-				scan4_send_dac_data ();
+			case 'w':
+				s4_set_dwell_t_ms (uart_wait_get_char());
+				break;
+			case 'y':
+				s4_set_sample_cnt (uart_wait_get_char());
+				break;
+			case 'U':
+				s4_get_array_flash();
 				break;
 		}
 	}

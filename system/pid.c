@@ -10,7 +10,6 @@ setPoint: reference signal (set manually)
 */
 
 extern volatile u16 pid_input;
-extern bool isAvgOn;
 
 volatile u16 			input, 
 						lastInput, 
@@ -100,15 +99,8 @@ void setSampleTime(u16 newSampleTime)
 void pid_handler(void)
 {
 	// Read ADC for input, busy-wait
-	if (isAvgOn)
-	{
-		input = pid_input;
-	}
-	else
-	{
-		adc_start_conv(PID_INPUT);
-		input = adc_get_val();
-	}
+	adc_start_conv(PID_INPUT);
+	input = adc_get_val();
 
 	error = setPoint - input;
 	iTerm += (ki * error);

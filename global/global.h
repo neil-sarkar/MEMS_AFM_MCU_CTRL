@@ -56,6 +56,13 @@ typedef int 		 	s32;
 void delay_25_us (u8 delay);
 void delay_1_ms (u16 delay);
 
+#define CNT_1_MS		3900
+#define CNT_25_US		90		
+
+#define DELAY_BUSY_WAIT(delay)	while (delay--) {}			
+#define DELAY_MS(delayCnt) 		DELAY_BUSY_WAIT(CNT_1_MS*delayCnt)
+#define DELAY_25_US(delayCnt) 	DELAY_BUSY_WAIT(CNT_25_US*delayCnt)
+
 /***** type definitions *****/
 /*
 Reference:
