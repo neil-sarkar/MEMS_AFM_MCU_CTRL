@@ -49,17 +49,24 @@ struct scan4
 
 struct scan4 s4;
 
-#define GET_DAC_VAL(index)	flash_Read2Bytes((BLOCK0_BASE + (index*2)), &(s4.data));
+static void GET_DAC_VAL(u16 index)
+{
+	flash_Read2Bytes((BLOCK0_BASE + (index*2)), &(s4.data));
+}	
 																					  		
 #define SET_PAIRX(v1, v2)	s4.xp.a1_val = v1; 															\
 							s4.xp.a2_val = v2; 															\
-							GET_DAC_VAL(v1); 															\
+							if (v1 < 0) s4.xp.a1_val = 0;												\
+							if (v2 < 0) s4.xp.a2_val = 0;												\
+							GET_DAC_VAL(s4.xp.a1_val); 													\
 							dac_set_val(s4.xp.a1, s4.data); 											\
-							GET_DAC_VAL(v2); 															\
+							GET_DAC_VAL(s4.xp.a2_val); 													\
 							dac_set_val(s4.xp.a2, s4.data);
 
 #define SET_PAIRY(v1, v2)	s4.yp.a1_val = v1; 															\
 							s4.yp.a2_val = v2; 															\
+							if (v1 < 0) s4.yp.a1_val = 0;												\
+							if (v2 < 0) s4.yp.a2_val = 0;												\
 							GET_DAC_VAL(v1);															\
 							dac_set_val(s4.yp.a1, s4.data); 											\
 							GET_DAC_VAL(v2);															\
@@ -115,7 +122,7 @@ u16 f_index = (4095*2);
 
 void s4_get_array_flash(void)
 {
-	GET_DAC_VAL(1023);
+	GET_DAC_VAL(63);
 //	f_index -= 2;
 	uart_set_char(s4.data);
 	uart_set_char(s4.data >> 8);	
@@ -162,10 +169,13 @@ bool scan4_get_dac_data (void)
 	
 	return true;	
 }
+
+bool s4_scan = false;
 				  
 void scan4_start (void)
 {
 //	scan4_init();
+	s4_scan = true;
 	SET_PAIRX(4095, 0);
 	SET_PAIRY((s4.yRange-1), (s4.xRange-1));
 	s4.isXScanDirDwn = true;
@@ -189,15 +199,21 @@ void scan4_step (void)
 				// send data to client
 				for (i = 0; i < 8; i++)
 				{
-					// set actuators to next point
-					if (!scan_last_p)
+					if (!s4_scan)
 					{
-						SCAN;
+						if (!scan_last_p)
+						{
+							SCAN;
+						}
+						else
+						{
+							SCAN_LAST;
+							scan_last_p = false;
+						}
 					}
 					else
 					{
-						SCAN_LAST;
-						scan_last_p = false;
+						s4_scan = false;
 					}
 
 					// dwell
