@@ -36,7 +36,7 @@ static u8 flash_ReadPageBlk0 (u16 adr, u32 sz, u8 *buf);
 static u8 flash_ReadPageBlk1 (u16 adr, u32 sz, u8 *buf);
 
 u8 flash_Read2Bytes (u32 adr, u16 *data);
-static u8 flash_Read2BytesBlk0 (u16 adr, u16 *data);
-static u8 flash_Read2BytesBlk1 (u16 adr, u16 *data);
+u8 flash_Read2BytesBlk0 (u16 adr, u16 *data);
+u8 flash_Read2BytesBlk1 (u16 adr, u16 *data);
 
 #endif

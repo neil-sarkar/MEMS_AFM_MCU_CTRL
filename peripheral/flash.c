@@ -305,14 +305,14 @@ u8 flash_Read2Bytes (u32 adr, u16 *data)
 	u8 result = 1;
 
 	if (flash_IsBlk0Addr(adr, 2))
-		result = flash_Read2BytesBlk0 (adr, data);
+		result = flash_Read2BytesBlk0 (adr & BLOCK_MASK, data);
 	else if (flash_IsBlk1Addr(adr, 2))
-		result = flash_Read2BytesBlk1 (adr, data);
+		result = flash_Read2BytesBlk1 (adr & BLOCK_MASK, data);
 		
 	return result;
 }
 
-static u8 flash_Read2BytesBlk0 (u16 adr, u16 *data)
+u8 flash_Read2BytesBlk0 (u16 adr, u16 *data)
 {
 	FEE0ADR = adr;
 	FEE0CON = READ_HALF_WORD;
@@ -325,7 +325,7 @@ static u8 flash_Read2BytesBlk0 (u16 adr, u16 *data)
 	return 0;
 }
 
-static u8 flash_Read2BytesBlk1 (u16 adr, u16 *data)
+u8 flash_Read2BytesBlk1 (u16 adr, u16 *data)
 {
 	FEE1ADR = adr;
 	FEE1CON = READ_HALF_WORD;

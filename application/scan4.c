@@ -49,40 +49,39 @@ struct scan4
 
 struct scan4 s4;
 
-static void GET_DAC_VAL(u16 index)
-{
-	flash_Read2Bytes((BLOCK0_BASE + (index*2)), &(s4.data));
-}	
+#define GET_DAC_VAL(index) flash_Read2BytesBlk0((BLOCK0_BASE + (index << 1)) & BLOCK_MASK, &(s4.data));	
 																					  		
-#define SET_PAIRX(v1, v2)	s4.xp.a1_val = v1; 															\
-							s4.xp.a2_val = v2; 															\
-							if (v1 < 0) s4.xp.a1_val = 0;												\
-							if (v2 < 0) s4.xp.a2_val = 0;												\
-							GET_DAC_VAL(s4.xp.a1_val); 													\
-							dac_set_val(s4.xp.a1, s4.data); 											\
-							GET_DAC_VAL(s4.xp.a2_val); 													\
-							dac_set_val(s4.xp.a2, s4.data);
+static void SET_PAIRX(u16 v1, u16 v2)
+{	
+	s4.xp.a1_val = v1;
+	s4.xp.a2_val = v2;
+	GET_DAC_VAL(v1); 													
+	dac_set_val(s4.xp.a1, s4.data);											
+	GET_DAC_VAL(v2); 													
+	dac_set_val(s4.xp.a2, s4.data);
+}
 
-#define SET_PAIRY(v1, v2)	s4.yp.a1_val = v1; 															\
-							s4.yp.a2_val = v2; 															\
-							if (v1 < 0) s4.yp.a1_val = 0;												\
-							if (v2 < 0) s4.yp.a2_val = 0;												\
-							GET_DAC_VAL(v1);															\
-							dac_set_val(s4.yp.a1, s4.data); 											\
-							GET_DAC_VAL(v2);															\
-							dac_set_val(s4.yp.a2, s4.data);
+static void SET_PAIRY(u16 v1, u16 v2)
+{	
+	s4.yp.a1_val = v1;
+	s4.yp.a2_val = v2;
+	GET_DAC_VAL(v1);															
+	dac_set_val(s4.yp.a1, s4.data);											
+	GET_DAC_VAL(v2);															
+	dac_set_val(s4.yp.a2, s4.data);
+}
 
 // TODO review this!!!
-#define SCAN_PAIRX_DWN		SET_PAIRX((s4.xp.a1_val - s4.xIncrement), (s4.xp.a2_val + s4.xIncrement))
+#define SCAN_PAIRX_DWN 	SET_PAIRX((s4.xp.a1_val - s4.xIncrement), (s4.xp.a2_val + s4.xIncrement));
 
-#define SCAN_PAIRX_UP		SET_PAIRX((s4.xp.a1_val + s4.xIncrement), (s4.xp.a2_val - s4.xIncrement))
+#define SCAN_PAIRX_UP 	SET_PAIRX((s4.xp.a1_val + s4.xIncrement), (s4.xp.a2_val - s4.xIncrement));
 
-#define SCAN_PAIRY_DWN		SET_PAIRY((s4.yp.a1_val - s4.xIncrement), (s4.yp.a2_val + s4.xIncrement))
+#define SCAN_PAIRY_DWN 	SET_PAIRY((s4.yp.a1_val - s4.xIncrement), (s4.yp.a2_val + s4.xIncrement));
 
-#define SCAN_PAIRY_UP		SET_PAIRY((s4.yp.a1_val + s4.xIncrement), (s4.yp.a2_val - s4.xIncrement))
+#define SCAN_PAIRY_UP 	SET_PAIRY((s4.yp.a1_val + s4.xIncrement), (s4.yp.a2_val - s4.xIncrement));
 
-#define SCAN_NEXT_LINE		SET_PAIRX((s4.xp.a1_val - s4.yIncrement), (s4.xp.a2_val + s4.yIncrement))	\
-							SET_PAIRY((s4.yp.a1_val - s4.yIncrement), (s4.yp.a2_val + s4.yIncrement))
+#define SCAN_NEXT_LINE 	SET_PAIRX((s4.xp.a1_val - s4.yIncrement), (s4.xp.a2_val + s4.yIncrement)); 		\
+						SET_PAIRY((s4.yp.a1_val - s4.yIncrement), (s4.yp.a2_val + s4.yIncrement));
 
 #define SAMPLE_WAIT_CNT_ABS	10
 
@@ -116,69 +115,18 @@ static void GET_DAC_VAL(u16 index)
 #define SWAP_DIRECTION		if (s4.isXScanDirDwn)														\
 								s4.isXScanDirDwn = false;												\
 							else				  														\
-								s4.isXScanDirDwn = true;		
-
-u16 f_index = (4095*2);
-
-void s4_get_array_flash(void)
-{
-	GET_DAC_VAL(63);
-//	f_index -= 2;
-	uart_set_char(s4.data);
-	uart_set_char(s4.data >> 8);	
-}
-
-void scan4_get_data (void)
-{
-	u8 val_l, val_h;
-
-	val_l = uart_wait_get_char();
-	s4.ratio = val_l;
-
-	val_l = uart_wait_get_char();
-	val_h = uart_wait_get_char();
-	s4.numPts = (val_h << 8) | val_l;
-
-	val_l = uart_wait_get_char();
-	val_h = uart_wait_get_char();
-	s4.numLines = (val_h << 8) | val_l;
-	
-	s4.xRange = 4096 / s4.ratio;
-	s4.yRange = 4096 - s4.xRange; 
-	s4.xIncrement = s4.xRange / s4.numPts;
-	s4.yIncrement = s4.yRange / s4.numLines;
-}
-
-bool scan4_get_dac_data (void)
-{
-	u16 i;
-	u8 val_l, val_h;
-
-	for (i = 0; i < PAGE_SIZE/2; i ++)
-	{
-		val_l = uart_wait_get_char();
-		val_h = (uart_wait_get_char() & 0x0F); 
-		s4.f.buffer[i] = (val_h << 8) | val_l;	
-	}
-
-	if (flash_EraseSector (s4.f.adr))
-		return false;
-	if (flash_WriteAdr (s4.f.adr, PAGE_SIZE, (u8*)s4.f.buffer))
-		return false;
-	s4.f.adr += PAGE_SIZE;
-	
-	return true;	
-}
+								s4.isXScanDirDwn = true;
 
 bool s4_scan = false;
 				  
 void scan4_start (void)
 {
-//	scan4_init();
-	s4_scan = true;
+	s4_scan 			= true;
+	s4.isXScanDirDwn 	= true;
+	s4.xStepCnt 		= 0;
+	s4.lineCnt 			= 0;
 	SET_PAIRX(4095, 0);
 	SET_PAIRY((s4.yRange-1), (s4.xRange-1));
-	s4.isXScanDirDwn = true;
 }
 
 void scan4_step (void)
@@ -249,7 +197,7 @@ void scan4_init (void)
 	s4.xStepCnt 	= 0;
 	s4.lineCnt 		= 0;
 	s4.dwellTime_ms = 1;
-	s4.sampleCnt 	= 2;
+	s4.sampleCnt 	= 1;
 }
 
 void s4_set_dwell_t_ms (u8 dwell_ms)
@@ -260,4 +208,56 @@ void s4_set_dwell_t_ms (u8 dwell_ms)
 void s4_set_sample_cnt (u8 sample_cnt)
 {
 	s4.sampleCnt = sample_cnt;
+}
+
+u16 f_index = (4095*2);
+
+void s4_get_array_flash(void)
+{
+	GET_DAC_VAL(63);
+//	f_index -= 2;
+	uart_set_char(s4.data);
+	uart_set_char(s4.data >> 8);	
+}
+
+void scan4_get_data (void)
+{
+	u8 val_l, val_h;
+
+	val_l = uart_wait_get_char();
+	s4.ratio = val_l;
+
+	val_l = uart_wait_get_char();
+	val_h = uart_wait_get_char();
+	s4.numPts = (val_h << 8) | val_l;
+
+	val_l = uart_wait_get_char();
+	val_h = uart_wait_get_char();
+	s4.numLines = (val_h << 8) | val_l;
+	
+	s4.xRange = 4096 / s4.ratio;
+	s4.yRange = 4096 - s4.xRange; 
+	s4.xIncrement = s4.xRange / s4.numPts;
+	s4.yIncrement = s4.yRange / s4.numLines;
+}
+
+bool scan4_get_dac_data (void)
+{
+	u16 i;
+	u8 val_l, val_h;
+
+	for (i = 0; i < PAGE_SIZE/2; i ++)
+	{
+		val_l = uart_wait_get_char();
+		val_h = (uart_wait_get_char() & 0x0F); 
+		s4.f.buffer[i] = (val_h << 8) | val_l;	
+	}
+
+	if (flash_EraseSector (s4.f.adr))
+		return false;
+	if (flash_WriteAdr (s4.f.adr, PAGE_SIZE, (u8*)s4.f.buffer))
+		return false;
+	s4.f.adr += PAGE_SIZE;
+	
+	return true;	
 }
