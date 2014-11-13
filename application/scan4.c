@@ -227,16 +227,6 @@ void s4_set_sample_cnt (u8 sample_cnt)
 	s4.sampleCnt = sample_cnt;
 }
 
-u16 f_index = (4095*2);
-
-void s4_get_array_flash(void)
-{
-	GET_DAC_VAL(63);
-//	f_index -= 2;
-	uart_set_char(s4.data);
-	uart_set_char(s4.data >> 8);	
-}
-
 void scan4_get_data (void)
 {
 	u8 val_l, val_h;

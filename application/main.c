@@ -284,9 +284,6 @@ int main(void)
 			case 'y':
 				s4_set_sample_cnt (uart_wait_get_char());
 				break;
-			case 'U':
-				s4_get_array_flash();
-				break;
 		}
 	}
 }
