@@ -166,9 +166,9 @@ u8 flash_WriteAdr (u32 adr, u32 sz, u8 *buf)
 	u8 result = 1;
 	
 	if (flash_IsBlk0Addr(adr, sz))
-		result = flash_ProgramPageBlk0(adr,sz,buf);
+		result = flash_ProgramPageBlk0(adr & BLOCK_MASK, sz, buf);
 	else if (flash_IsBlk1Addr (adr, sz))
-		result = flash_ProgramPageBlk1(adr,sz,buf);
+		result = flash_ProgramPageBlk1(adr & BLOCK_MASK, sz, buf);
 	
 	return result;
 }
@@ -237,9 +237,9 @@ u8 flash_ReadAdr (u32 adr, u32 sz, u8 *buf)
 	u8 result = 1;
 	
 	if (flash_IsBlk0Addr(adr, sz))
-		result = flash_ReadPageBlk0(adr, sz, buf);
+		result = flash_ReadPageBlk0(adr & BLOCK_MASK, sz, buf);
 	else if (flash_IsBlk1Addr(adr, sz))
-		result = flash_ReadPageBlk1(adr,sz,buf);
+		result = flash_ReadPageBlk1(adr & BLOCK_MASK,sz,buf);
 	
 	return result;
 }
@@ -298,4 +298,42 @@ static u8 flash_ReadPageBlk1 (u16 adr, u32 sz, u8 *buf)
 		buf += 2;
 	}
 	return (0);
+}
+
+u8 flash_Read2Bytes (u32 adr, u16 *data)
+{
+	u8 result = 1;
+
+	if (flash_IsBlk0Addr(adr, 2))
+		result = flash_Read2BytesBlk0 (adr & BLOCK_MASK, data);
+	else if (flash_IsBlk1Addr(adr, 2))
+		result = flash_Read2BytesBlk1 (adr & BLOCK_MASK, data);
+		
+	return result;
+}
+
+u8 flash_Read2BytesBlk0 (u16 adr, u16 *data)
+{
+	FEE0ADR = adr;
+	FEE0CON = READ_HALF_WORD;
+
+	while ((FEE0STA & 0x04)) {}
+	
+	if (FEE0STA & 0x02) return 1;
+
+	*data = FEE0DAT;
+	return 0;
+}
+
+u8 flash_Read2BytesBlk1 (u16 adr, u16 *data)
+{
+	FEE1ADR = adr;
+	FEE1CON = READ_HALF_WORD;
+
+	while ((FEE1STA & 0x04)) {}
+
+	if (FEE1STA & 0x02) return 1;
+
+	*data = FEE1DAT;
+	return 0;
 }

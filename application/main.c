@@ -12,8 +12,10 @@
 #include "../system/pid.h"
 #include "../system/motor.h"
 #include "../system/wire3.h"
+
 #include "calibration.h"
 #include "scan.h"
+#include "scan4.h"
 
 tyVctHndlr    DDS     	= (tyVctHndlr)dds_handler;
 tyVctHndlr    PID     	= (tyVctHndlr)pid_handler;
@@ -119,6 +121,9 @@ int main(void)
 	/* Disable filter and PID */
 	pid_enable(false);
 
+	scan4_init();
+ // 	scan4_start();
+
 	/*
 	 * Main program loop
 	 */
@@ -209,7 +214,7 @@ int main(void)
 				break;
 			case '!':
 				set_scan_wait ();
-				break;
+				break;		 
 			case '@':
 				configure_scan ();
 				break;
@@ -258,6 +263,30 @@ int main(void)
 			case 'O':
 				calib_delay = uart_wait_get_char ();
 				break;
+			case 'P':
+				scan4_get_data ();
+				break;
+			case 'Q':
+				scan4_start ();
+				break;
+			case 'R':
+				scan4_step ();
+				break;
+			case 'S':
+				if (scan4_get_dac_data () == true)
+					uart_set_char('o');
+				else
+					uart_set_char('f');
+				break;
+			case 'w':
+				s4_set_dwell_t_ms (uart_wait_get_char());
+				break;
+			case 'y':
+				s4_set_sample_cnt (uart_wait_get_char());
+				break;
+			case 'U':
+				s4_get_array_flash();
+				break;
 		}
 	}
 }
@@ -283,6 +312,12 @@ void force_curve (void)
 
 		uart_set_char(adc_val);
 		uart_set_char((adc_val & 0x0F00) >> 8);
+
+	   	adc_start_conv(ADC_PHASE);
+		adc_val = adc_get_avgw_val(FC_AVG_CNT, 300);
+
+		uart_set_char(adc_val);
+		uart_set_char((adc_val & 0x0F00) >> 8);
 	}
 
 	for (dac_val = 0; dac_val < FC_INITIAL_Z; dac_val += FC_STEP)
@@ -293,7 +328,13 @@ void force_curve (void)
 		adc_val = adc_get_avgw_val(FC_AVG_CNT, 300);
 
 		uart_set_char(adc_val);
-		uart_set_char((adc_val & 0x0F00) >> 8);		
+		uart_set_char((adc_val & 0x0F00) >> 8);	
+		
+	   	adc_start_conv(ADC_PHASE);
+		adc_val = adc_get_avgw_val(FC_AVG_CNT, 300);
+
+		uart_set_char(adc_val);
+		uart_set_char((adc_val & 0x0F00) >> 8);	
 	}		
 }
 

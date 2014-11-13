@@ -21,6 +21,7 @@ File 1,1,<..\system\wire3.c><wire3.c>
 File 1,1,<..\peripheral\pga_1ch.c><pga_1ch.c>
 File 1,1,<..\peripheral\pga_4ch.c><pga_4ch.c>
 File 1,1,<..\global\global.c><global.c>
+File 1,1,<..\application\scan4.c><scan4.c>
 
 
 Options 1,0,0  // Target 'Target 1'

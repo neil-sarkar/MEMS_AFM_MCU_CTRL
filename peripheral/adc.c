@@ -19,6 +19,7 @@ void adc_start_conv(adc channel)
 	// ADCCON |= BIT0 | BIT1 | BIT5 | BIT7 | BIT9 | BIT11;
 
 	u16 reg_val = 0x00;
+	// continuous conversion
 	reg_val |= BIT2 | BIT5 | BIT7 | BIT9 | BIT11;
 
 	switch (channel) {
@@ -116,15 +117,13 @@ u16 adc_get_avg_val (const u16 num_samples)
 }
 
 // Continuous software conversion must be enabled
-u16 adc_get_avgw_val (const u16 num_samples, const u16 wait_time)
+u16 adc_get_avgw_val (const u16 num_samples, u16 wait_time)
 {
-	static u16 i;
-	static u32 val;
-	static u16 cnt;
-	val = 0;
+	u16 i, wait;
+	u32 val = 0;
 	for (i = 0; i < num_samples; i ++){
-		cnt = wait_time;		
-		while (cnt--);
+		wait = wait_time;		
+		while (wait--);
 		while (ADCSTA == 0x00){};
 		val += (ADCDAT >> 16);		
 	}
