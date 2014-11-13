@@ -58,10 +58,18 @@ void delay_1_ms (u16 delay);
 
 #define CNT_1_MS		3900
 #define CNT_25_US		90		
+			
+__inline void DELAY_MS(u16 delayCnt)
+{
+		u32 delay = CNT_1_MS*delayCnt;
+		while (delay--) {}
+}
 
-#define DELAY_BUSY_WAIT(delay)	while (delay--) {}			
-#define DELAY_MS(delayCnt) 		DELAY_BUSY_WAIT(CNT_1_MS*delayCnt)
-#define DELAY_25_US(delayCnt) 	DELAY_BUSY_WAIT(CNT_25_US*delayCnt)
+__inline void DELAY_25_US(u16 delayCnt) 	
+{
+	u32 delay = CNT_25_US*delayCnt;
+	while (delay--) {}
+}
 
 /***** type definitions *****/
 /*

@@ -119,10 +119,11 @@ u16 adc_get_avg_val (const u16 num_samples)
 // Continuous software conversion must be enabled
 u16 adc_get_avgw_val (const u16 num_samples, u16 wait_time)
 {
-	u16 i;
+	u16 i, wait;
 	u32 val = 0;
-	for (i = 0; i < num_samples; i ++){		
-		while (wait_time--);
+	for (i = 0; i < num_samples; i ++){
+		wait = wait_time;		
+		while (wait--);
 		while (ADCSTA == 0x00){};
 		val += (ADCDAT >> 16);		
 	}

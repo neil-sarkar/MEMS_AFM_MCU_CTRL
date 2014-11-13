@@ -314,6 +314,12 @@ void force_curve (void)
 
 		uart_set_char(adc_val);
 		uart_set_char((adc_val & 0x0F00) >> 8);
+
+	   	adc_start_conv(ADC_PHASE);
+		adc_val = adc_get_avgw_val(FC_AVG_CNT, 300);
+
+		uart_set_char(adc_val);
+		uart_set_char((adc_val & 0x0F00) >> 8);
 	}
 
 	for (dac_val = 0; dac_val < FC_INITIAL_Z; dac_val += FC_STEP)
@@ -324,7 +330,13 @@ void force_curve (void)
 		adc_val = adc_get_avgw_val(FC_AVG_CNT, 300);
 
 		uart_set_char(adc_val);
-		uart_set_char((adc_val & 0x0F00) >> 8);		
+		uart_set_char((adc_val & 0x0F00) >> 8);	
+		
+	   	adc_start_conv(ADC_PHASE);
+		adc_val = adc_get_avgw_val(FC_AVG_CNT, 300);
+
+		uart_set_char(adc_val);
+		uart_set_char((adc_val & 0x0F00) >> 8);	
 	}		
 }
 

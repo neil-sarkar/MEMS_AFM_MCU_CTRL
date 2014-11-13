@@ -40,7 +40,7 @@ struct scan4
 	u16 	lineCnt;
 	u8  	sampleCnt;
 	u8  	dwellTime_ms;
-	u8		j;
+	u8		iLine;
 	bool   	isXScanDirDwn;
 	bool	start;
 	bool	isLastPnt; 
@@ -85,7 +85,7 @@ __inline static void SET_PAIRY(u16 v1, u16 v2)
 #define SCAN_NEXT_LINE		SET_PAIRX((s4.xp.a1StartVal -= s4.yIncrement), s4.xp.a2StartVal += s4.yIncrement); 	\
 							SET_PAIRY((s4.yp.a1StartVal -= s4.yIncrement), s4.yp.a2StartVal += s4.yIncrement)
 
-#define SAMPLE_WAIT_CNT_ABS	10
+#define SAMPLE_WAIT_CNT_ABS	50
 
 #define TAKE_MEASUREMENT	adc_start_conv (ADC_ZAMP);	 														\
 							s4.img.zAmplitude = adc_get_avgw_val(s4.sampleCnt, SAMPLE_WAIT_CNT_ABS); 			\
@@ -127,7 +127,7 @@ void scan4_start (void)
 	s4.xStepCnt 		= 0;
 	s4.lineCnt 			= 0;
 	
-	s4.j				= 0;
+	s4.iLine			= 0;
 
 	s4.xp.a1StartVal 	= 4095;
 	s4.xp.a2StartVal 	= 0;
@@ -137,6 +137,10 @@ void scan4_start (void)
 
 	SET_PAIRX(s4.xp.a1StartVal, s4.xp.a2StartVal);
 	SET_PAIRY(s4.yp.a1StartVal, s4.yp.a2StartVal);
+
+	// this is a wait so that the actuators settle at the starting point
+	// before starting the scan
+	DELAY_MS(10);
 }
 
 void scan4_step (void)
@@ -146,12 +150,12 @@ void scan4_step (void)
 
 	// this loop keeping track of the number of lines that need to be scanned
 	// this is essentially the whole scan proccess
-	for ( ; s4.lineCnt < s4.numLines; )
+	for ( ; s4.lineCnt < s4.numLines; s4.lineCnt++)
 	{
 		// scan one line back and forth
-		for ( ; s4.j < 2; s4.j++)
+		for ( ; s4.iLine < 2; s4.iLine++)
 		{
-			for ( ; s4.xStepCnt < s4.numPts ;)
+			for ( ; s4.xStepCnt < s4.numPts;)
 			{
 				// get 8 data points
 				// send data to client
@@ -175,7 +179,8 @@ void scan4_step (void)
 					}
 
 					// dwell
-					//DELAY_MS(s4.dwellTime_ms);
+					DELAY_MS(s4.dwellTime_ms);
+
 					// take all measurements
 					//pid_wait_update ();		// TODO: is this necessary????
 					TAKE_MEASUREMENT;
@@ -190,8 +195,7 @@ void scan4_step (void)
 			s4.isLastPnt = true;
 			SWAP_DIRECTION;
 		}
-		s4.j = 0;
-		s4.lineCnt++;
+		s4.iLine = 0;
 		SCAN_NEXT_LINE;
 	}
 	// reset for the next scan
@@ -204,13 +208,13 @@ void scan4_init (void)
 	s4.xp.a1  		= DAC_X2;
 	s4.xp.a2  		= DAC_X1;
 
-	s4.yp.a1  		= DAC_Y1;
-	s4.yp.a2  		= DAC_Y2;
+	s4.yp.a1  		= DAC_Y2;
+	s4.yp.a2  		= DAC_Y1;
 
 	s4.xStepCnt 	= 0;
 	s4.lineCnt 		= 0;
 	s4.dwellTime_ms = 1;
-	s4.sampleCnt 	= 1;
+	s4.sampleCnt 	= 16;
 }
 
 void s4_set_dwell_t_ms (u8 dwell_ms)
