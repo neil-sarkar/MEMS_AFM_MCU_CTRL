@@ -11,10 +11,12 @@ struct flash
 struct act_pair
 {
 	dac a1;
-	u16 a1_val;
+	u16 a1Val;
+	u16 a1StartVal;
 
 	dac a2;
-	u16 a2_val;
+	u16 a2Val;
+	u16 a2StartVal;
 };
 
 struct img_data
@@ -40,7 +42,8 @@ struct scan4
 	u8  	dwellTime_ms;
 	u8		j;
 	bool   	isXScanDirDwn;
-	 
+	bool	start;
+	bool	isLastPnt; 
 	struct 	flash f;
 	struct 	act_pair xp;
 	struct 	act_pair yp;
@@ -51,117 +54,124 @@ struct scan4 s4;
 
 #define GET_DAC_VAL(index) flash_Read2BytesBlk0((BLOCK0_BASE + (index << 1)) & BLOCK_MASK, &(s4.data));	
 																					  		
-static void SET_PAIRX(u16 v1, u16 v2)
+__inline static void SET_PAIRX(u16 v1, u16 v2)
 {	
-	s4.xp.a1_val = v1;
-	s4.xp.a2_val = v2;
+	s4.xp.a1Val = v1;
+	s4.xp.a2Val = v2;
 	GET_DAC_VAL(v1); 													
 	dac_set_val(s4.xp.a1, s4.data);											
 	GET_DAC_VAL(v2); 													
 	dac_set_val(s4.xp.a2, s4.data);
 }
 
-static void SET_PAIRY(u16 v1, u16 v2)
+__inline static void SET_PAIRY(u16 v1, u16 v2)
 {	
-	s4.yp.a1_val = v1;
-	s4.yp.a2_val = v2;
+	s4.yp.a1Val = v1;
+	s4.yp.a2Val = v2;
 	GET_DAC_VAL(v1);															
 	dac_set_val(s4.yp.a1, s4.data);											
 	GET_DAC_VAL(v2);															
 	dac_set_val(s4.yp.a2, s4.data);
 }
 
-// TODO review this!!!
-#define SCAN_PAIRX_DWN 	SET_PAIRX((s4.xp.a1_val - s4.xIncrement), (s4.xp.a2_val + s4.xIncrement));
+#define SCAN_PAIRX_DWN 		SET_PAIRX((s4.xp.a1Val - s4.xIncrement), (s4.xp.a2Val + s4.xIncrement));
 
-#define SCAN_PAIRX_UP 	SET_PAIRX((s4.xp.a1_val + s4.xIncrement), (s4.xp.a2_val - s4.xIncrement));
+#define SCAN_PAIRX_UP 		SET_PAIRX((s4.xp.a1Val + s4.xIncrement), (s4.xp.a2Val - s4.xIncrement));
 
-#define SCAN_PAIRY_DWN 	SET_PAIRY((s4.yp.a1_val - s4.xIncrement), (s4.yp.a2_val + s4.xIncrement));
+#define SCAN_PAIRY_DWN 		SET_PAIRY((s4.yp.a1Val - s4.xIncrement), (s4.yp.a2Val + s4.xIncrement));
 
-#define SCAN_PAIRY_UP 	SET_PAIRY((s4.yp.a1_val + s4.xIncrement), (s4.yp.a2_val - s4.xIncrement));
+#define SCAN_PAIRY_UP 		SET_PAIRY((s4.yp.a1Val + s4.xIncrement), (s4.yp.a2Val - s4.xIncrement));
 
-#define SCAN_NEXT_LINE 	SET_PAIRX((s4.xp.a1_val - s4.yIncrement), (s4.xp.a2_val + s4.yIncrement)); 		\
-						SET_PAIRY((s4.yp.a1_val - s4.yIncrement), (s4.yp.a2_val + s4.yIncrement));
+#define SCAN_NEXT_LINE		SET_PAIRX((s4.xp.a1StartVal -= s4.yIncrement), s4.xp.a2StartVal += s4.yIncrement); 	\
+							SET_PAIRY((s4.yp.a1StartVal -= s4.yIncrement), s4.yp.a2StartVal += s4.yIncrement)
 
 #define SAMPLE_WAIT_CNT_ABS	10
 
-#define TAKE_MEASUREMENT	adc_start_conv (ADC_ZAMP);	 												\
-							s4.img.zAmplitude = adc_get_avgw_val(s4.sampleCnt, SAMPLE_WAIT_CNT_ABS); 	\
-							s4.img.zOffset = dac_get_val(DAC_ZOFFSET_FINE);			 					\
-							adc_start_conv(ADC_PHASE);								 					\
+#define TAKE_MEASUREMENT	adc_start_conv (ADC_ZAMP);	 														\
+							s4.img.zAmplitude = adc_get_avgw_val(s4.sampleCnt, SAMPLE_WAIT_CNT_ABS); 			\
+							s4.img.zOffset = dac_get_val(DAC_ZOFFSET_FINE);			 							\
+							adc_start_conv(ADC_PHASE);								 							\
 							s4.img.zPhase = adc_get_avgw_val(s4.sampleCnt, SAMPLE_WAIT_CNT_ABS);
 
-#define SEND_DATA_TO_CLIENT uart_set_char((s4.img.zAmplitude & 0xFF)); 									\
-							uart_set_char((s4.img.zAmplitude >> 8) & 0x0F); 							\
-							uart_set_char(s4.img.zOffset & 0xFF); 										\
-							uart_set_char((s4.img.zOffset >> 8) & 0x0F); 								\
-							uart_set_char(s4.img.zPhase & 0xFF); 										\
+#define SEND_DATA_TO_CLIENT uart_set_char((s4.img.zAmplitude & 0xFF)); 											\
+							uart_set_char((s4.img.zAmplitude >> 8) & 0x0F); 									\
+							uart_set_char(s4.img.zOffset & 0xFF); 												\
+							uart_set_char((s4.img.zOffset >> 8) & 0x0F); 										\
+							uart_set_char(s4.img.zPhase & 0xFF); 												\
 							uart_set_char((s4.img.zPhase >> 8) & 0x0F);				
 
-#define SCAN				if (s4.isXScanDirDwn)														\
-							{		 																	\
-								SCAN_PAIRY_UP;															\
-								SCAN_PAIRX_DWN;															\
-							}	 																		\
-							else																		\
-							{																			\
-								SCAN_PAIRY_DWN;															\
-								SCAN_PAIRX_UP;															\
+#define SCAN				if (s4.isXScanDirDwn)																\
+							{														  							\
+								SCAN_PAIRX_DWN;																	\
+								SCAN_PAIRY_UP;																	\
+							}	 																				\
+							else																				\
+							{																					\
+								SCAN_PAIRX_UP;																	\
+								SCAN_PAIRY_DWN;																	\
 							}
 							
-#define SCAN_LAST			SET_PAIRX(s4.xp.a1_val, s4.xp.a2_val);										\
-		 					SET_PAIRY(s4.yp.a1_val, s4.yp.a2_val)							
+#define SCAN_LAST			SET_PAIRX(s4.xp.a1Val, s4.xp.a2Val);												\
+		 					SET_PAIRY(s4.yp.a1Val, s4.yp.a2Val)							
 
-#define SWAP_DIRECTION		if (s4.isXScanDirDwn)														\
-								s4.isXScanDirDwn = false;												\
-							else				  														\
+#define SWAP_DIRECTION		if (s4.isXScanDirDwn)																\
+								s4.isXScanDirDwn = false;														\
+							else				  																\
 								s4.isXScanDirDwn = true;
-
-bool s4_scan = false;
 				  
 void scan4_start (void)
 {
-	s4_scan 			= true;
+	s4.start 			= true;
 	s4.isXScanDirDwn 	= true;
+	s4.isLastPnt		= false;
 	s4.xStepCnt 		= 0;
 	s4.lineCnt 			= 0;
-	SET_PAIRX(4095, 0);
-	SET_PAIRY((s4.yRange-1), (s4.xRange-1));
+	
+	s4.j				= 0;
+
+	s4.xp.a1StartVal 	= 4095;
+	s4.xp.a2StartVal 	= 0;
+
+	s4.yp.a1StartVal 	= (s4.yRange - 1);
+	s4.yp.a2StartVal	= (s4.xRange - 1);
+
+	SET_PAIRX(s4.xp.a1StartVal, s4.xp.a2StartVal);
+	SET_PAIRY(s4.yp.a1StartVal, s4.yp.a2StartVal);
 }
 
 void scan4_step (void)
 {
 	u8 i;
-	bool scan_last_p = false;
+	s4.isLastPnt = false;
 
 	// this loop keeping track of the number of lines that need to be scanned
 	// this is essentially the whole scan proccess
-	for ( ; s4.lineCnt < s4.numLines; s4.lineCnt++)
+	for ( ; s4.lineCnt < s4.numLines; )
 	{
 		// scan one line back and forth
 		for ( ; s4.j < 2; s4.j++)
 		{
-			for ( ; s4.xStepCnt < s4.numPts; )
+			for ( ; s4.xStepCnt < s4.numPts ;)
 			{
 				// get 8 data points
 				// send data to client
 				for (i = 0; i < 8; i++)
 				{
-					if (!s4_scan)
+					if (!s4.start)
 					{
-						if (!scan_last_p)
+						if (!s4.isLastPnt)
 						{
 							SCAN;
 						}
 						else
 						{
 							SCAN_LAST;
-							scan_last_p = false;
+							s4.isLastPnt = false;
 						}
 					}
 					else
 					{
-						s4_scan = false;
+						s4.start = false;
 					}
 
 					// dwell
@@ -177,10 +187,11 @@ void scan4_step (void)
 			}
 			// one scan forward/backward completed
 			s4.xStepCnt = 0;
-			scan_last_p = true;
+			s4.isLastPnt = true;
 			SWAP_DIRECTION;
 		}
 		s4.j = 0;
+		s4.lineCnt++;
 		SCAN_NEXT_LINE;
 	}
 	// reset for the next scan
@@ -192,8 +203,10 @@ void scan4_init (void)
 	s4.f.adr  		= BLOCK0_BASE;
 	s4.xp.a1  		= DAC_X2;
 	s4.xp.a2  		= DAC_X1;
+
 	s4.yp.a1  		= DAC_Y1;
 	s4.yp.a2  		= DAC_Y2;
+
 	s4.xStepCnt 	= 0;
 	s4.lineCnt 		= 0;
 	s4.dwellTime_ms = 1;
