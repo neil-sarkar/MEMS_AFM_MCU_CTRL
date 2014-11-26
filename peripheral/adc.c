@@ -82,7 +82,7 @@ void adc_start_conv(adc channel)
 
 void adc_set_pga(adc channel, u8 gain)
 {
-	gain &= 0x1F;
+	gain &= 0x3F;
 	switch (channel) {	
 		case padc0:
 			PGAGN =	gain; 

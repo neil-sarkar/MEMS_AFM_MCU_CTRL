@@ -30,4 +30,9 @@ void reset_mcu (void);
 
 void set_pga (void);
 
+void um_track (void);
+void um_sweep(void);
+void um_set_delta (void);
+void um_init(void);
+
 #endif

@@ -1,5 +1,6 @@
 #include "main.h"
 
+#include <stdlib.h>
 #include "../peripheral/uart.h"
 #include "../peripheral/adc.h"
 #include "../peripheral/dac.h"
@@ -106,6 +107,8 @@ int main(void)
 
 	init_scanner (&left_act, &right_act);
 
+   	um_init ();
+
 	/*
 	 * Main program loop
 	 */
@@ -176,8 +179,134 @@ int main(void)
 			case 'n':
 				scan_set_freq (uart_wait_get_char ());
 				break;
+			case 'N':
+				um_sweep();
+				break;
+			case 'd':
+				um_track();
+				break;
+			case 'e':
+				um_set_delta();
+				break;
 		}
 	}
+}
+
+#define DAC_1_V		1861
+
+struct umirror
+{
+	u16 dac_val;
+	u16 delta;
+	u16 dac_delta;	
+};
+
+struct umirror um = {0, 10, 10};
+
+void um_init (void)
+{
+	adc_set_pga(ADC_MIRROR, 32);
+}
+
+void um_set_delta (void)
+{
+	u8 val_l, val_h;
+
+	val_l 			= uart_wait_get_char();
+	val_h 			= uart_wait_get_char();
+	um.delta 		= (val_h << 8) | val_l;
+
+	val_l 			= uart_wait_get_char();
+	val_h 			= uart_wait_get_char();
+	um.dac_delta 	= (val_h << 8) | val_l;
+}
+
+#define UM_INC 		um.dac_val += um.dac_delta; 								\
+					if (um.dac_val > DAC_1_V)	um.dac_val = DAC_1_V;			\
+					dac_set_val(DAC_ZOFFSET_COARSE, um.dac_val);
+
+#define UM_DEC 		if ((um.dac_val - um.dac_delta) < 124) um.dac_val = 124; 	\
+					else um.dac_val -= um.dac_delta;							\
+					dac_set_val(DAC_ZOFFSET_COARSE, um.dac_val);
+
+void um_track (void)
+{
+	s32 val, pval;
+	u8 dir = 1;
+
+   	// cold-start the algorithm
+	adc_start_conv(ADC_MIRROR);
+	pval = adc_get_avgw_val(32, 10);
+	
+	while (COMRX != 'q')
+	{
+		adc_start_conv(ADC_MIRROR);
+		val = adc_get_avgw_val(32, 10);
+		
+		//dac_set_val(DAC_ZOFFSET_COARSE, (um.dac_val += um.dac_delta));
+
+		//adc_start_conv(ADC_MIRROR);
+		//pval = adc_get_avgw_val(32, 100);
+
+		if ((abs(val - pval)) > um.delta)
+		{
+			if ((val - pval) > 0)
+			{
+				dir = 1;
+				UM_INC;
+			}
+			else
+			{
+				dir = 0;
+				UM_DEC;
+			}
+		}
+		else
+		{
+			if (dir == 1)
+			{
+				UM_INC;
+			}
+			else if (dir == 0)
+			{
+				UM_DEC;				
+			}		
+		}
+
+		uart_set_char (um.dac_val);
+		uart_set_char (um.dac_val >> 8);
+		
+		pval = val;	
+	}
+}
+
+void um_sweep (void)
+{
+	u16 i;
+	u16 val, max = 0;
+
+	// find maximum
+	for (i = 0; i < DAC_1_V; i++)
+	{
+		dac_set_val(DAC_ZOFFSET_COARSE, i);
+		adc_start_conv(ADC_MIRROR);
+		val = adc_get_avgw_val(32, 100);
+		if (val > max) 
+		{
+			max = val;
+			um.dac_val = i;
+		}
+	}
+
+	// set voltage to maximum
+	dac_set_val(DAC_ZOFFSET_COARSE, um.dac_val);
+
+	// send data
+	uart_set_char(max);
+	uart_set_char(max >> 8);
+
+	uart_set_char(um.dac_val);
+	uart_set_char(um.dac_val >> 8);
 }
 
 #define MV_TO_ABS_200	248
