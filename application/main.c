@@ -192,7 +192,8 @@ int main(void)
 	}
 }
 
-#define DAC_1_V		1861
+#define DAC_1_5_V		1861
+#define DAC_1_V			1241
 
 struct umirror
 {
@@ -222,60 +223,35 @@ void um_set_delta (void)
 	um.dac_delta 	= (val_h << 8) | val_l;
 }
 
-#define UM_INC 		um.dac_val += um.dac_delta; 								\
-					if (um.dac_val > DAC_1_V)	um.dac_val = DAC_1_V;			\
-					dac_set_val(DAC_ZOFFSET_COARSE, um.dac_val);
-
-#define UM_DEC 		if ((um.dac_val - um.dac_delta) < 124) um.dac_val = 124; 	\
-					else um.dac_val -= um.dac_delta;							\
-					dac_set_val(DAC_ZOFFSET_COARSE, um.dac_val);
-
 void um_track (void)
 {
-	s32 val, pval;
-	s16 dir = 1;
-
-   	// cold-start the algorithm
-	adc_start_conv(ADC_MIRROR);
-	pval = adc_get_avgw_val(32, 10);
+	u16 val;
+	u16 i;
+	u16 max;
 	
 	while (COMRX != 'q')
 	{
-		adc_start_conv(ADC_MIRROR);
-		val = adc_get_avgw_val(32, 10);
-
-		if ((abs(val - pval)) > um.delta)
+		max = 0;
+		for (i = 0; i < DAC_1_V; i += 20)
 		{
-			if (((val - pval)*dir) > 0)
+			dac_set_val(DAC_ZOFFSET_COARSE, i);
+			adc_start_conv(ADC_MIRROR);
+			val = adc_get_avgw_val(8, 100);
+			if (val > max) 
 			{
-				dir = 1;
-				UM_INC;
-			}
-			else
-			{
-				dir = -1;
-				UM_DEC;
+				max = val;
+				um.dac_val = i;
 			}
 		}
-		else
-		{
-			if (dir == 1)
-			{
-				UM_INC;
-			}
-			else if (dir == -1)
-			{
-				UM_DEC;				
-			}		
-		}
+	
+		// set voltage to maximum
+		dac_set_val(DAC_ZOFFSET_COARSE, um.dac_val);
 
 		uart_set_char (um.dac_val);
 		uart_set_char (um.dac_val >> 8);
 
 		uart_set_char (val);
-		uart_set_char (val >> 8);
-		
-		pval = val;	
+		uart_set_char (val >> 8);	
 	}
 }
 
