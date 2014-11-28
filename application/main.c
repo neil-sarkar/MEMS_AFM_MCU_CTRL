@@ -197,11 +197,12 @@ int main(void)
 struct umirror
 {
 	u16 dac_val;
+	u16 dac_val_min;
 	u16 delta;
 	u16 dac_delta;	
 };
 
-struct umirror um = {0, 10, 10};
+struct umirror um = {0, 0, 10, 10};
 
 void um_init (void)
 {
@@ -232,7 +233,7 @@ void um_set_delta (void)
 void um_track (void)
 {
 	s32 val, pval;
-	u8 dir = 1;
+	s16 dir = 1;
 
    	// cold-start the algorithm
 	adc_start_conv(ADC_MIRROR);
@@ -242,22 +243,17 @@ void um_track (void)
 	{
 		adc_start_conv(ADC_MIRROR);
 		val = adc_get_avgw_val(32, 10);
-		
-		//dac_set_val(DAC_ZOFFSET_COARSE, (um.dac_val += um.dac_delta));
-
-		//adc_start_conv(ADC_MIRROR);
-		//pval = adc_get_avgw_val(32, 100);
 
 		if ((abs(val - pval)) > um.delta)
 		{
-			if ((val - pval) > 0)
+			if (((val - pval)*dir) > 0)
 			{
 				dir = 1;
 				UM_INC;
 			}
 			else
 			{
-				dir = 0;
+				dir = -1;
 				UM_DEC;
 			}
 		}
@@ -267,7 +263,7 @@ void um_track (void)
 			{
 				UM_INC;
 			}
-			else if (dir == 0)
+			else if (dir == -1)
 			{
 				UM_DEC;				
 			}		
@@ -275,6 +271,9 @@ void um_track (void)
 
 		uart_set_char (um.dac_val);
 		uart_set_char (um.dac_val >> 8);
+
+		uart_set_char (val);
+		uart_set_char (val >> 8);
 		
 		pval = val;	
 	}
@@ -283,18 +282,24 @@ void um_track (void)
 void um_sweep (void)
 {
 	u16 i;
-	u16 val, max = 0;
+	u16 val; 
+	u16 max = 0;
+	u16 min = 0xFFFF;
 
 	// find maximum
-	for (i = 0; i < DAC_1_V; i++)
+	for (i = 0; i < DAC_1_V; i += 20)
 	{
 		dac_set_val(DAC_ZOFFSET_COARSE, i);
 		adc_start_conv(ADC_MIRROR);
-		val = adc_get_avgw_val(32, 100);
+		val = adc_get_avgw_val(64, 100);
 		if (val > max) 
 		{
 			max = val;
 			um.dac_val = i;
+		}
+		if (val < min)
+		{
+			min = val;
 		}
 	}
 
@@ -377,7 +382,7 @@ void act_res_test (void)
 	dac_set_val(DAC_Y1, y1);
 	dac_set_val(DAC_Y2, y2);
 	dac_set_val(DAC_ZAMP, z_amp);
-	dac_set_val(DAC_ZOFFSET_COARSE, z_c);							
+	dac_set_val(DAC_ZOFFSET_COARSE, z_c);						
 }
 
 void set_pv_rel_manual_a (void) 
