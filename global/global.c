@@ -1,6 +1,5 @@
 /*
-This a set of global functions that all drivers/applications
-could use. An example is a simple busy-wait delay function.
+Global helper functions
 */
 
 #include "global.h"
@@ -19,13 +18,5 @@ void delay_25_us(u8 delay)
 {
 	u32 wait = DELAY_25_US*delay;
 	while (wait--) {}	
-}
-/************************************/
-
-
-/************************************/
-void get_mcu_version (void)
-{
-	
 }
 /************************************/

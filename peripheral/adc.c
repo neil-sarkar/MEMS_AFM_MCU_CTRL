@@ -1,3 +1,10 @@
+/************************
+
+ICSPI CORP.
+www.icspicorp.com
+
+************************/
+
 #include "adc.h"
 
 void adc_init() 
@@ -7,16 +14,13 @@ void adc_init()
 	// wait for ADC to be fully powered on
 	while (delay--);
 
-	// continuous software conversion
-	//ADCCON = BIT0 | BIT1 | BIT5 | BIT9 | BIT11;
 	// 2.5V ref
    	REFCON |= BIT1;
 }
 
 void adc_start_conv(adc channel)
 {
-   	// single software conversion
-	// ADCCON |= BIT0 | BIT1 | BIT5 | BIT7 | BIT9 | BIT11;
+	// continuous software conversion
 
 	u16 reg_val = 0x00;
 	reg_val |= BIT2 | BIT5 | BIT7 | BIT9 | BIT11;

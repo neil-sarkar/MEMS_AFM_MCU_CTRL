@@ -1,3 +1,10 @@
+/************************
+
+ICSPI CORP.
+www.icspicorp.com
+
+************************/
+
 #include "dac.h"
 
 static u16 dac_limit [NUM_DACS] = {0};

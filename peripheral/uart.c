@@ -1,3 +1,10 @@
+/************************
+
+ICSPI CORP.
+www.icspicorp.com
+
+************************/
+
 #include "uart.h"
 
 /* carriage return ASCII value */

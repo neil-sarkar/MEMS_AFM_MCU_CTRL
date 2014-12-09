@@ -1,5 +1,11 @@
-#include "dds.h"
+/************************
 
+ICSPI CORP.
+www.icspicorp.com
+
+************************/
+
+#include "dds.h"
 #include "../peripheral/uart.h"
 
 #ifdef BOARD_m_assem

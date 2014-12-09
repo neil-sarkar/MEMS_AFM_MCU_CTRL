@@ -1,3 +1,10 @@
+/************************
+
+ICSPI CORP.
+www.icspicorp.com
+
+************************/
+
 #include "pga_4ch.h"
 #include "../peripheral/wire3.h"
 

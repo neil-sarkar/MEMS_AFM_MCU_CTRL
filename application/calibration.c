@@ -1,3 +1,10 @@
+/************************
+
+ICSPI CORP.
+www.icspicorp.com
+
+************************/
+
 #include "calibration.h"
 
 #define CALC_COEFF_0(a, b) 		(-0.5f*b/a)
@@ -94,10 +101,6 @@ void calibrate_actuator (Actuator* act, u16 max_voltage){
 	// Convert to single precision floating point
 	set_pv_rel (act, ((float*)buffer)[0],((float*)buffer)[1],((float*)buffer)[2]);
 }
-
-/************************** 
-LOCAL FUNCTION DEFINITIONS
-**************************/
 
 static void set_pv_rel (Actuator* act, float a, float b, float c)
 {

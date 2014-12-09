@@ -1,3 +1,10 @@
+/************************
+
+ICSPI CORP.
+www.icspicorp.com
+
+************************/
+
 #include "wire3.h"
 
 #define WIRE3_DAT_REG GP3DAT

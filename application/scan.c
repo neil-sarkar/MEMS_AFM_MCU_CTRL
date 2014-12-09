@@ -1,3 +1,10 @@
+/************************
+
+ICSPI CORP.
+www.icspicorp.com
+
+************************/
+
 #include "scan.h"
 
 #define SC_GP_REG		GP2DAT
@@ -15,12 +22,6 @@ static Actuator* r_act;
 
 volatile scan_params scan_state;
 
-/*************************
- HELPER TIMER FUNCTIONS
-*************************/
-
-// periodic, core clock
-
 void init_scanner (Actuator* left_act, Actuator* right_act){
 	l_act = left_act;
 	r_act = right_act;
@@ -32,12 +33,9 @@ void init_scanner (Actuator* left_act, Actuator* right_act){
 	scan_state.freq_ld		= SCAN_DFLT_LD;
 		
 	// Set GPIOs as output
-	//SET_1(SC_GP_REG, SC_FINE_DD | SC_COARSE_DD);
 	GP2DAT = SC_FINE_DD | SC_COARSE_DD;
 
 	// Set default values
-	//SET_0(SC_GP_REG, SC_FINE_HZ);
-	//SET_0(SC_GP_REG, SC_COARSE_HZ);
 	GP2DAT &= ~SC_FINE_HZ;
 	GP2DAT &= ~SC_COARSE_HZ;
 
@@ -96,9 +94,9 @@ void scan_set_freq (u8 frequency)
 	}
 }
 
+// Scan algorithm, gets triggered every step
 volatile u16 s_i = 0;
 volatile u8 dir = 1;
-
 void scan_handler (void)
 {
    	if ((s_i == (scan_state.numpts-1)) || (s_i == 0))

@@ -1,3 +1,10 @@
+/************************
+
+ICSPI CORP.
+www.icspicorp.com
+
+************************/
+
 #include "main.h"
 
 #include "../peripheral/uart.h"
@@ -12,17 +19,6 @@
 #include "calibration.h"
 #include "scan.h"
 
-tyVctHndlr	  SCAN		= (tyVctHndlr)scan_handler;
-tyVctHndlr    DDS     	= (tyVctHndlr)dds_handler;
-tyVctHndlr 	  UART		= (tyVctHndlr)uart_handler;
-tyVctHndlr	  WIRE3		= (tyVctHndlr)wire3_handler;
-extern int dds_inc_cnt;
-
-static Actuator left_act;
-static Actuator right_act;
-
-#define SWEEP_MAX 4096
-
 // DAC attenuators CS bits
 #define DAC0_CS_DIR_BIT BIT29
 #define DAC0_CS_BIT	BIT21
@@ -30,12 +26,21 @@ static Actuator right_act;
 // Macro function to clear terminal screen
 #define CLEAR() uart_write("\033c")
 
+// Interrup handler address translations
+tyVctHndlr	  SCAN		= (tyVctHndlr)scan_handler;		// scan algorithm
+tyVctHndlr    DDS     	= (tyVctHndlr)dds_handler;	 	// dds communication
+tyVctHndlr 	  UART		= (tyVctHndlr)uart_handler;		// uart communication
+tyVctHndlr	  WIRE3		= (tyVctHndlr)wire3_handler;	// bit-banged spi communication
+
+// Extern variable for interacting with dds module
+extern int dds_inc_cnt;
+
+// Actuators
+static Actuator left_act;
+static Actuator right_act;
+
 // Delay variable for the calibration routine
 extern u8 calib_delay;
-
-// coarse approach ISR flag
-//volatile bool flag;	
-//void set_dir(char);
 
 int main(void)
 {
@@ -107,7 +112,7 @@ int main(void)
 	init_scanner (&left_act, &right_act);
 
 	/*
-	 * Main program loop
+	 * Main program loop - handle requests
 	 */
 	while (true)
 	{	
@@ -206,41 +211,34 @@ void act_res_test (void)
 
 	// retrieve actuators' resistance values	
 	adc_start_conv(ADC_X1);
-//	adc_val = adc_get_val();
 	adc_val = adc_get_avgw_val(32, 500);
 		
 	uart_set_char(adc_val & 0xFF);
 	uart_set_char((adc_val & 0x0F00) >> 8);
 
 	adc_start_conv(ADC_X2);
-//	adc_val = adc_get_val();
 	adc_val = adc_get_avgw_val(32, 500);
 	
 	uart_set_char(adc_val & 0xFF);
 	uart_set_char((adc_val & 0x0F00) >> 8);
 
 	adc_start_conv(ADC_Y1);
-//	adc_val = adc_get_val();
 	adc_val = adc_get_avgw_val(32, 500);
 	
 	uart_set_char(adc_val & 0xFF);
 	uart_set_char((adc_val & 0x0F00) >> 8);
 
 	adc_start_conv(ADC_Y2);
-//	adc_val = adc_get_val();
 	adc_val = adc_get_avgw_val(32, 500);
 	
 	uart_set_char(adc_val & 0xFF);
 	uart_set_char((adc_val & 0x0F00) >> 8);
 
 	adc_start_conv(ADC_ZOFFSET);
-//	adc_val = adc_get_val();
 	adc_val = adc_get_avgw_val(32, 500);
 	
 	uart_set_char(adc_val & 0xFF);
 	uart_set_char((adc_val & 0x0F00) >> 8);
-
-	// TODO: CONVERT FROM VOLTAGE TO RESISTANCE 
 
 	// set actuator values to what they were originally	
 	dac_set_val(DAC_X1, x1);
