@@ -23,6 +23,7 @@ tyVctHndlr 	  UART		= (tyVctHndlr)uart_handler;
 tyVctHndlr	  MTR		= (tyVctHndlr)mtr_handler;
 tyVctHndlr	  WIRE3		= (tyVctHndlr)wire3_handler;
 extern int dds_inc_cnt;
+extern int dds_AD9837_inc_cnt;
 
 static Actuator left_act;
 static Actuator right_act;
@@ -61,6 +62,7 @@ int main(void)
 
    	/* Initialize SPI/DDS */
 	dds_spi_init();
+	dds_AD9837_spi_init();
 	//dds_power_up();
 
 	/* Initialize UART */
@@ -100,16 +102,16 @@ int main(void)
 	mtr_init ();
 
 	/* Init DAC attenuators */
-	pga_1ch_init (pga_fine);
-	pga_1ch_init (pga_dds);
-	pga_4ch_init ();		   
+///	pga_1ch_init (pga_fine);
+///	pga_1ch_init (pga_dds);
+///	pga_4ch_init ();		   
 	
-	pga_1ch_set (pga_fine, 127);
-	pga_1ch_set (pga_dds, 127);
-	pga_4ch_set (pga_x1, 192);
-	pga_4ch_set (pga_x2, 192);
-	pga_4ch_set (pga_y1, 192);
-	pga_4ch_set (pga_y2, 192);
+///	pga_1ch_set (pga_fine, 127);
+///	pga_1ch_set (pga_dds, 127);
+///	pga_4ch_set (pga_x1, 192);
+///	pga_4ch_set (pga_x2, 192);
+///	pga_4ch_set (pga_y1, 192);
+///	pga_4ch_set (pga_y2, 192);
 
 	/* Init actuators */
 	init_act (&left_act, DAC_Y1, ADC_Y1, ADC_ZOFFSET);
@@ -123,6 +125,10 @@ int main(void)
 
 	scan4_init();
  // 	scan4_start();
+
+ 	/*Initialize the 8-PGA*/
+///	pga_init();
+///	send_address();
 
 	/*
 	 * Main program loop
@@ -189,13 +195,13 @@ int main(void)
 				single_pulse();
 				break;
 			case 'n':
-				cont_pulse();
+				dds_AD9837_get_data();
 				break;
 			case 'o':
 				device_calibration ();
 				break;			
 			case 'q':
-				freq_sweep();
+				freq_sweep_AD9837();
 				break;
 			case 'r':
 				freq_sweep_dds();
@@ -630,31 +636,20 @@ void set_pid_setpoint (void)
 	pid_set_setpoint (setpoint);
 }
 
-void freq_sweep(void)
+void freq_sweep_AD9837(void)
 {
-	u16 i, val;
-	u16 steps;
-	u16 diff;
-	u16 adc_val;
-	u8 steps_l;
-	u8 steps_h;
-	//u8 sweep[SWEEP_MAX * 2];
+	u32 i;
 	long int delay;
+	u16 adc_val; 
 
-	steps_l = uart_wait_get_char();
-	steps_h = uart_wait_get_char();
-
-	steps = ((steps_h << 8)| steps_l) & 0x0FFF;
-
-	diff = SWEEP_MAX / steps;
-	
+	dds_AD9837_load_freq();
 	// sweep and write table
-	for (i = 0, val = 0; i < (steps*2); i += 2, val += diff)
-	{
-		dac_set_val(DAC_ZVCO, val);
+	for (i = 0; i < dds_AD9837_inc_cnt; i++)
+	{		
 
-		// delay is about ~4.60ms
-		delay = 20000;
+		dds_AD9837_write();
+		
+		delay = 12500;
 		while(delay--){};
 
 		// read adc
@@ -672,6 +667,8 @@ void freq_sweep(void)
 	 	// Send data out
 		uart_set_char((adc_val));
 		uart_set_char(((adc_val >> 8)));
+
+		dds_AD9837_increment(i+1);
 
 	}
 }
@@ -739,19 +736,6 @@ void set_pw (void)
 void single_pulse(void)
 {
 	mtr_step ();
-	uart_write ("o");
-}
-
-void cont_pulse(void)
-{
-	for (;;) {
-		/* Kill approach if requested */
-		if (is_received () && uart_get_char () == BRK_CHAR){
-			break;
-		}
-
-		mtr_step ();
-	}
 	uart_write ("o");
 }
 

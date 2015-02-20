@@ -55,13 +55,12 @@ void set_i_gain (void);
 void set_d_gain (void);
 void set_pid_setpoint (void);
 
-void freq_sweep (void);
+void freq_sweep_AD9837(void);
 void freq_sweep_dds(void);
 
 void set_dir(char dirchar);
 void set_pw (void);
 void single_pulse(void);
-void cont_pulse(void);
 void auto_approach (void);
 
 void device_calibration (void);
