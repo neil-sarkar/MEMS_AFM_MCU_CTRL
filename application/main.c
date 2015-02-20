@@ -12,6 +12,7 @@
 #include "../system/dds.h"
 #include "calibration.h"
 #include "scan.h"
+#include "math.h"
 
 tyVctHndlr	  SCAN		= (tyVctHndlr)scan_handler;
 tyVctHndlr    DDS     	= (tyVctHndlr)dds_handler;
@@ -192,18 +193,31 @@ int main(void)
 	}
 }
 
+#define DAC_2_V			2481
 #define DAC_1_5_V		1861
 #define DAC_1_V			1241
 
+#define DAC_LIMIT_L		1540081
+
+struct um_peak
+{
+	u16 max_f;
+	u16 iMax_f;
+	u16 max_b;
+	u16 iMax_b;
+	u16 iMax;
+};
+
 struct umirror
 {
-	u16 dac_val;
+	struct um_peak horz;
+	struct um_peak vert;
 	u16 dac_val_min;
 	u16 delta;
 	u16 dac_delta;	
 };
 
-struct umirror um = {0, 0, 10, 10};
+struct umirror um = {{0, 0, 0}, {0, 0, 0}, 10, 10};
 
 void um_init (void)
 {
@@ -223,32 +237,155 @@ void um_set_delta (void)
 	um.dac_delta 	= (val_h << 8) | val_l;
 }
 
+#define DAC_HORZ	DAC_ZOFFSET_COARSE	
+#define DAC_VERT	DAC_X1	// TODO is this correct?
+
 void um_track (void)
 {
 	u16 val;
-	u16 i;
-	u16 max;
+	u16 delay;
+	s32 i, j;
+	
+	dac_set_limit(DAC_X1, DAC_1_V);
+	dac_set_limit(DAC_X1, DAC_1_V);
+	while (COMRX != 'q')
+	{
+		// Horizontal Tracking
+		um.horz.max_f = 0;
+		for (i = 0; i < 4095; i += 20)
+		{
+			delay = 1000;
+			while (delay--);
+			if (i > 4095) i = 4095;
+			dac_set_val(DAC_HORZ, i);
+			adc_start_conv(ADC_MIRROR);
+			//val = adc_get_avgw_val(8, 100);
+			val = adc_get_val();
+			if (val > um.horz.max_f) 
+			{
+				um.horz.max_f = val;
+				um.horz.iMax_f = i;
+			}
+		}
+		um.horz.max_b = 0;
+		for (i = 4095; i > 0; i -= 20)
+		{
+			delay = 1000;
+			while (delay--);
+			if (i < 0) i = 0;
+			dac_set_val(DAC_HORZ, i);
+			adc_start_conv(ADC_MIRROR);
+			//val = adc_get_avgw_val(8, 100);
+			val = adc_get_val();
+			if (val > um.horz.max_b) 
+			{
+				um.horz.max_b = val;
+				um.horz.iMax_b = i;
+			}
+		}
+
+		// Vertical Tracking
+		um.vert.max_f = 0;
+		for (i = 0, j = DAC_LIMIT_L; i < DAC_LIMIT_L, j > 0; i += 400, j -= 400)
+		{
+			delay = 1000;
+			while (delay--);
+			if (i > DAC_LIMIT_L) i = DAC_LIMIT_L;
+			if (j < 0) j = 0;
+
+			dac_set_val(DAC_X1, sqrt(i));
+			dac_set_val(DAC_Y1, sqrt(j));
+
+			adc_start_conv(ADC_MIRROR);
+			//val = adc_get_avgw_val(8, 100);
+			val = adc_get_val();
+			if (val > um.vert.max_f) 
+			{
+				um.vert.max_f = val;
+				um.vert.iMax_f = i;
+			}
+		}
+		um.vert.max_b = 0;
+		for (j = 0, i = DAC_LIMIT_L; j < DAC_LIMIT_L, i > 0; j += 400, i -= 400)
+		{
+			delay = 1000;
+			while (delay--);
+			if (j > DAC_LIMIT_L) j = DAC_LIMIT_L;
+			if (i < 0) i = 0; 
+
+			dac_set_val(DAC_X1, sqrt(i));
+			dac_set_val(DAC_Y1, sqrt(j));
+
+			adc_start_conv(ADC_MIRROR);
+			//val = adc_get_avgw_val(8, 100);
+			val = adc_get_val();
+			if (val > um.vert.max_b) 
+			{
+				um.vert.max_b = val;
+				um.vert.iMax_b = i;
+			}
+		}
+				
+		um.horz.iMax = (um.horz.iMax_f + um.horz.iMax_b) / 2;
+		um.vert.iMax = (um.vert.iMax_f + um.vert.iMax_b) / 2;
+		// set voltage to maximum
+		// dac_set_val(DAC_VERT, dac_avg);
+
+		uart_set_char (um.horz.iMax);
+		uart_set_char (um.horz.iMax >> 8);
+
+		uart_set_char (um.vert.iMax);
+		uart_set_char (um.vert.iMax >> 8);	
+	}
+}
+
+void um_track2 (void)
+{
+	u16 val;
+	u16 delay;
+	s16 i;
 	
 	while (COMRX != 'q')
 	{
-		max = 0;
-		for (i = 0; i < DAC_1_V; i += 20)
+		um.horz.max_f = 0;
+		for (i = 0; i < 4095; i += 20)
 		{
-			dac_set_val(DAC_ZOFFSET_COARSE, i);
+			delay = 100;
+			while (delay--);
+			if (i > 4095) i = 4095;
+			dac_set_val(DAC_HORZ, i);
 			adc_start_conv(ADC_MIRROR);
-			val = adc_get_avgw_val(8, 100);
-			if (val > max) 
+			//val = adc_get_avgw_val(8, 100);
+			val = adc_get_val();
+			if (val > um.horz.max_f) 
 			{
-				max = val;
-				um.dac_val = i;
+				um.horz.max_f = val;
+				um.horz.iMax_f = i;
 			}
 		}
-	
+		um.horz.max_b = 0;
+		for (i = 4095; i > 0; i -= 20)
+		{
+			delay = 100;
+			while (delay--);
+			if (i < 0) i = 0;
+			dac_set_val(DAC_HORZ, i);
+			adc_start_conv(ADC_MIRROR);
+			//val = adc_get_avgw_val(8, 100);
+			val = adc_get_val();
+			if (val > um.horz.max_b) 
+			{
+				um.horz.max_b = val;
+				um.horz.iMax_b = i;
+			}
+		}
+		
+		um.horz.iMax = (um.horz.iMax_f + um.horz.iMax_b) / 2;	
 		// set voltage to maximum
-		dac_set_val(DAC_ZOFFSET_COARSE, um.dac_val);
+		//dac_set_val(DAC_HORZ, dac_avg);
 
-		uart_set_char (um.dac_val);
-		uart_set_char (um.dac_val >> 8);
+		uart_set_char (um.horz.iMax);
+		uart_set_char (um.horz.iMax >> 8);
 
 		uart_set_char (val);
 		uart_set_char (val >> 8);	
@@ -271,7 +408,7 @@ void um_sweep (void)
 		if (val > max) 
 		{
 			max = val;
-			um.dac_val = i;
+//			um.dac_val_f = i;
 		}
 		if (val < min)
 		{
@@ -280,14 +417,14 @@ void um_sweep (void)
 	}
 
 	// set voltage to maximum
-	dac_set_val(DAC_ZOFFSET_COARSE, um.dac_val);
+//	dac_set_val(DAC_ZOFFSET_COARSE, um.dac_val_f);
 
 	// send data
 	uart_set_char(max);
 	uart_set_char(max >> 8);
 
-	uart_set_char(um.dac_val);
-	uart_set_char(um.dac_val >> 8);
+//	uart_set_char(um.dac_val_f);
+//	uart_set_char(um.dac_val_f >> 8);
 }
 
 #define MV_TO_ABS_200	248

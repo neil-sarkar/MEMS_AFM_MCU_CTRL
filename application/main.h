@@ -34,5 +34,6 @@ void um_track (void);
 void um_sweep(void);
 void um_set_delta (void);
 void um_init(void);
+void um_track2 (void);
 
 #endif

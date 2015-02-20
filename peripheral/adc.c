@@ -20,6 +20,7 @@ void adc_start_conv(adc channel)
 
 	u16 reg_val = 0x00;
 	reg_val |= BIT2 | BIT5 | BIT7 | BIT9 | BIT11;
+	//reg_val |= BIT0 | BIT1 | BIT5 | BIT7 | BIT9 | BIT11;
 
 	switch (channel) {
 		case adc0:

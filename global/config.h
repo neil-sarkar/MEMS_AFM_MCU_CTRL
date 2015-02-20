@@ -25,7 +25,7 @@
 #define ADC_X2				adc7
 #define ADC_Y2				adc8
 
-#define ADC_MIRROR			padc0
+#define ADC_MIRROR			ADC_ZAMP
 
 #endif
 

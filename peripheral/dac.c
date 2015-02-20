@@ -217,8 +217,11 @@ u16 dac_get_limit (dac channel)
 void dac_set_val (dac channel, u16 new_value)
 {
 	// Check to make sure we are not passing DAC limits
-	if (new_value > dac_limit[channel]){
-		return;
+	if (channel != DAC_ZOFFSET_COARSE)
+	{
+		if (new_value > dac_limit[channel]){
+			return;
+		}
 	}
 	
 	switch (channel)
