@@ -39,6 +39,10 @@ extern u8 calib_delay;
 //volatile bool flag;	
 //void set_dir(char);
 
+u16 scan_l_points[1024];
+u16 scan_r_points[1024];
+u16 scan_numpts;
+
 int main(void)
 {
 	/*
@@ -239,12 +243,13 @@ void um_set_delta (void)
 
 #define DAC_HORZ	DAC_ZOFFSET_COARSE	
 #define DAC_VERT	DAC_X1	// TODO is this correct?
+#define UM_delay 	100
 
-void um_track (void)
+void um_track3 (void)
 {
 	u16 val;
 	u16 delay;
-	s32 i, j;
+	s32 i;
 	
 	dac_set_limit(DAC_X1, DAC_1_V);
 	dac_set_limit(DAC_X1, DAC_1_V);
@@ -254,7 +259,7 @@ void um_track (void)
 		um.horz.max_f = 0;
 		for (i = 0; i < 4095; i += 20)
 		{
-			delay = 1000;
+			delay = UM_delay;
 			while (delay--);
 			if (i > 4095) i = 4095;
 			dac_set_val(DAC_HORZ, i);
@@ -270,7 +275,7 @@ void um_track (void)
 		um.horz.max_b = 0;
 		for (i = 4095; i > 0; i -= 20)
 		{
-			delay = 1000;
+			delay = UM_delay;
 			while (delay--);
 			if (i < 0) i = 0;
 			dac_set_val(DAC_HORZ, i);
@@ -286,15 +291,13 @@ void um_track (void)
 
 		// Vertical Tracking
 		um.vert.max_f = 0;
-		for (i = 0, j = DAC_LIMIT_L; i < DAC_LIMIT_L, j > 0; i += 400, j -= 400)
+		for (i = 0; i < scan_numpts; i++)
 		{
-			delay = 1000;
+			delay = UM_delay;
 			while (delay--);
-			if (i > DAC_LIMIT_L) i = DAC_LIMIT_L;
-			if (j < 0) j = 0;
 
-			dac_set_val(DAC_X1, sqrt(i));
-			dac_set_val(DAC_Y1, sqrt(j));
+			dac_set_val(DAC_X1, scan_l_points[i]);
+			dac_set_val(DAC_Y1, scan_r_points[i]);
 
 			adc_start_conv(ADC_MIRROR);
 			//val = adc_get_avgw_val(8, 100);
@@ -306,15 +309,13 @@ void um_track (void)
 			}
 		}
 		um.vert.max_b = 0;
-		for (j = 0, i = DAC_LIMIT_L; j < DAC_LIMIT_L, i > 0; j += 400, i -= 400)
+		for (i = (scan_numpts-1); i >= 0; i--)
 		{
-			delay = 1000;
-			while (delay--);
-			if (j > DAC_LIMIT_L) j = DAC_LIMIT_L;
-			if (i < 0) i = 0; 
+			delay = UM_delay;
+			while (delay--); 
 
-			dac_set_val(DAC_X1, sqrt(i));
-			dac_set_val(DAC_Y1, sqrt(j));
+			dac_set_val(DAC_X1, scan_r_points[i]);
+			dac_set_val(DAC_Y1, scan_l_points[i]);
 
 			adc_start_conv(ADC_MIRROR);
 			//val = adc_get_avgw_val(8, 100);
@@ -339,7 +340,7 @@ void um_track (void)
 	}
 }
 
-void um_track2 (void)
+void um_track (void)
 {
 	u16 val;
 	u16 delay;
@@ -711,8 +712,6 @@ void device_calibration (void)
 	}
 }									
 
-u16 scan_l_points[1024];
-u16 scan_r_points[1024];
 void configure_scan (void)
 {
 	// read scan parameters over UART
@@ -818,5 +817,105 @@ void FIQ_Handler(void) __irq
 		// Interrupt caused by hardware RX/TX buffer being full, cleared when
 		// RX/TX buffer is read
 		UART ();
+	}
+}
+
+// TODO REMOVE
+void um_track2 (void)
+{
+	u16 val;
+	u16 delay;
+	s32 i, j;
+	
+	dac_set_limit(DAC_X1, DAC_1_V);
+	dac_set_limit(DAC_X1, DAC_1_V);
+	while (COMRX != 'q')
+	{
+		// Horizontal Tracking
+		um.horz.max_f = 0;
+		for (i = 0; i < 4095; i += 20)
+		{
+			delay = UM_delay;
+			while (delay--);
+			if (i > 4095) i = 4095;
+			dac_set_val(DAC_HORZ, i);
+			adc_start_conv(ADC_MIRROR);
+			//val = adc_get_avgw_val(8, 100);
+			val = adc_get_val();
+			if (val > um.horz.max_f) 
+			{
+				um.horz.max_f = val;
+				um.horz.iMax_f = i;
+			}
+		}
+		um.horz.max_b = 0;
+		for (i = 4095; i > 0; i -= 20)
+		{
+			delay = UM_delay;
+			while (delay--);
+			if (i < 0) i = 0;
+			dac_set_val(DAC_HORZ, i);
+			adc_start_conv(ADC_MIRROR);
+			//val = adc_get_avgw_val(8, 100);
+			val = adc_get_val();
+			if (val > um.horz.max_b) 
+			{
+				um.horz.max_b = val;
+				um.horz.iMax_b = i;
+			}
+		}
+
+		// Vertical Tracking
+		um.vert.max_f = 0;
+		for (i = 0, j = DAC_LIMIT_L; i < DAC_LIMIT_L, j > 0; i += 400, j -= 400)
+		{
+			delay = 1000;
+			while (delay--);
+			if (i > DAC_LIMIT_L) i = DAC_LIMIT_L;
+			if (j < 0) j = 0;
+
+			dac_set_val(DAC_X1, sqrt(i));
+			dac_set_val(DAC_Y1, sqrt(j));
+
+			adc_start_conv(ADC_MIRROR);
+			//val = adc_get_avgw_val(8, 100);
+			val = adc_get_val();
+			if (val > um.vert.max_f) 
+			{
+				um.vert.max_f = val;
+				um.vert.iMax_f = i;
+			}
+		}
+		um.vert.max_b = 0;
+		for (j = 0, i = DAC_LIMIT_L; j < DAC_LIMIT_L, i > 0; j += 400, i -= 400)
+		{
+			delay = 1000;
+			while (delay--);
+			if (j > DAC_LIMIT_L) j = DAC_LIMIT_L;
+			if (i < 0) i = 0; 
+
+			dac_set_val(DAC_X1, sqrt(i));
+			dac_set_val(DAC_Y1, sqrt(j));
+
+			adc_start_conv(ADC_MIRROR);
+			//val = adc_get_avgw_val(8, 100);
+			val = adc_get_val();
+			if (val > um.vert.max_b) 
+			{
+				um.vert.max_b = val;
+				um.vert.iMax_b = i;
+			}
+		}
+				
+		um.horz.iMax = (um.horz.iMax_f + um.horz.iMax_b) / 2;
+		um.vert.iMax = (um.vert.iMax_f + um.vert.iMax_b) / 2;
+		// set voltage to maximum
+		// dac_set_val(DAC_VERT, dac_avg);
+
+		uart_set_char (um.horz.iMax);
+		uart_set_char (um.horz.iMax >> 8);
+
+		uart_set_char (um.vert.iMax);
+		uart_set_char (um.vert.iMax >> 8);	
 	}
 }
