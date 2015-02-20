@@ -50,6 +50,20 @@ u8 dds_AD9837_data[12]={
 	0x00	 //numpts MSB in sweep
 	};
 
+u8 dds_9837_init[10] = 
+{
+   0x21,
+   0x00,
+   0x50,
+   0xC7,
+   0x40,
+   0x00,      
+   0xC0,
+   0x00,
+   0x20,
+   0x00
+};
+
 void dds_AD9837_spi_init()
 {
 	// Configure P0.2, P0.3,P0.4 and P0.5 for SPI mode
@@ -70,27 +84,8 @@ void dds_AD9837_spi_init()
 	SPIDIV  = 0xC7;	   	         		// Select 101kHz clock rate
 	IRQEN |= BIT14;
 
-  
-   SPITX = 0x21;
-   while ((SPISTA & BIT2) == BIT2) {} //Wait until the TX FIFO	has space before continuing to write to it
-   SPITX = 0x00;
-   while ((SPISTA & BIT2) == BIT2) {} //Wait until the TX FIFO	has space before continuing to write to it
-   SPITX = 0x50;
-   while ((SPISTA & BIT2) == BIT2) {} //Wait until the TX FIFO	has space before continuing to write to it
-   SPITX = 0xC7;
-   while ((SPISTA & BIT2) == BIT2) {} //Wait until the TX FIFO	has space before continuing to write to it
-   SPITX = 0x40;
-   while ((SPISTA & BIT2) == BIT2) {} //Wait until the TX FIFO	has space before continuing to write to it
-   SPITX = 0x00;      
-   while ((SPISTA & BIT2) == BIT2) {} //Wait until the TX FIFO	has space before continuing to write to it 
-   SPITX = 0xC0;
-   while ((SPISTA & BIT2) == BIT2) {} //Wait until the TX FIFO	has space before continuing to write to it
-   SPITX = 0x00;
-   while ((SPISTA & BIT2) == BIT2) {} //Wait until the TX FIFO	has space before continuing to write to it
-   SPITX = 0x20;
-   while ((SPISTA & BIT2) == BIT2) {} //Wait until the TX FIFO	has space before continuing to write to it
-   SPITX = 0x00;
-
+  	SPITX = dds_9837_init[writeCnt++];
+	SPITX = dds_9837_init[writeCnt++];
 }
 
 void dds_AD9837_write()
