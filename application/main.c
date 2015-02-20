@@ -12,16 +12,18 @@
 #include "../system/pid.h"
 #include "../system/motor.h"
 #include "../system/wire3.h"
+#include "../system/ddsad9837.h"
 
 #include "calibration.h"
 #include "scan.h"
 #include "scan4.h"
 
-tyVctHndlr    DDS     	= (tyVctHndlr)dds_handler;
+tyVctHndlr    DDS     	= (tyVctHndlr)dds_98_handler;
 tyVctHndlr    PID     	= (tyVctHndlr)pid_handler;
 tyVctHndlr 	  UART		= (tyVctHndlr)uart_handler;
 tyVctHndlr	  MTR		= (tyVctHndlr)mtr_handler;
 tyVctHndlr	  WIRE3		= (tyVctHndlr)wire3_handler;
+						
 extern int dds_inc_cnt;
 extern int dds_AD9837_inc_cnt;
 
