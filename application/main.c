@@ -243,16 +243,24 @@ void um_set_delta (void)
 
 #define DAC_HORZ	DAC_ZOFFSET_COARSE	
 #define DAC_VERT	DAC_X1	// TODO is this correct?
-#define UM_delay 	100
+#define UM_delay 	75
+#define COM_delay 	100
 
-void um_track3 (void)
+
+void um_track (void)
 {
 	u16 val;
-	u16 delay;
+	u32 delay;
 	s32 i;
 	
+	
 	dac_set_limit(DAC_X1, DAC_1_V);
-	dac_set_limit(DAC_X1, DAC_1_V);
+	dac_set_limit(DAC_Y1, DAC_1_V);
+	dac_set_limit(DAC_Y2, 4095);
+	//turn on photodiode
+	//dac_set_val(DAC_Y2, 4095);
+	
+
 	while (COMRX != 'q')
 	{
 		// Horizontal Tracking
@@ -289,6 +297,11 @@ void um_track3 (void)
 			}
 		}
 
+		um.horz.iMax = (um.horz.iMax_f + um.horz.iMax_b) / 2;
+		dac_set_val(DAC_HORZ, um.horz.iMax);
+
+		delay = 1000;
+		while(delay--){}
 		// Vertical Tracking
 		um.vert.max_f = 0;
 		for (i = 0; i < scan_numpts; i++)
@@ -308,8 +321,9 @@ void um_track3 (void)
 				um.vert.iMax_f = i;
 			}
 		}
+		
 		um.vert.max_b = 0;
-		for (i = (scan_numpts-1); i >= 0; i--)
+		for (i = 0; i < scan_numpts; i++)
 		{
 			delay = UM_delay;
 			while (delay--); 
@@ -326,9 +340,16 @@ void um_track3 (void)
 				um.vert.iMax_b = i;
 			}
 		}
-				
-		um.horz.iMax = (um.horz.iMax_f + um.horz.iMax_b) / 2;
-		um.vert.iMax = (um.vert.iMax_f + um.vert.iMax_b) / 2;
+
+	//	um.vert.iMax = (um.vert.iMax_f + um.vert.iMax_b) / 2;
+	  	um.vert.iMax = (um.vert.iMax_f + (scan_numpts-um.vert.iMax_b)) / 2;
+
+		dac_set_val(DAC_Y1, scan_r_points[um.vert.iMax]);
+		dac_set_val(DAC_X1, scan_l_points[um.vert.iMax]);
+
+		delay = 1000;
+		while(delay--){}
+
 		// set voltage to maximum
 		// dac_set_val(DAC_VERT, dac_avg);
 
@@ -337,10 +358,12 @@ void um_track3 (void)
 
 		uart_set_char (um.vert.iMax);
 		uart_set_char (um.vert.iMax >> 8);	
+		//delay = COM_delay;
+		//while(delay--);
 	}
 }
 
-void um_track (void)
+void um_track2 (void)
 {
 	u16 val;
 	u16 delay;
@@ -733,6 +756,7 @@ void configure_scan (void)
 		scan_r_points[i]   =  ((temp_buffer[0]) | (temp_buffer[1] << 8)) & 0x0FFF;
 	} 
 
+	scan_numpts = numpts;
 	scan_configure (numpts);
 }
 
@@ -821,7 +845,7 @@ void FIQ_Handler(void) __irq
 }
 
 // TODO REMOVE
-void um_track2 (void)
+void um_track3 (void)
 {
 	u16 val;
 	u16 delay;
