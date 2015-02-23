@@ -13,6 +13,7 @@
 #include "../system/motor.h"
 #include "../system/wire3.h"
 #include "../system/ddsad9837.h"
+#include "../system/pga_i2c.h"
 
 #include "calibration.h"
 #include "scan.h"
@@ -73,6 +74,8 @@ int main(void)
 	/* Initialize ADC */
 	adc_init();
 
+
+
 	/* Configure all DACs */
 	dac_set_range(dac0, dac_AVdd_AGND);
 	dac_set_range(dac1, dac_AVdd_AGND);
@@ -129,8 +132,7 @@ int main(void)
  // 	scan4_start();
 
  	/*Initialize the 8-PGA*/
-///	pga_init();
-///	send_address();
+	pga_init();
 
 	/*
 	 * Main program loop
@@ -239,13 +241,13 @@ int main(void)
 				set_pga ();
 				break;
 			case 'A':
-				set_pv_rel_manual_a ();
+				//set_pv_rel_manual_a ();
 				break;
 			case 'B':
-				set_pv_rel_manual_b ();
+				//set_pv_rel_manual_b ();
 				break;
 			case 'C':
-				set_pv_rel_manual_c ();
+				//set_pv_rel_manual_c ();
 				break;
 			case 'J':
 				act_res_test ();
@@ -291,6 +293,12 @@ int main(void)
 				break;
 			case 'y':
 				s4_set_sample_cnt (uart_wait_get_char());
+				break;
+			case 'T':
+				pga_get_data();
+				break;
+			case 'U':
+				mute(uart_wait_get_char());
 				break;
 		}
 	}
@@ -413,7 +421,7 @@ void act_res_test (void)
 	dac_set_val(DAC_ZAMP, z_amp);
 	dac_set_val(DAC_ZOFFSET_COARSE, z_c);							
 }
-
+/*
 void set_pv_rel_manual_a (void) 
 {
 	float coeff_a;
@@ -497,7 +505,7 @@ void set_pv_rel_manual_c (void)
 			break;
 	}	
 }
-
+*/
 void set_dac_max (void)
 {
 	dac dac_ch;
@@ -644,7 +652,7 @@ void freq_sweep_AD9837(void)
 	long int delay;
 	u16 adc_val; 
 
-	dds_AD9837_load_freq();
+	dds_AD9837_load_freq();		//set the start frequency
 	// sweep and write table
 	for (i = 0; i < dds_AD9837_inc_cnt; i++)
 	{		

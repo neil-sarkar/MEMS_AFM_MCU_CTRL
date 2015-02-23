@@ -2,31 +2,8 @@
 
 #include "../peripheral/uart.h"
 
-#ifdef BOARD_m_assem
-	#define DDS_DAT_REG		GP0DAT
-	#define DDS_CTRL 		BIT17
-	#define DDS_CTRL_DD		(DDS_CTRL<<8U)
-#elif defined(BOARD_v2)
-	#define DDS_DAT_REG		GP1DAT
-	#define DDS_CTRL 		BIT22
-	#define DDS_CTRL_DD		(DDS_CTRL<<8U)
-#else 
-	#error "DDS GPIO not defined"
-#endif
-
 // DDS registers
-#define	REG_D15			0xF
-#define REG_D14			0xE
 #define	REG_B28			0x2000
-#define REG_HLB			0xC
-#define	REG_FSEL		0xB
-#define REG_PSEL		0xA
-#define REG_RESET		0x8
-#define REG_SLEEP1		0x7
-#define REG_SLEEP12		0x6
-#define REG_OPBITEN		0x5
-#define REG_DIV2		0x3
-#define REG_MODE		0x1
 
 int dds_AD9837_inc_cnt = 0;
 u16 cntrl_reg_data=REG_B28;
@@ -54,10 +31,10 @@ u8 dds_9837_init[10] =
 {
    0x21,
    0x00,
-   0x50,
-   0xC7,
+   0x56,
+   0xE0,
    0x40,
-   0x00,      
+   0x10,      
    0xC0,
    0x00,
    0x20,
@@ -71,16 +48,10 @@ volatile bool d_init = false;
 void dds_AD9837_spi_init()
 {
 	// Configure P0.2, P0.3,P0.4 and P0.5 for SPI mode
-	GP0CON = BIT8 + BIT12 + BIT16 + BIT20;  // Select SPI alternative function
-	
-	// Configure P0.1 for DDS control, set to 0 and transition high
-	DDS_DAT_REG |= DDS_CTRL_DD;
-	DDS_DAT_REG &= ~DDS_CTRL;
+	GP0CON |= BIT8 + BIT12 + BIT16 + BIT20;  // Select SPI alternative function
 
 	SPICON = BIT0 + BIT1
 		   + BIT3
-		   //+ BIT2						// CPOL = 0, CPHA = 1
-		   //+ BIT5						// LSB first transfer
 		   + BIT6						// Initiate transfer on write to Tx FIFO
 		   + BIT11						// Continuous transfer mode
 		   + BIT14;
@@ -136,18 +107,13 @@ void dds_AD9837_get_data()
 	increment = dds_AD9837_data[8] | (dds_AD9837_data[9] << 8);
 	dds_AD9837_inc_cnt = dds_AD9837_data[10] | (dds_AD9837_data[11] << 8);
 	freq = fstart;
+	dds_AD9837_load_freq();
+	dds_AD9837_write();
+
 }
 
-void dds_AD9837_load_freq()
+void dds_AD9837_load_freq()		   //update the first four entries in dds_AD9837_data to the newest frequency
 {
-/*
-	dds_AD9837_data[0] = freq ; 
-	dds_AD9837_data[1] = freq >>8;
-	dds_AD9837_data[1] &= ~0xC0;
-	dds_AD9837_data[2] = freq >>14;
-	dds_AD9837_data[3] = freq >>22;	
-*/
-
 	dds_AD9837_data[0] = ((freq >> 8) & 0x3F) | 0x40; 
 	dds_AD9837_data[1] = freq;
 	dds_AD9837_data[2] = (((u8)(freq >> 22)) & 0x3F) | 0x40;
@@ -156,7 +122,7 @@ void dds_AD9837_load_freq()
 
 void dds_AD9837_increment(u32 pt)
 {
-	freq = fstart + increment * pt;
+	freq = fstart + increment * pt;	 //new frequency equals the start frequency plus the frequency increment multiplied by the current pointin the frequency sweep
 	
 	dds_AD9837_load_freq();
 	

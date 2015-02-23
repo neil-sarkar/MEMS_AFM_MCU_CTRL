@@ -7,6 +7,7 @@
 void pga_init(void);
 void send_address(void);
 void pga_get_data (void);
-void pga_send(void);
+void pga_send(u8);
+void mute(u8);
 
 #endif
