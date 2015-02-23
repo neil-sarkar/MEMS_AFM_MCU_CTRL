@@ -138,21 +138,35 @@ void z_set_samples (u16 num_samples)
 	scan_state.z_samples_req = num_samples;
 }
 
+extern u8 isPidOn;
+extern u16 pid_input;
+extern u16 pid_phase;
 u16 z_sample (void)
 {
-	adc_start_conv (ADC_ZAMP);
-	z_data.z_amp_samples += adc_get_val (); 
+	if (isPidOn == true)
+	{
+		z_data.z_amp_samples += pid_input;
+		z_data.z_off_samples += dac_get_val(DAC_ZOFFSET_FINE);
+		z_data.z_phs_samples += pid_phase;
+	}
+	else
+	{
+		adc_start_conv (ADC_ZAMP);
+		z_data.z_amp_samples += adc_get_val (); 
+		
+		z_data.z_off_samples += dac_get_val(DAC_ZOFFSET_FINE);
 	
-	z_data.z_off_samples += dac_get_val(DAC_ZOFFSET_FINE);
-
-	adc_start_conv(ADC_PHASE);
-	z_data.z_phs_samples += adc_get_val();
+		adc_start_conv(ADC_PHASE);
+		z_data.z_phs_samples += adc_get_val();
+	}
 	
 	return (++z_data.num_samples);
 }
 
 void z_write_data (void)
 {
+	// TODO: we NEED to make sure that num_samples is not 0
+	// Enforce some sort of order between z_init_sample, z_sample, z_write_data
 	u16 z_amp = (u16)(z_data.z_amp_samples/z_data.num_samples);
 	u16 z_off = (u16)(z_data.z_off_samples/z_data.num_samples);
 	u16 z_phs = (u16)(z_data.z_phs_samples/z_data.num_samples);

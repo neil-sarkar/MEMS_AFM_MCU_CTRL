@@ -40,10 +40,6 @@ static Actuator z_act;
 // Delay variable for the calibration routine
 extern u8 calib_delay;
 
-// coarse approach ISR flag
-//volatile bool flag;	
-//void set_dir(char);
-
 int main(void)
 {
 	u8 rx_char;
@@ -560,7 +556,7 @@ void read_dac(void)
 void read_z (void)
 {
 	z_init_sample ();
-	pid_wait_update ();
+	//pid_wait_update ();
 	z_sample ();
 	z_write_data ();
 }
