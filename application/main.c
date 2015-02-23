@@ -152,6 +152,8 @@ int main(void)
 				configure_scan ();
 				break;
 			case '#':
+				// TODO REMOVE for AH
+				// TODO remove also from scan.c
 				scan_start ();
 				break;
 			case '&':
@@ -185,12 +187,14 @@ int main(void)
 				scan_set_freq (uart_wait_get_char ());
 				break;
 			case 'N':
+				// TODO REMOVE for AH
 				um_sweep();
 				break;
 			case 'd':
 				um_track();
 				break;
 			case 'e':
+				// TODO REMOVE for AH
 				um_set_delta();
 				break;
 		}
