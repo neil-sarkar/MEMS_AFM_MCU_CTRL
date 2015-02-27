@@ -35,7 +35,7 @@ void um_init (void)
 #define DAC_HORZ	DAC_ZOFFSET_COARSE	
 #define DAC_L1		DAC_X1
 #define DAC_L2		DAC_Y1
-#define UM_delay 	75
+#define UM_delay 	100
 #define COM_delay 	100
 
 
@@ -50,7 +50,7 @@ void um_track (void)
 	dac_set_limit(DAC_Y1, DAC_1_V);
 	dac_set_limit(DAC_Y2, 4095);
 	//turn on photodiode
-	//dac_set_val(DAC_Y2, 4095);
+	dac_set_val(DAC_Y2, 4095);
 	
 
 	while (COMRX != 'q')
@@ -73,6 +73,8 @@ void um_track (void)
 			}
 		}
 		um.horz.max_b = 0;
+		delay = 1000;
+		while(delay--);
 		for (i = 4095; i > 0; i -= 20)
 		{
 			delay = UM_delay;
@@ -115,13 +117,13 @@ void um_track (void)
 		}
 		
 		um.vert.max_b = 0;
-		for (i = 0; i < scan_numpts; i++)
+		for (i = scan_numpts; i > 0; i--)
 		{
 			delay = UM_delay;
 			while (delay--); 
 
-			dac_set_val(DAC_X1, scan_r_points[i]);
-			dac_set_val(DAC_Y1, scan_l_points[i]);
+			dac_set_val(DAC_X1, scan_l_points[i]);
+			dac_set_val(DAC_Y1, scan_r_points[i]);
 
 			adc_start_conv(ADC_MIRROR);
 			//val = adc_get_avgw_val(8, 100);
@@ -134,10 +136,10 @@ void um_track (void)
 		}
 
 	//	um.vert.iMax = (um.vert.iMax_f + um.vert.iMax_b) / 2;
-	  	um.vert.iMax = (um.vert.iMax_f + (scan_numpts-um.vert.iMax_b)) / 2;
+	  	um.vert.iMax = (um.vert.iMax_f + um.vert.iMax_b) / 2;
 
-		dac_set_val(DAC_Y1, scan_r_points[um.vert.iMax]);
 		dac_set_val(DAC_X1, scan_l_points[um.vert.iMax]);
+		dac_set_val(DAC_Y1, scan_r_points[um.vert.iMax]);
 
 		delay = 1000;
 		while(delay--){}
