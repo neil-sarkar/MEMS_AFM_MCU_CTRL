@@ -91,7 +91,7 @@ void um_track (void)
 			}
 		}
 
-		um.horz.iMax = (um.horz.iMax_f + um.horz.iMax_b) / 2;
+		um.horz.iMax = (2 * um.horz.iMax_f + um.horz.iMax_b) / 3;
 		dac_set_val(DAC_HORZ, um.horz.iMax);
 
 		delay = 1000;
