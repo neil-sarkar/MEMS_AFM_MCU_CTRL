@@ -11,7 +11,8 @@ setPoint: reference signal (set manually)
 
 extern volatile u16 pid_input;
 
-volatile u16 			input, 
+volatile u16 			pid_input,
+						pid_phase, 
 						lastInput, 
 						output, 
 						setPoint = 0x7FF;
@@ -21,6 +22,8 @@ volatile int iTerm;
 volatile float  kp = 1.6, 
 				ki = 0, 
 				kd = 0;
+
+u8 isPidOn;
 
 // Sample time is in ms for now (could be changed to us)
 u16 sampleTime = 1;
@@ -76,10 +79,12 @@ void pid_enable(bool enable)
 		T1CON |= BIT7;
 
 		outMax = dac_get_limit (PID_OUTPUT);
+		isPidOn = true;
 	}
 	else
 	{
 		T1CON &= ~BIT7;
+		isPidOn = false;
 	}
 }
 
@@ -100,9 +105,12 @@ void pid_handler(void)
 {
 	// Read ADC for input, busy-wait
 	adc_start_conv(PID_INPUT);
-	input = adc_get_val();
+	pid_input = adc_get_val();
 
-	error = setPoint - input;
+	adc_start_conv(ADC_PHASE);
+	pid_phase = adc_get_val();
+
+	error = setPoint - pid_input;
 	iTerm += (ki * error);
 	if (iTerm > outMax)
 	{ 
@@ -112,9 +120,10 @@ void pid_handler(void)
 	{
 		iTerm = outMin;
 	}
-	dInput = (input - lastInput);
-
-	output = kp * error + iTerm - kd * dInput;
+	
+//	dInput = (pid_input - lastInput);
+//	output = kp * error + iTerm - kd * dInput;
+	output = kp * error + iTerm;
 
 	if (output > outMax) output = outMax;
 	else if (output < outMin) output = outMin;
@@ -122,7 +131,7 @@ void pid_handler(void)
 	// write PID output
 	dac_set_val (PID_OUTPUT, output);
 
-	lastInput = input;
+	lastInput = pid_input;
 	pid_update_flag = true;
 }
 

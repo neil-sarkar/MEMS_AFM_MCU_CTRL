@@ -576,7 +576,7 @@ void read_dac(void)
 void read_z (void)
 {
 	z_init_sample ();
-	pid_wait_update ();
+//	pid_wait_update ();
 	z_sample ();
 	z_write_data ();
 }
