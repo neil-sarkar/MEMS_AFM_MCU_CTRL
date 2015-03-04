@@ -1,5 +1,14 @@
 #include "adc.h"
 
+#define CONTNS_CONV		BIT2
+#define SINGLE_CONV	   	(BIT0 | BIT1)
+
+#define CONV_MODE		SINGLE_CONV	
+
+static struct {
+	adc curr_ch;	
+} ctrl;
+
 void adc_init() 
 {
 	u16 delay = 2000;
@@ -7,20 +16,17 @@ void adc_init()
 	// wait for ADC to be fully powered on
 	while (delay--);
 
-	// continuous software conversion
-	//ADCCON = BIT0 | BIT1 | BIT5 | BIT9 | BIT11;
 	// 2.5V ref
    	REFCON |= BIT1;
 }
 
 void adc_start_conv(adc channel)
 {
-   	// single software conversion
-	// ADCCON |= BIT0 | BIT1 | BIT5 | BIT7 | BIT9 | BIT11;
 
 	u16 reg_val = 0x00;
-	// continuous conversion
-	reg_val |= BIT2 | BIT5 | BIT7 | BIT9 | BIT11;
+
+	// see conversion mode above
+	reg_val |= CONV_MODE | BIT5 | BIT7 | BIT9 | BIT11;
 
 	switch (channel) {
 		case adc0:
@@ -78,6 +84,7 @@ void adc_start_conv(adc channel)
 			break;
 	}
 
+	ctrl.curr_ch = channel;
 	ADCCON = reg_val;
 }
 
@@ -103,29 +110,62 @@ u16 adc_get_val()
 	return (ADCDAT >> 16);
 }
 
-// Continuous software conversion must be enabled
-u16 adc_get_avg_val (const u16 num_samples)
-{
-	static u16 i;
-	static u32 val;
-	val = 0;
-	for (i = 0; i < num_samples; i ++){
-		while (ADCSTA == 0x00){};
-		val += (ADCDAT >> 16);
+#if	CONV_MODE == SINGLE_CONV
+	// single-ended conversion must be enabled
+	u16 adc_get_avg_val (const u16 num_samples)
+	{
+		u16 i;
+		u32 val;
+		val = 0;
+		for (i = 0; i < num_samples; i++){
+			adc_start_conv(ctrl.curr_ch);
+			while (ADCSTA == 0x00){};
+			val += (ADCDAT >> 16);
+		}
+		return (u16)(val/num_samples);
 	}
-	return (u16)(val/num_samples);
-}
-
-// Continuous software conversion must be enabled
-u16 adc_get_avgw_val (const u16 num_samples, u16 wait_time)
-{
-	u16 i, wait;
-	u32 val = 0;
-	for (i = 0; i < num_samples; i ++){
-		wait = wait_time;		
-		while (wait--);
-		while (ADCSTA == 0x00){};
-		val += (ADCDAT >> 16);		
+	
+	// single-ended conversion must be enabled
+	u16 adc_get_avgw_val (const u16 num_samples, u16 wait_time)
+	{
+		u16 i, wait;
+		u32 val = 0;
+		for (i = 0; i < num_samples; i++){
+			wait = wait_time;		
+			while (wait--);
+			adc_start_conv(ctrl.curr_ch);
+			while (ADCSTA == 0x00){};
+			val += (ADCDAT >> 16);		
+		}
+		return (u16)(val/num_samples);
 	}
-	return (u16)(val/num_samples);
-}
+#elif CONV_MODE == CONTNS_CONV
+	// Continuous software conversion must be enabled
+	u16 adc_get_avg_val (const u16 num_samples)
+	{
+		static u16 i;
+		static u32 val;
+		val = 0;
+		for (i = 0; i < num_samples; i ++){
+			while (ADCSTA == 0x00){};
+			val += (ADCDAT >> 16);
+		}
+		return (u16)(val/num_samples);
+	}
+	
+	// Continuous software conversion must be enabled
+	u16 adc_get_avgw_val (const u16 num_samples, const u16 wait_time)
+	{
+		static u16 i;
+		static u32 val;
+		static u16 cnt;
+		val = 0;
+		for (i = 0; i < num_samples; i ++){
+			cnt = wait_time;		
+			while (cnt--);
+			while (ADCSTA == 0x00){};
+			val += (ADCDAT >> 16);		
+		}
+		return (u16)(val/num_samples);
+	}
+#endif

@@ -79,12 +79,12 @@ void pid_enable(bool enable)
 		T1CON |= BIT7;
 
 		outMax = dac_get_limit (PID_OUTPUT);
-		isPidOn = true;
+		isPidOn = 1;
 	}
 	else
 	{
 		T1CON &= ~BIT7;
-		isPidOn = false;
+		isPidOn = 0;
 	}
 }
 
