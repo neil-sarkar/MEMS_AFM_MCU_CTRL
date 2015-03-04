@@ -106,6 +106,9 @@ void pid_handler(void)
 	adc_start_conv(PID_INPUT);
 	pid_input = adc_get_val();
 
+	adc_start_conv(ADC_PHASE);
+	pid_phase = adc_get_val();
+		
 	error = setPoint - pid_input;
 	iTerm += (ki * error);
 	if (iTerm > outMax)
