@@ -143,7 +143,7 @@ extern u16 pid_input;
 extern u16 pid_phase;
 u16 z_sample (void)
 {
-	if (isPidOn == true)
+	if (isPidOn == 1)
 	{
 		z_data.z_amp_samples += pid_input;
 		z_data.z_off_samples += dac_get_val(DAC_ZOFFSET_FINE);
