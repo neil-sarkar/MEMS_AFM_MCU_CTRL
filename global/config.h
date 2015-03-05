@@ -1,11 +1,6 @@
-#ifndef __CONFIG_H
-#define __CONFIG_H
+#ifndef __P_CONFIG_H
+#define __P_CONFIG_H
 
-/* Identify which board is used
- * to use Mahdi's board's pinout, comment BOARD_d and un-comment BOARD_m
- * to use Duncan's board's pinout, comment BOARD_m and un-comment BOARD_d
- * Note that ONLY one of these directives must be un-commented at a time
-*/
 //#define BOARD_m
 //#define BOARD_m_assem
 #define BOARD_v2

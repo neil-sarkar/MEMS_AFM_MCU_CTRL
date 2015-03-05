@@ -117,7 +117,7 @@ int main(void)
 	/* Disable filter and PID */
 	pid_enable(false);
 
-	scan4_init();
+ //	scan4_init();
  // 	scan4_start();
 
 	/*
