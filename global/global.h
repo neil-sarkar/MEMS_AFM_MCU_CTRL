@@ -3,6 +3,7 @@
 
 #include <ADuC7122.h>
 #include "config.h"
+#include "sys_config.h"
 
 // Bit Definitions
 #define BIT0   0x01u
