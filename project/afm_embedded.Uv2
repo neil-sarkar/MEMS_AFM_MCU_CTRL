@@ -8,7 +8,6 @@ Group (Source Group 1)
 File 1,2,<.\ADuC7122.s><ADuC7122.s>
 File 1,1,<..\global\irq_arm.c><irq_arm.c>
 File 1,1,<..\application\main.c><main.c>
-File 1,1,<..\system\dds.c><dds.c>
 File 1,1,<..\system\pid.c><pid.c>
 File 1,1,<..\peripheral\adc.c><adc.c>
 File 1,1,<..\peripheral\dac.c><dac.c>
@@ -17,11 +16,12 @@ File 1,1,<..\peripheral\uart.c><uart.c>
 File 1,1,<..\application\scan.c><scan.c>
 File 1,1,<..\application\calibration.c><calibration.c>
 File 1,1,<..\system\motor.c><motor.c>
-File 1,1,<..\system\wire3.c><wire3.c>
-File 1,1,<..\peripheral\pga_1ch.c><pga_1ch.c>
-File 1,1,<..\peripheral\pga_4ch.c><pga_4ch.c>
 File 1,1,<..\global\global.c><global.c>
 File 1,1,<..\application\scan4.c><scan4.c>
+File 1,1,<..\system\dds_AD5932.c><dds_AD5932.c>
+File 1,1,<..\peripheral\wire3.c><wire3.c>
+File 1,1,<..\system\pga_1ch_LM1971.c><pga_1ch_LM1971.c>
+File 1,1,<..\system\pga_4ch_PGA4311.c><pga_4ch_PGA4311.c>
 
 
 Options 1,0,0  // Target 'Target 1'
@@ -78,7 +78,7 @@ Options 1,0,0  // Target 'Target 1'
  OCMADSXRAM { 0,0,0,0,0,0,0,0,0 }
  OCR_RVCT { 1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,8,0,0,248,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,0,0,32,0,0,0,0,0,0,0,0,0,0,0 }
  RV_STAVEC ()
- ADSCCFLG { 5,0,0,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
+ ADSCCFLG { 5,0,8,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
  ADSCMISC ()
  ADSCDEFN ()
  ADSCUDEF ()

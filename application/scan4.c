@@ -1,5 +1,7 @@
 #include "scan4.h"
 
+#ifdef configMEMS_4ACT
+
 #define S4_SEND_CNT 8
 
 struct flash
@@ -268,3 +270,5 @@ bool scan4_get_dac_data (void)
 	
 	return true;	
 }
+
+#endif

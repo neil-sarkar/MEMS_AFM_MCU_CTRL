@@ -1,12 +1,13 @@
 #pragma once
 
 #include "../global/global.h"
-#include "../peripheral/pga_4ch.h"
 #include "../peripheral/uart.h"
 #include "../peripheral/flash.h"
 #include "../peripheral/dac.h"
 #include "../peripheral/adc.h"
+
 #include "../system/pid.h"
+#include "../system/pga_4ch_PGA4311.h"
 
 void scan4_init (void);
 void scan4_get_data (void);

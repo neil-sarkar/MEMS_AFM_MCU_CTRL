@@ -4,14 +4,14 @@
 #include "../peripheral/adc.h"
 #include "../peripheral/dac.h"
 #include "../peripheral/flash.h"
-#include "../peripheral/pga_1ch.h"
-#include "../peripheral/pga_4ch.h"
 #include "../peripheral/flash.h"
+#include "../peripheral/wire3.h"
 
-#include "../system/dds.h"
+#include "../system/dds_AD5932.h"
 #include "../system/pid.h"
 #include "../system/motor.h"
-#include "../system/wire3.h"
+#include "../system/pga_1ch_LM1971.h"
+#include "../system/pga_4ch_PGA4311.h"
 
 #include "calibration.h"
 #include "scan.h"
@@ -27,6 +27,8 @@ extern int dds_inc_cnt;
 static Actuator left_act;
 static Actuator right_act;
 static Actuator z_act;
+
+static void sys_init (void);
 
 #define SWEEP_MAX 4096
 
@@ -47,78 +49,14 @@ int main(void)
 	/*
 	 * MCU Initialization				  
 	 */
+
 	/* Configure CPU Clock for 41.78MHz, CD=0 */
 	POWKEY1 = 0x01;
 	POWCON  = 0x00;
 	POWKEY2 = 0xF4;
 
-	/* Initialize flash memory */
-	flash_Init ();
-
-   	/* Initialize SPI/DDS */
-	dds_spi_init();
-	//dds_power_up();
-
-	/* Initialize UART */
-	uart_init();  
-
-	/* Initialize ADC */
-	adc_init();
-
-	/* Configure all DACs */
-	dac_set_range(dac0, dac_AVdd_AGND);
-	dac_set_range(dac1, dac_AVdd_AGND);
-	dac_set_range(dac2, dac_AVdd_AGND);
-	dac_set_range(dac3, dac_AVdd_AGND);
-	dac_set_range(dac4, dac_AVdd_AGND);
-	dac_set_range(dac5, dac_AVdd_AGND);
-	dac_set_range(dac6, dac_AVdd_AGND);
-	dac_set_range(dac7, dac_AVdd_AGND);
-	dac_set_range(dac8, dac_AVdd_AGND);
-	dac_set_range(dac9, dac_AVdd_AGND);
-	dac_set_range(dac10, dac_AVdd_AGND);
-	dac_set_range(dac11, dac_AVdd_AGND);
-
-	dac_init (dac0, dac_enable);
-	dac_init (dac1, dac_enable);
-	dac_init (dac2, dac_enable);
-	dac_init (dac3, dac_enable);
-	dac_init (dac4, dac_enable);
-	dac_init (dac5, dac_enable);
-	dac_init (dac6, dac_enable);
-	dac_init (dac7, dac_enable);
-	dac_init (dac8, dac_enable);
-	dac_init (dac9, dac_enable);
-	dac_init (dac10, dac_enable);
-	dac_init (dac11, dac_enable);
-
-	/* Init motor control */
-	mtr_init ();
-
-	/* Init DAC attenuators */
-	pga_1ch_init (pga_fine);
-	pga_1ch_init (pga_dds);
-	pga_4ch_init ();		   
-	
-	pga_1ch_set (pga_fine, 127);
-	pga_1ch_set (pga_dds, 127);
-	pga_4ch_set (pga_x1, 192);
-	pga_4ch_set (pga_x2, 192);
-	pga_4ch_set (pga_y1, 192);
-	pga_4ch_set (pga_y2, 192);
-
-	/* Init actuators */
-	init_act (&left_act, DAC_Y1, ADC_Y1, ADC_ZOFFSET);
-	init_act (&right_act, DAC_X1, ADC_X1, ADC_ZOFFSET);
-	init_act (&z_act, DAC_ZOFFSET_FINE, ADC_ZOFFSET, ADC_Y1);
-
-	init_scanner (&left_act, &right_act, &z_act);
-	
-	/* Disable filter and PID */
-	pid_enable(false);
-
- //	scan4_init();
- // 	scan4_start();
+	/* initialize all relevant modules */
+   	sys_init ();
 
 	/*
 	 * Main program loop
@@ -208,6 +146,7 @@ int main(void)
 			case 'z':
 				adc_set_pga(padc0, uart_wait_get_char());
 				break;
+#ifdef configMEMS_2ACT
 			case '!':
 				set_scan_wait ();
 				break;		 
@@ -220,6 +159,7 @@ int main(void)
 			case '^':
 				step_scan ();
 				break;
+#endif
 			case '&':
 				set_dac_max ();
 				break;
@@ -259,6 +199,8 @@ int main(void)
 			case 'O':
 				calib_delay = uart_wait_get_char ();
 				break;
+// 4scan spcific functions
+#ifdef configMEMS_4ACT 
 			case 'P':
 				scan4_get_data ();
 				break;
@@ -280,8 +222,83 @@ int main(void)
 			case 'y':
 				s4_set_sample_cnt (uart_wait_get_char());
 				break;
+#endif
 		}
 	}
+}
+
+/**********************************
+		Initialization 
+**********************************/
+
+static void sys_init ()
+{
+	/* Initialize flash memory */
+	flash_Init ();
+
+   	/* Initialize SPI/DDS */
+	dds_spi_init();
+	//dds_power_up();
+
+	/* Initialize UART */
+	uart_init();  
+
+	/* Initialize ADC */
+	adc_init();
+
+	/* Configure all DACs */
+	dac_set_range(dac0, dac_AVdd_AGND);
+	dac_set_range(dac1, dac_AVdd_AGND);
+	dac_set_range(dac2, dac_AVdd_AGND);
+	dac_set_range(dac3, dac_AVdd_AGND);
+	dac_set_range(dac4, dac_AVdd_AGND);
+	dac_set_range(dac5, dac_AVdd_AGND);
+	dac_set_range(dac6, dac_AVdd_AGND);
+	dac_set_range(dac7, dac_AVdd_AGND);
+	dac_set_range(dac8, dac_AVdd_AGND);
+	dac_set_range(dac9, dac_AVdd_AGND);
+	dac_set_range(dac10, dac_AVdd_AGND);
+	dac_set_range(dac11, dac_AVdd_AGND);
+
+	dac_init (dac0, dac_enable);
+	dac_init (dac1, dac_enable);
+	dac_init (dac2, dac_enable);
+	dac_init (dac3, dac_enable);
+	dac_init (dac4, dac_enable);
+	dac_init (dac5, dac_enable);
+	dac_init (dac6, dac_enable);
+	dac_init (dac7, dac_enable);
+	dac_init (dac8, dac_enable);
+	dac_init (dac9, dac_enable);
+	dac_init (dac10, dac_enable);
+	dac_init (dac11, dac_enable);
+
+	/* Init motor control */
+	mtr_init ();
+
+	/* Init DAC attenuators */
+	pga_1ch_init (pga_fine);
+	pga_1ch_init (pga_dds);
+	pga_4ch_init ();		   
+	
+	pga_1ch_set (pga_fine, 127);
+	pga_1ch_set (pga_dds, 127);
+	pga_4ch_set (pga_x1, 192);
+	pga_4ch_set (pga_x2, 192);
+	pga_4ch_set (pga_y1, 192);
+	pga_4ch_set (pga_y2, 192);
+
+	/* Init actuators */
+	init_act (&left_act, DAC_Y1, ADC_Y1, ADC_ZOFFSET);
+	init_act (&right_act, DAC_X1, ADC_X1, ADC_ZOFFSET);
+	init_act (&z_act, DAC_ZOFFSET_FINE, ADC_ZOFFSET, ADC_Y1);
+
+	init_scanner (&left_act, &right_act, &z_act);
+
+ 	scan4_init();
+		
+	/* Disable filter and PID */
+	pid_enable(false);
 }
 
 #define FC_INITIAL_Z	2500

@@ -1,5 +1,7 @@
 #include "scan.h"
 
+#ifdef configMEMS_2ACT
+
 static u16 buffer [1];
 
 static Actuator* l_act;
@@ -310,3 +312,5 @@ static float get_max_linepwr (const u16 vmin_line, const u16 vmax)
 	float right_lean = pwr(l_act, vmax) + pwr(r_act, vmin_line);
 	return (left_lean > right_lean)?left_lean:right_lean;
 }
+
+#endif
