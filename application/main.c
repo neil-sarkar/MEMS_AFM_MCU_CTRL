@@ -295,7 +295,9 @@ static void sys_init ()
 
 	init_scanner (&left_act, &right_act, &z_act);
 
+#ifdef configMEMS_4ACT
  	scan4_init();
+#endif
 		
 	/* Disable filter and PID */
 	pid_enable(false);
