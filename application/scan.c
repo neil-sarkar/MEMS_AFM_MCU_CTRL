@@ -2,7 +2,7 @@
 
 #ifdef configMEMS_2ACT
 
-static u16 buffer [1];
+static u16 buffer [BFR_SIZE];
 
 static Actuator* l_act;
 static Actuator* r_act;																								 
