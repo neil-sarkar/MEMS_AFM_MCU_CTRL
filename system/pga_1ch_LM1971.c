@@ -1,6 +1,8 @@
 #include "pga_1ch_LM1971.h"
 #include "../peripheral/wire3.h"
 
+#ifdef configSYS_PGA_LM1971_PGA4311
+
 #define PGA_CHNL1_ADR (0x00U)
 
 #define PGA_FINE_DAT_REG	(GP3DAT)
@@ -53,4 +55,6 @@ void pga_1ch_set (pga channel, u8 db)
 	wire3_set_cs (cs_dat_reg, cs_bit);
 	wire3_write_wait ((u16)data, 2);
 }
+
+#endif
 

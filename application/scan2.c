@@ -1,4 +1,4 @@
-#include "scan.h"
+#include "scan2.h"
 
 #ifdef configMEMS_2ACT
 

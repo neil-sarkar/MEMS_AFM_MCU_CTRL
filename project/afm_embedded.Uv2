@@ -13,7 +13,6 @@ File 1,1,<..\peripheral\adc.c><adc.c>
 File 1,1,<..\peripheral\dac.c><dac.c>
 File 1,1,<..\peripheral\flash.c><flash.c>
 File 1,1,<..\peripheral\uart.c><uart.c>
-File 1,1,<..\application\scan.c><scan.c>
 File 1,1,<..\application\calibration.c><calibration.c>
 File 1,1,<..\system\motor.c><motor.c>
 File 1,1,<..\global\global.c><global.c>
@@ -22,6 +21,9 @@ File 1,1,<..\system\dds_AD5932.c><dds_AD5932.c>
 File 1,1,<..\peripheral\wire3.c><wire3.c>
 File 1,1,<..\system\pga_1ch_LM1971.c><pga_1ch_LM1971.c>
 File 1,1,<..\system\pga_4ch_PGA4311.c><pga_4ch_PGA4311.c>
+File 1,1,<..\system\pga_8ch_CS3308.c><pga_8ch_CS3308.c>
+File 1,1,<..\system\dds_AD9837.c><dds_AD9837.c>
+File 1,1,<..\application\scan2.c><scan2.c>
 
 
 Options 1,0,0  // Target 'Target 1'

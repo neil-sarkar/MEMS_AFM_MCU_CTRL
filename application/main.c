@@ -10,19 +10,24 @@
 #include "../system/dds_AD5932.h"
 #include "../system/pid.h"
 #include "../system/motor.h"
+
 #include "../system/pga_1ch_LM1971.h"
 #include "../system/pga_4ch_PGA4311.h"
+#include "../system/dds_AD9837.h"
+#include "../system/pga_8ch_CS3308.h"
 
 #include "calibration.h"
-#include "scan.h"
+#include "scan2.h"
 #include "scan4.h"
 
-tyVctHndlr    DDS     	= (tyVctHndlr)dds_handler;
+tyVctHndlr    DDS     	= (tyVctHndlr)dds_98_handler;
 tyVctHndlr    PID     	= (tyVctHndlr)pid_handler;
 tyVctHndlr 	  UART		= (tyVctHndlr)uart_handler;
 tyVctHndlr	  MTR		= (tyVctHndlr)mtr_handler;
 tyVctHndlr	  WIRE3		= (tyVctHndlr)wire3_handler;
+						
 extern int dds_inc_cnt;
+extern int dds_AD9837_inc_cnt;
 
 static Actuator left_act;
 static Actuator right_act;
@@ -122,15 +127,17 @@ int main(void)
 			case 'm':
 				single_pulse();
 				break;
-			case 'n':
-				cont_pulse();
-				break;
 			case 'o':
 				device_calibration ();
+				break;
+#ifdef configSYS_DDS_AD9837
+			case 'n':
+				dds_AD9837_get_data();
 				break;			
 			case 'q':
-				freq_sweep();
+				freq_sweep_AD9837();
 				break;
+#endif
 			case 'r':
 				freq_sweep_dds();
 				break;
@@ -163,18 +170,11 @@ int main(void)
 			case '&':
 				set_dac_max ();
 				break;
+#ifdef configSYS_PGA_LM1971_PGA4311
 			case '*':
 				set_pga ();
 				break;
-			case 'A':
-				set_pv_rel_manual_a ();
-				break;
-			case 'B':
-				set_pv_rel_manual_b ();
-				break;
-			case 'C':
-				set_pv_rel_manual_c ();
-				break;
+#endif
 			case 'J':
 				act_res_test ();
 				break;
@@ -223,6 +223,24 @@ int main(void)
 				s4_set_sample_cnt (uart_wait_get_char());
 				break;
 #endif
+#ifdef configSYS_PGA_CS3308 
+			case 'T':
+				pga_get_data();
+				break;
+			case 'U':
+				mute(uart_wait_get_char());
+				break;
+#endif
+			// TODO take these out?
+			case 'A':
+				//set_pv_rel_manual_a ();
+				break;
+			case 'B':
+				//set_pv_rel_manual_b ();
+				break;
+			case 'C':
+				//set_pv_rel_manual_c ();
+				break;
 		}
 	}
 }
@@ -233,12 +251,22 @@ int main(void)
 
 static void sys_init ()
 {
+
+	// TODO: choose from:
+	// 2 pgas
+	// 2 scanners
+	// 2 dds'
+
 	/* Initialize flash memory */
 	flash_Init ();
 
    	/* Initialize SPI/DDS */
+#ifdef configSYS_DDS_AD5932
 	dds_spi_init();
-	//dds_power_up();
+#endif
+#ifdef configSYS_DDS_AD9837
+	dds_AD9837_spi_init();
+#endif
 
 	/* Initialize UART */
 	uart_init();  
@@ -276,6 +304,7 @@ static void sys_init ()
 	/* Init motor control */
 	mtr_init ();
 
+#ifdef configSYS_PGA_LM1971_PGA4311
 	/* Init DAC attenuators */
 	pga_1ch_init (pga_fine);
 	pga_1ch_init (pga_dds);
@@ -287,7 +316,13 @@ static void sys_init ()
 	pga_4ch_set (pga_x2, 192);
 	pga_4ch_set (pga_y1, 192);
 	pga_4ch_set (pga_y2, 192);
+#endif
 
+#ifdef configSYS_PGA_CS3308
+	/* Init the 8-PGA */
+	pga_init();
+#endif
+	
 	/* Init actuators */
 	init_act (&left_act, DAC_Y1, ADC_Y1, ADC_ZOFFSET);
 	init_act (&right_act, DAC_X1, ADC_X1, ADC_ZOFFSET);
@@ -420,7 +455,7 @@ void act_res_test (void)
 	dac_set_val(DAC_ZAMP, z_amp);
 	dac_set_val(DAC_ZOFFSET_COARSE, z_c);							
 }
-
+/*
 void set_pv_rel_manual_a (void) 
 {
 	float coeff_a;
@@ -504,7 +539,7 @@ void set_pv_rel_manual_c (void)
 			break;
 	}	
 }
-
+*/
 void set_dac_max (void)
 {
 	dac dac_ch;
@@ -575,6 +610,7 @@ void read_dac(void)
 void read_z (void)
 {
 	z_init_sample ();
+	// TODO might as well remove
 	//pid_wait_update ();
 	z_sample ();
 	z_write_data ();
@@ -645,31 +681,20 @@ void set_pid_setpoint (void)
 	pid_set_setpoint (setpoint);
 }
 
-void freq_sweep(void)
+void freq_sweep_AD9837(void)
 {
-	u16 i, val;
-	u16 steps;
-	u16 diff;
-	u16 adc_val;
-	u8 steps_l;
-	u8 steps_h;
-	//u8 sweep[SWEEP_MAX * 2];
+	u32 i;
 	long int delay;
+	u16 adc_val; 
 
-	steps_l = uart_wait_get_char();
-	steps_h = uart_wait_get_char();
-
-	steps = ((steps_h << 8)| steps_l) & 0x0FFF;
-
-	diff = SWEEP_MAX / steps;
-	
+	dds_AD9837_load_freq();		//set the start frequency
 	// sweep and write table
-	for (i = 0, val = 0; i < (steps*2); i += 2, val += diff)
-	{
-		dac_set_val(DAC_ZVCO, val);
+	for (i = 0; i < dds_AD9837_inc_cnt; i++)
+	{		
 
-		// delay is about ~4.60ms
-		delay = 20000;
+		dds_AD9837_write();
+		
+		delay = 12500;
 		while(delay--){};
 
 		// read adc
@@ -687,6 +712,8 @@ void freq_sweep(void)
 	 	// Send data out
 		uart_set_char((adc_val));
 		uart_set_char(((adc_val >> 8)));
+
+		dds_AD9837_increment(i+1);
 
 	}
 }
@@ -754,19 +781,6 @@ void set_pw (void)
 void single_pulse(void)
 {
 	mtr_step ();
-	uart_write ("o");
-}
-
-void cont_pulse(void)
-{
-	for (;;) {
-		/* Kill approach if requested */
-		if (is_received () && uart_get_char () == BRK_CHAR){
-			break;
-		}
-
-		mtr_step ();
-	}
 	uart_write ("o");
 }
 
@@ -864,6 +878,7 @@ void step_scan (void)
 	scan_step ();
 }
 
+#ifdef configSYS_PGA_LM1971_PGA4311
 void set_pga (void)
 {
 	u8 pga;
@@ -897,6 +912,7 @@ void set_pga (void)
 
 	uart_write ("o");
 }
+#endif
 
 void reset_mcu ()
 {

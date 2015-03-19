@@ -21,6 +21,7 @@ volatile float  kp = 1.6,
 				ki = 0, 
 				kd = 0;
 
+u8 isPidOn;
 
 // Sample time is in ms for now (could be changed to us)
 u16 sampleTime = 1;
@@ -108,7 +109,7 @@ void pid_handler(void)
 
 	adc_start_conv(ADC_PHASE);
 	pid_phase = adc_get_val();
-		
+
 	error = setPoint - pid_input;
 	iTerm += (ki * error);
 	if (iTerm > outMax)

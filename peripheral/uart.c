@@ -21,7 +21,7 @@ void uart_init (void)
 	// Initialize the UART for 9600-8-N
 	
 	/* Select UART functionality for P1.0/P1.1 */
-	GP1CON = BIT0 | BIT4;     		  
+	GP1CON |= BIT0 | BIT4;     		  
 	
 	/* Enable access to COMDIV registers */
 	COMCON0 = 0x080;

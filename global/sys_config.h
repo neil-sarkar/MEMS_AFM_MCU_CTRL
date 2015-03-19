@@ -3,7 +3,7 @@
 
 // TODO: somehow ensure that only one board is define at a time
 // TODO: somehow check for configBOARD_...
-#define configBOARD_V2_0
+//#define configBOARD_V2_0
 #define configBOARD_V3_0
 
 // choose one or the other
@@ -12,13 +12,15 @@
 //#define configMEMS_4ACT
 //#define configMEMS_4ACT_ORTHO
 
-// choose one or the other
-#define configSYS_DDS1234
-#define configSYS_DDS4321
+#ifdef configBOARD_V2_0
+	#define configSYS_DDS_AD5932
+	#define configSYS_PGA_LM1971_PGA4311
+#endif 
 
-// choose one or the other
-#define configSYS_PGA1234
-#define configSYS_PGA4321
+#ifdef configBOARD_V3_0
+	#define configSYS_DDS_AD9837
+	#define configSYS_PGA_CS3308
+#endif
 
 // TODO: this could be more specific, how many do we have?
 #define configAPPROACH_HORZ
@@ -26,9 +28,13 @@
 
 // TODO: define these better
 #define configMOTOR_PCB
-// note that the stepprt doesn't exists yet
+// note that the steppr doesn't exists yet
 
 #define configMOTOR_STEPPER
+
+// Determine controller characteristics
+#define featCONTROLLER_PID
+#define featCONTROLLER_PI
 
 // General features
 #define featCALIBRATION
