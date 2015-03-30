@@ -35,7 +35,7 @@ void um_init (void)
 #define DAC_HORZ	DAC_ZOFFSET_COARSE	
 #define DAC_L1		DAC_X1
 #define DAC_L2		DAC_Y1
-#define UM_delay 	0
+#define UM_delay 	10
 #define COM_delay 	100
 
 
@@ -53,6 +53,15 @@ void um_track (void)
 	u16 hysteresis=0;
 	u16 threshold=2000;
 	u16 prevmax=0;
+	u16 serpstep=0;
+	u8 xstate=0;
+	s8 xdir=1;
+	u16 xval=0;
+	u16 yindex=0;
+	u8 ystate=0;
+	s8 ydir=1;
+	u16 yval=0;
+	u16 phase=scan_numpts/8+13;
 
 	
 	
@@ -60,14 +69,43 @@ void um_track (void)
 	dac_set_limit(DAC_Y1, DAC_1_V);
 	dac_set_limit(DAC_Y2, 4095);
 	//turn on photodiode
-	dac_set_val(DAC_Y2, 4095);
+	//dac_set_val(DAC_Y2, 4095);
 	//set pistons to midscale
-	dac_set_val(DAC_X1, scan_l_points[vertpos]);
-	dac_set_val(DAC_Y1, scan_r_points[vertpos]);
+	//dac_set_val(DAC_X1, scan_l_points[vertpos]);
+	//dac_set_val(DAC_Y1, scan_r_points[vertpos]);
 	
 
 	while (COMRX != 'q')
 	{
+		um.horz.iMax = 0;
+		um.horz.iMin = 4095;
+		edgenum=0;
+		serpstep=(4095/scan_numpts); //scan range of serpentine actuator is 50%
+
+		for (i = 0; i < (scan_numpts); i++)
+		{
+		xstate=(2*i/(scan_numpts));
+		xdir=(xstate*-2+1);
+		xval=serpstep*(xdir*(2*i % (scan_numpts))+((scan_numpts))*xstate);
+		
+		dac_set_val(DAC_HORZ, xval);
+		//write horz dac
+
+		yindex=(i-phase) % scan_numpts;
+		ystate=(yindex*4/scan_numpts) % 2;
+		ydir=(ystate*-2+1);
+		yval=ydir*(4*yindex % (scan_numpts))+((scan_numpts)*ystate);
+		//yval=((scan_numpts/4)*ystate - (ydir*yindex % (scan_numpts/4)));
+		dac_set_val(DAC_X1, scan_r_points[yval+1]);
+		dac_set_val(DAC_Y1, scan_l_points[yval-1]);
+		
+		
+		delay = UM_delay;
+		while (delay--);
+		}
+	}
+
+		/*
 		// Horizontal Tracking
 		um.horz.iMax = 0;
 		um.horz.iMin = 4095;
@@ -189,5 +227,6 @@ void um_track (void)
 		uart_set_char (vertpos);
 		uart_set_char (vertpos >> 8);	
 		}
+		*/
 	}
 
