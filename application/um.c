@@ -1,4 +1,5 @@
 #include "um.h"
+#include "math.h"
 
 #define DAC_2_V			2481
 #define DAC_1_5_V		1861
@@ -35,7 +36,7 @@ void um_init (void)
 #define DAC_HORZ	DAC_ZOFFSET_COARSE	
 #define DAC_L1		DAC_X1
 #define DAC_L2		DAC_Y1
-#define UM_delay 	10
+#define UM_delay 	0
 #define COM_delay 	100
 
 
@@ -60,10 +61,22 @@ void um_track (void)
 	u16 yindex=0;
 	u8 ystate=0;
 	s8 ydir=1;
-	u16 yval=0;
+	u16 yval1=0;
+	u16 yval2=0;
 	u16 phase=scan_numpts/8+13;
+	const u16 sinpts=128;
+	float sintbl[sinpts];
+	float sqrtsintbl[sinpts];
+	float pi=3.14159265358979323846;
+	u16 j=0;
 
-	
+	for (j = 0; j < (sinpts); j++)
+		 {
+		 sintbl[j]=0.5*(1+sin((float)j/sinpts*2*pi));
+		 sqrtsintbl[j]=sqrt(sintbl[j]);
+		 }
+
+
 	
 	dac_set_limit(DAC_X1, DAC_1_V);
 	dac_set_limit(DAC_Y1, DAC_1_V);
@@ -80,24 +93,27 @@ void um_track (void)
 		um.horz.iMax = 0;
 		um.horz.iMin = 4095;
 		edgenum=0;
-		serpstep=(4095/scan_numpts); //scan range of serpentine actuator is 50%
-
-		for (i = 0; i < (scan_numpts); i++)
+		
+		for (i = 0; i < (sinpts); i++)
 		{
-		xstate=(2*i/(scan_numpts));
-		xdir=(xstate*-2+1);
-		xval=serpstep*(xdir*(2*i % (scan_numpts))+((scan_numpts))*xstate);
+		//xstate=(2*i/(scan_numpts));
+		//xdir=(xstate*-2+1);
+		xval=3000*(sintbl[i]);
 		
 		dac_set_val(DAC_HORZ, xval);
 		//write horz dac
 
-		yindex=(i-phase) % scan_numpts;
+		/*yindex=(i-phase) % scan_numpts;
 		ystate=(yindex*4/scan_numpts) % 2;
 		ydir=(ystate*-2+1);
 		yval=ydir*(4*yindex % (scan_numpts))+((scan_numpts)*ystate);
-		//yval=((scan_numpts/4)*ystate - (ydir*yindex % (scan_numpts/4)));
-		dac_set_val(DAC_X1, scan_r_points[yval+1]);
-		dac_set_val(DAC_Y1, scan_l_points[yval-1]);
+		*/
+		
+		yval1=4000*(sqrtsintbl[(8*i)%sinpts]);
+		yval2=4000*(sqrtsintbl[(8*i+64-20)%sinpts]);
+		
+		dac_set_val(DAC_X1, yval1);
+		dac_set_val(DAC_Y1, yval2);
 		
 		
 		delay = UM_delay;
