@@ -1,8 +1,9 @@
-#ifdef configMEMS_4ACT
-
 #pragma once
 
 #include "../global/global.h"
+
+#ifdef configMEMS_4ACT
+
 #include "../peripheral/uart.h"
 #include "../peripheral/flash.h"
 #include "../peripheral/dac.h"

@@ -8,8 +8,8 @@
 
 // choose one or the other
 // TODO: use ifdef to manage both?
-#define configMEMS_2ACT
-//#define configMEMS_4ACT
+//#define configMEMS_2ACT
+#define configMEMS_4ACT
 //#define configMEMS_4ACT_ORTHO
 
 #ifdef configBOARD_V2_0

@@ -93,7 +93,7 @@ __inline static void SET_PAIRY(u16 v1, u16 v2)
 
 #define SAMPLE_WAIT_CNT_ABS	50
 
-#define TAKE_MEASUREMENT	if (isPidOn == 1)																		\
+#define TAKE_MEASUREMENT	if (isPidOn == 1)																	\
 							{																					\
 								s4.img.zAmplitude = pid_input;													\
 								s4.img.zOffset = dac_get_val(DAC_ZOFFSET_FINE);			 						\

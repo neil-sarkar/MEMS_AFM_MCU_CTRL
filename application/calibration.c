@@ -1,5 +1,7 @@
 #include "calibration.h"
 
+#ifdef configMEMS_2ACT
+
 #define CALC_COEFF_0(a, b) 		(-0.5f*b/a)
 #define CALC_COEFF_1(a, b, c) 	((b*b-4.0f*a*c)/4.0f/(a*a))
 #define CALC_COEFF_2(a)			(1.0f/a)
@@ -145,3 +147,5 @@ static void set_indirect_rel (Actuator* act, float a, float b, float c)
 	act->vr_indirect_rel[1] = CALC_COEFF_1(a, b, c);
 	act->vr_indirect_rel[2] = CALC_COEFF_2(a);
 }
+
+#endif

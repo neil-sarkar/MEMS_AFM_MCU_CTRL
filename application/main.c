@@ -90,9 +90,6 @@ int main(void)
 			case 'c':
 				read_adc();
 				break;
-			case 'e':
-				read_z();
-				break;
 			// Set Actuator Voltages
 			case 'f':
 				set_actuators();
@@ -127,9 +124,6 @@ int main(void)
 			case 'm':
 				single_pulse();
 				break;
-			case 'o':
-				device_calibration ();
-				break;
 #ifdef configSYS_DDS_AD9837
 			case 'n':
 				dds_AD9837_get_data();
@@ -153,6 +147,9 @@ int main(void)
 			case 'z':
 				adc_set_pga(padc0, uart_wait_get_char());
 				break;
+			case 'e':
+				read_z();
+				break;
 #ifdef configMEMS_2ACT
 			case '!':
 				set_scan_wait ();
@@ -165,6 +162,12 @@ int main(void)
 				break;
 			case '^':
 				step_scan ();
+				break;
+			case 'O':
+				calib_delay = uart_wait_get_char ();
+				break;
+			case 'o':
+				device_calibration ();
 				break;
 #endif
 			case '&':
@@ -195,9 +198,6 @@ int main(void)
 				break;
 			case 'N':
 				force_curve ();
-				break;
-			case 'O':
-				calib_delay = uart_wait_get_char ();
 				break;
 // 4scan spcific functions
 #ifdef configMEMS_4ACT 
@@ -322,13 +322,15 @@ static void sys_init ()
 	/* Init the 8-PGA */
 	pga_init();
 #endif
-	
+
+#ifdef configMEMS_2ACT	
 	/* Init actuators */
 	init_act (&left_act, DAC_Y1, ADC_Y1, ADC_ZOFFSET);
 	init_act (&right_act, DAC_X1, ADC_X1, ADC_ZOFFSET);
 	init_act (&z_act, DAC_ZOFFSET_FINE, ADC_ZOFFSET, ADC_Y1);
 
 	init_scanner (&left_act, &right_act, &z_act);
+#endif
 
 #ifdef configMEMS_4ACT
  	scan4_init();
@@ -383,6 +385,39 @@ void force_curve (void)
 		uart_set_char(adc_val);
 		uart_set_char((adc_val & 0x0F00) >> 8);	
 	}		
+}
+
+extern u8 isPidOn;
+extern u16 pid_input;
+extern u16 pid_phase;
+void read_z (void)
+{
+	u16 z_amp, z_offset, z_phase;
+
+	if (isPidOn == 1)
+	{
+		z_amp 		= pid_input;
+		z_offset 	= dac_get_val(DAC_ZOFFSET_FINE);
+		z_phase 	= pid_phase;
+	}
+	else
+	{
+		adc_start_conv (ADC_ZAMP);
+		z_amp 		= adc_get_val (); 
+		
+		z_offset	= dac_get_val(DAC_ZOFFSET_FINE);
+		adc_start_conv(ADC_PHASE);
+		z_phase 	= adc_get_val();
+	}
+
+	uart_set_char((u8)((z_amp) & 0xFF));
+	uart_set_char((u8)((z_amp >> 8) & 0xFF));
+
+	uart_set_char((u8)(z_offset & 0xFF));
+	uart_set_char((u8)((z_offset >> 8) & 0xFF));
+
+	uart_set_char((u8)(z_phase & 0xFF));
+	uart_set_char((u8)((z_phase >> 8) & 0xFF));
 }
 
 #define MV_TO_ABS_200	248
@@ -607,15 +642,6 @@ void read_dac(void)
 	uart_set_char((dac_val >> 8) & 0xFF);		
 }
 
-void read_z (void)
-{
-	z_init_sample ();
-	// TODO might as well remove
-	//pid_wait_update ();
-	z_sample ();
-	z_write_data ();
-}
-
 void set_actuators(void)
 {
 	u8 dac1_l, dac1_h, dac2_l, dac2_h;		  
@@ -807,6 +833,7 @@ void auto_approach (void)
 	}
 }
 
+#ifdef configMEMS_2ACT
 void device_calibration (void)
 {
 	u8 actuator_cal;
@@ -877,6 +904,8 @@ void step_scan (void)
 {
 	scan_step ();
 }
+
+#endif 
 
 #ifdef configSYS_PGA_LM1971_PGA4311
 void set_pga (void)
