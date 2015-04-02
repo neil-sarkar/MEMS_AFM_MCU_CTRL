@@ -13,8 +13,9 @@ extern u16 scan_r_points[1024];
 
 struct um_peak
 {
+	u16 max;
 	u16 iMax;
-	u16 iMin;
+	u16 min;
 	u16 edge_a;
 	u16 edge_b;
 	u16 peak_posn;
@@ -22,7 +23,10 @@ struct um_peak
 	u16 delta_y;
 	u16 delta_f;
 	u16 phase_offset;
-	u16 trigpos[3];
+	u16 trigpos[1][1];
+	u16 maxPeak;
+	u16 corrDelta;
+	u16 corrFactor;
 };
 
 struct umirror
@@ -33,7 +37,7 @@ struct umirror
 
 //struct umirror um = {{0, 0, 0}, {0, 0, 0}};
 
-struct um_peak um = {0, 0, 0, 0, 0, 0, 0, 0, 0, {0, 0, 0}};
+struct um_peak um;// = {0, 0, 0, 0, 0, 0, 0, 0, 0, {0, 0, 0}};
 
 void um_init (void)
 {
@@ -49,6 +53,8 @@ void um_init (void)
 
 void um_track (void)
 {
+	// TODO: need to set phase_offset to something
+
 	u16 val;
 	u32 delay;
 	s32 i;
@@ -94,9 +100,10 @@ void um_track (void)
 
 	while (COMRX != 'q')
 	{
-		um.iMax = 0;
-		um.iMin = 4095;
-		peakCnt = 0;	
+		um.max = 0;
+		um.min = 4095;
+		peakCnt = 0;
+		um.maxPeak = 0;	
 		for (i = 0; i < (sinpts); i++)
 		{
 
@@ -105,8 +112,8 @@ void um_track (void)
 
 			// calculate next point
 			xval=3000*(sintbl[i]);
-			yval1=4000*(sqrtsintbl[(8*i)%sinpts]);
-			yval2=4000*(sqrtsintbl[(8*i+64-20)%sinpts]);
+			yval1=4000*(sqrtsintbl[(2*i)%sinpts]);
+			yval2=4000*(sqrtsintbl[(2*i+64-20)%sinpts]);
 			
 			// write next point
 			dac_set_val(DAC_HORZ, xval);
@@ -117,13 +124,13 @@ void um_track (void)
 			adc_start_conv(ADC_MIRROR);
 			val = adc_get_val();
 
-			if (val > um.iMax)
+			if (val > um.max)
 			{
-				um.iMax = val;
+				um.max = val;
 			}
-			if (val < um.iMin)
+			if (val < um.min)
 			{
-				um.iMin = val;
+				um.min = val;
 			}
 
 			if (!triggered)
@@ -132,11 +139,13 @@ void um_track (void)
 				{
 					threshold = threshold - hysteresis;
 					triggered = true;
-					um.trigpos[peakCnt] = i - um.phase_offset;
-					peakCnt++;
+					if (val == um.max)
+					{ 
+						um.iMax = (i - um.phase_offset + sinpts) % sinpts;
+					}
 				}
 			}
-			else
+			if (triggered)
 			{
 				if (val < threshold)
 				{
@@ -147,135 +156,13 @@ void um_track (void)
 
 		}
 
-		// calculate offset
-		for (i =0; i < peakCnt; i++)
-		{
-			if (um.trigpos[i] 
-		}
+		// calculate next point
+		deltaX = sintbl[iMax] - sintbl[previMax];
+
+		xval=3000*(sintbl[iMax]);
+		yval1=4000*(sqrtsintbl[(2*iMax)%sinpts]);
+		yval2=4000*(sqrtsintbl[(2*iMax+64-20)%sinpts]);
+
 	}
-
-		/*
-		// Horizontal Tracking
-		um.horz.iMax = 0;
-		um.horz.iMin = 4095;
-		edgenum=0;
-		for (i = 0; i < 4095; i += 20)
-		{
-			delay = UM_delay;
-			while (delay--);
-			if (i > 4095) i = 4095;
-			dac_set_val(DAC_HORZ, i);
-			adc_start_conv(ADC_MIRROR);
-			//val = adc_get_avgw_val(8, 100);
-			val = adc_get_val();
-			
-			if (val > um.horz.iMax) 
-			{
-				um.horz.iMax = val;
-			}
-			if (val < um.horz.iMin) 
-			{
-				um.horz.iMin = val;
-			}
-			if (!triggered)
-			{
-				if (val>threshold)
-				{
-					threshold=threshold-hysteresis;
-					triggered = true;
-					trigpos[edgenum]=i;
-					edgenum++;
-				}
-			}
-			if (triggered)
-			{	
-				if (val<threshold)
-				{
-					threshold=threshold+hysteresis;
-					triggered = false;
-				}
- 			}
-		}
-//		um.horz.max_b = 0;
-//		delay = 1000;
-//		while(delay--);
-		for (i = 4095; i > 0; i -= 20)
-		{
-			delay = UM_delay;
-			while (delay--);
-			if (i < 0) i = 0;
-			dac_set_val(DAC_HORZ, i);
-			adc_start_conv(ADC_MIRROR);
-			//val = adc_get_avgw_val(8, 100);
-			val = adc_get_val();
-			if (val > um.horz.iMax) 
-			{
-				um.horz.iMax = val;
-			}
-			if (val < um.horz.iMin) 
-			{
-				um.horz.iMin = val;
-			}
-			if (!triggered)
-			{
-				if (val>threshold)
-				{
-					threshold=threshold-hysteresis;
-					triggered = true;
-					trigpos[edgenum]=i;
-					edgenum++;
-				}
-			}
-			if (triggered)
-			{	
-				if (val<threshold)
-				{
-					threshold=threshold+hysteresis;
-					triggered = false;
-				}
- 			}
-		}
-
-		um.horz.peak_posn = (trigpos[0] + trigpos[1]) / 2;
-		//dac_set_val(DAC_HORZ, um.horz.peak_posn);
-		
-		range = um.horz.iMax - um.horz.iMin;
-		threshold = um.horz.iMin + .5*range;
-		hysteresis = range/10;
-
-		// Vertical Tracking
-		if (um.horz.iMax>prevmax)
-		{
-			if (dir>0) vertpos++;
-			if (dir<0) vertpos--;						
-		}	
-		else
-		{
-			dir=dir*-1;
-			if (dir>0) vertpos++;
-			if (dir<0) vertpos--;						
-		}
-						  
-
-		if (vertpos>scan_numpts) vertpos=scan_numpts-1;
-		//if (vertpos<0) vertpos=0;	
-	
-		dac_set_val(DAC_X1, scan_r_points[vertpos]);
-		dac_set_val(DAC_Y1, scan_l_points[vertpos]);
-		delay = UM_delay;
-		while (delay--);
-		prevmax=um.horz.iMax;
-	
-
-		// set voltage to maximum
-		// dac_set_val(DAC_VERT, dac_avg);
-
-		uart_set_char (um.horz.peak_posn);
-		uart_set_char (um.horz.peak_posn >> 8);
-
-		uart_set_char (vertpos);
-		uart_set_char (vertpos >> 8);	
-		}
-		*/
-	}
+}
 
