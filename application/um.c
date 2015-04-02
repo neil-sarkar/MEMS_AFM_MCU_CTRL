@@ -15,12 +15,14 @@ struct um_peak
 {
 	u16 max;
 	u16 iMax;
+	u16 previMax;
 	u16 min;
 	u16 edge_a;
 	u16 edge_b;
 	u16 peak_posn;
-	u16 delta_x;
-	u16 delta_y;
+	s32 deltaX;
+	s32 deltaY1;
+	s32 deltaY2;
 	u16 delta_f;
 	u16 phase_offset;
 	u16 trigpos[1][1];
@@ -98,6 +100,10 @@ void um_track (void)
 	//dac_set_val(DAC_Y1, scan_r_points[vertpos]);
 	
 
+	um.deltaX = 0;
+	um.deltaY1 = 0;
+	um.deltaY2 = 0;
+	um.phase_offset = 0;
 	while (COMRX != 'q')
 	{
 		um.max = 0;
@@ -111,9 +117,9 @@ void um_track (void)
 			while (delay--);
 
 			// calculate next point
-			xval=3000*(sintbl[i]);
-			yval1=4000*(sqrtsintbl[(2*i)%sinpts]);
-			yval2=4000*(sqrtsintbl[(2*i+64-20)%sinpts]);
+			xval=3000*(sintbl[i] + um.deltaX);
+			yval1=4000*(sqrtsintbl[(2*i)%sinpts] + um.deltaY1);
+			yval2=4000*(sqrtsintbl[(2*i+64-20)%sinpts] + um.deltaY2);
 			
 			// write next point
 			dac_set_val(DAC_HORZ, xval);
@@ -157,12 +163,16 @@ void um_track (void)
 		}
 
 		// calculate next point
-		deltaX = sintbl[iMax] - sintbl[previMax];
+		um.deltaX = sintbl[um.iMax] - sintbl[um.previMax];
+		um.deltaY1 = sqrtsintbl[(2*um.iMax)%sinpts] - sqrtsintbl[(2*um.previMax)%sinpts];
+		um.deltaY2 = sqrtsintbl[(2*um.iMax+64-20)%sinpts] - sqrtsintbl[(2*um.previMax+64-20)%sinpts];
 
-		xval=3000*(sintbl[iMax]);
-		yval1=4000*(sqrtsintbl[(2*iMax)%sinpts]);
-		yval2=4000*(sqrtsintbl[(2*iMax+64-20)%sinpts]);
+		um.previMax = um.iMax;
 
+		uart_set_char (um.iMax);
+		uart_set_char (um.iMax >> 8);
+
+		uart_set_char ((2*um.iMax)%sinpts);
+		uart_set_char (((2*um.iMax)%sinpts) >> 8);
 	}
 }
-
