@@ -80,7 +80,6 @@ void uart_handler (void){
 				rx_fifo.tail = (rx_fifo.tail + 1)%BFR_SIZE;
 				rx_fifo.num_bytes ++;
 			}
-			
 		}
 	}
 }

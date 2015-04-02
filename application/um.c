@@ -104,7 +104,7 @@ void um_track (void)
 	um.deltaY1 = 0;
 	um.deltaY2 = 0;
 	um.phase_offset = 0;
-	while (COMRX != 'q')
+	while (uart_get_char() != 'q')
 	{
 		um.max = 0;
 		um.min = 4095;
@@ -112,7 +112,6 @@ void um_track (void)
 		um.maxPeak = 0;	
 		for (i = 0; i < (sinpts); i++)
 		{
-
 			delay = UM_delay;
 			while (delay--);
 
@@ -159,20 +158,21 @@ void um_track (void)
 					triggered = false;	
 				}
 			}
-
 		}
 
 		// calculate next point
-		um.deltaX = sintbl[um.iMax] - sintbl[um.previMax];
-		um.deltaY1 = sqrtsintbl[(2*um.iMax)%sinpts] - sqrtsintbl[(2*um.previMax)%sinpts];
-		um.deltaY2 = sqrtsintbl[(2*um.iMax+64-20)%sinpts] - sqrtsintbl[(2*um.previMax+64-20)%sinpts];
-
-		um.previMax = um.iMax;
+		um.deltaX 	= sintbl[um.iMax] - sintbl[um.previMax];
+		um.deltaY1 	= sqrtsintbl[(2*um.iMax)%sinpts] - sqrtsintbl[(2*um.previMax)%sinpts];
+		um.deltaY2 	= sqrtsintbl[(2*um.iMax+64-20)%sinpts] - sqrtsintbl[(2*um.previMax+64-20)%sinpts];
 
 		uart_set_char (um.iMax);
 		uart_set_char (um.iMax >> 8);
 
 		uart_set_char ((2*um.iMax)%sinpts);
 		uart_set_char (((2*um.iMax)%sinpts) >> 8);
+
+		um.previMax = um.iMax;
 	}
+
+	uart_reset_status ();
 }
