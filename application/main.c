@@ -222,6 +222,9 @@ int main(void)
 			case 'y':
 				s4_set_sample_cnt (uart_wait_get_char());
 				break;
+			case 'Z':
+				s4_set_send_back_cnt (uart_wait_get_char());
+				break;
 #endif
 #ifdef configSYS_PGA_CS3308 
 			case 'T':

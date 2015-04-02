@@ -44,6 +44,7 @@ struct scan4
 	u16		xStepCnt;
 	u16 	yRange;
 	u16 	lineCnt;
+	u8		sendBackCnt;
 	u8  	sampleCnt;
 	u8  	dwellTime_ms;
 	u8		iLine;
@@ -141,7 +142,7 @@ void scan4_start (void)
 	s4.isLastPnt		= false;
 	s4.xStepCnt 		= 0;
 	s4.lineCnt 			= 0;
-	
+	s4.sendBackCnt		= 8;	
 	s4.iLine			= 0;
 
 	s4.xp.a1StartVal 	= 4095;
@@ -172,9 +173,8 @@ void scan4_step (void)
 		{
 			for ( ; s4.xStepCnt < s4.numPts;)
 			{
-				// get 8 data points
 				// send data to client
-				for (i = 0; i < 8; i++)
+				for (i = 0; i < s4.sendBackCnt; i++)
 				{
 					if (!s4.start)
 					{
@@ -263,6 +263,7 @@ void scan4_get_data (void)
 	s4.yIncrement = s4.yRange / s4.numLines;
 }
 
+/* terminal interaction */
 bool scan4_get_dac_data (void)
 {
 	u16 i;
@@ -282,6 +283,11 @@ bool scan4_get_dac_data (void)
 	s4.f.adr += PAGE_SIZE;
 	
 	return true;	
+}
+
+void s4_set_send_back_cnt (u8 send_back_cnt)
+{
+	s4.sendBackCnt = send_back_cnt;	
 }
 
 #endif
