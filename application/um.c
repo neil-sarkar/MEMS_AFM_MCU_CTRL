@@ -18,6 +18,11 @@ struct um_peak
 	u16 edge_a;
 	u16 edge_b;
 	u16 peak_posn;
+	u16 delta_x;
+	u16 delta_y;
+	u16 delta_f;
+	u16 phase_offset;
+	u16 trigpos[3];
 };
 
 struct umirror
@@ -26,7 +31,9 @@ struct umirror
 	struct um_peak vert;
 };
 
-struct umirror um = {{0, 0, 0}, {0, 0, 0}};
+//struct umirror um = {{0, 0, 0}, {0, 0, 0}};
+
+struct um_peak um = {0, 0, 0, 0, 0, 0, 0, 0, 0, {0, 0, 0}};
 
 void um_init (void)
 {
@@ -48,8 +55,7 @@ void um_track (void)
 	s32 dir = 1;
 	u16 vertpos = scan_numpts/2;
 	bool triggered=false;
-	u8 edgenum=0;
-	u16 trigpos[2]={0,0};
+	u8 peakCnt=0;
 	u16 range;
 	u16 hysteresis=0;
 	u16 threshold=2000;
@@ -71,13 +77,11 @@ void um_track (void)
 	u16 j=0;
 
 	for (j = 0; j < (sinpts); j++)
-		 {
-		 sintbl[j]=0.5*(1+sin((float)j/sinpts*2*pi));
-		 sqrtsintbl[j]=sqrt(sintbl[j]);
-		 }
+	{
+		sintbl[j]=0.5*(1+sin((float)j/sinpts*2*pi));
+		sqrtsintbl[j]=sqrt(sintbl[j]);
+	}
 
-
-	
 	dac_set_limit(DAC_X1, DAC_1_V);
 	dac_set_limit(DAC_Y1, DAC_1_V);
 	dac_set_limit(DAC_Y2, 4095);
@@ -90,34 +94,63 @@ void um_track (void)
 
 	while (COMRX != 'q')
 	{
-		um.horz.iMax = 0;
-		um.horz.iMin = 4095;
-		edgenum=0;
-		
+		um.iMax = 0;
+		um.iMin = 4095;
+		peakCnt = 0;	
 		for (i = 0; i < (sinpts); i++)
 		{
-		//xstate=(2*i/(scan_numpts));
-		//xdir=(xstate*-2+1);
-		xval=3000*(sintbl[i]);
-		
-		dac_set_val(DAC_HORZ, xval);
-		//write horz dac
 
-		/*yindex=(i-phase) % scan_numpts;
-		ystate=(yindex*4/scan_numpts) % 2;
-		ydir=(ystate*-2+1);
-		yval=ydir*(4*yindex % (scan_numpts))+((scan_numpts)*ystate);
-		*/
-		
-		yval1=4000*(sqrtsintbl[(8*i)%sinpts]);
-		yval2=4000*(sqrtsintbl[(8*i+64-20)%sinpts]);
-		
-		dac_set_val(DAC_X1, yval1);
-		dac_set_val(DAC_Y1, yval2);
-		
-		
-		delay = UM_delay;
-		while (delay--);
+			delay = UM_delay;
+			while (delay--);
+
+			// calculate next point
+			xval=3000*(sintbl[i]);
+			yval1=4000*(sqrtsintbl[(8*i)%sinpts]);
+			yval2=4000*(sqrtsintbl[(8*i+64-20)%sinpts]);
+			
+			// write next point
+			dac_set_val(DAC_HORZ, xval);
+			dac_set_val(DAC_X1, yval1);
+			dac_set_val(DAC_Y1, yval2);
+
+			// read ADC			
+			adc_start_conv(ADC_MIRROR);
+			val = adc_get_val();
+
+			if (val > um.iMax)
+			{
+				um.iMax = val;
+			}
+			if (val < um.iMin)
+			{
+				um.iMin = val;
+			}
+
+			if (!triggered)
+			{
+				if (val > threshold)
+				{
+					threshold = threshold - hysteresis;
+					triggered = true;
+					um.trigpos[peakCnt] = i - um.phase_offset;
+					peakCnt++;
+				}
+			}
+			else
+			{
+				if (val < threshold)
+				{
+					threshold = threshold + hysteresis;
+					triggered = false;	
+				}
+			}
+
+		}
+
+		// calculate offset
+		for (i =0; i < peakCnt; i++)
+		{
+			if (um.trigpos[i] 
 		}
 	}
 
