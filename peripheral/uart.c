@@ -8,12 +8,15 @@ static struct uart_fifo {
 	u8 buffer [BFR_SIZE];
 	u8 head;
 	u8 tail;
+	u8 rx;
 	volatile u8 num_bytes;
 	volatile uart_status status;
 } rx_fifo;
 
 static s16 set_char (s16 ch);
 static u8 init_buffer (void);
+
+extern void reset_mcu (void);
 
 void uart_init (void)
 {
@@ -67,20 +70,25 @@ void uart_handler (void){
 		/* Handle receive buffer full interrupt */
 		else if ((UART_INTRPT & (BIT1 + BIT2)) == (BIT2 & (~BIT1)))
 		{
+			rx_fifo.rx = COMRX;
 			if (rx_fifo.num_bytes == BFR_SIZE)
 			{
 				/* Read COMRX to clear interrupt */
-				rx_fifo.status = (uart_status)COMRX;
+				rx_fifo.status = (uart_status)rx_fifo.rx;
 				rx_fifo.status = UBFR_OVERFLOW;
 			}
 			else
 			{	
 				/* Add byte to software uart buffer */
-				rx_fifo.buffer [rx_fifo.tail] = COMRX;
+				rx_fifo.buffer [rx_fifo.tail] = rx_fifo.rx;
 				rx_fifo.tail = (rx_fifo.tail + 1)%BFR_SIZE;
 				rx_fifo.num_bytes ++;
 			}
-			
+
+			if (rx_fifo.rx == 'M')
+			{
+				RSTSTA |= BIT2;
+			}
 		}
 	}
 }
@@ -91,7 +99,7 @@ u8 uart_get_num_bytes (void)
 }
 
 uart_status uart_get_status (void)
-{
+{				   
 	return rx_fifo.status;
 }
 

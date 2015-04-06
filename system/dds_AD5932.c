@@ -2,6 +2,8 @@
 
 #include "../peripheral/uart.h"
 
+#ifdef configSYS_DDS_AD5932
+
 #ifdef BOARD_m_assem
 	#define DDS_DAT_REG		GP0DAT
 	#define DDS_CTRL 		BIT17
@@ -152,3 +154,5 @@ void dds_get_data()
 
 	dds_write();
 }
+
+#endif

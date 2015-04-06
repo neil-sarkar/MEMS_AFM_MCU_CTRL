@@ -20,14 +20,26 @@
 #include "scan2.h"
 #include "scan4.h"
 
+#ifdef configSYS_DDS_AD9837
 tyVctHndlr    DDS     	= (tyVctHndlr)dds_98_handler;
+#endif
+
+#ifdef configSYS_DDS_AD5932
+tyVctHndlr    DDS     	= (tyVctHndlr)dds_handler;
+#endif
+
 tyVctHndlr    PID     	= (tyVctHndlr)pid_handler;
 tyVctHndlr 	  UART		= (tyVctHndlr)uart_handler;
 tyVctHndlr	  MTR		= (tyVctHndlr)mtr_handler;
 tyVctHndlr	  WIRE3		= (tyVctHndlr)wire3_handler;
-						
+
+
+#ifdef configSYS_DDS_AD5932						
 extern int dds_inc_cnt;
+#endif
+#ifdef configSYS_DDS_AD9837
 extern int dds_AD9837_inc_cnt;
+#endif
 
 static Actuator left_act;
 static Actuator right_act;
@@ -132,6 +144,7 @@ int main(void)
 				freq_sweep_AD9837();
 				break;
 #endif
+#ifdef configSYS_DDS_AD5932
 			case 'r':
 				freq_sweep_dds();
 				break;
@@ -141,6 +154,7 @@ int main(void)
 			case 'u':
 				dds_get_data();
 				break;
+#endif
 			case 'v': 
 				auto_approach();
 				break;
@@ -710,6 +724,7 @@ void set_pid_setpoint (void)
 	pid_set_setpoint (setpoint);
 }
 
+#ifdef configSYS_DDS_AD9837
 void freq_sweep_AD9837(void)
 {
 	u32 i;
@@ -746,7 +761,9 @@ void freq_sweep_AD9837(void)
 
 	}
 }
+#endif
 
+#ifdef configSYS_DDS_AD5932
 void freq_sweep_dds(void)
 {
 	u32 i;
@@ -783,6 +800,7 @@ void freq_sweep_dds(void)
 		dds_increment();		
 	} 		
 }
+#endif
 
 void set_dir(char dirchar)
 {

@@ -2,8 +2,6 @@
 
 #ifdef configMEMS_4ACT
 
-#define S4_SEND_CNT 8
-
 extern u8 isPidOn;
 extern u16 pid_input;
 extern u16 pid_phase;

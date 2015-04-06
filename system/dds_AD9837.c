@@ -1,5 +1,7 @@
 #include "dds_AD9837.h"
 
+#ifdef configSYS_DDS_AD9837
+
 #include "../peripheral/uart.h"
 
 // DDS registers
@@ -153,3 +155,5 @@ void dds_98_handler()
 		}
 	}		
 }
+
+#endif
