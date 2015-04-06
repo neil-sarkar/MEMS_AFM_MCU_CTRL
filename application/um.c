@@ -17,38 +17,31 @@ struct um_peak
 	u16 iMax;
 	u16 min;
 	u16 iMin;
-	u16 edge_a;
-	u16 edge_b;
-	u16 peak_posn;
 	s32 deltaX;
 	s32 deltaY1;
 	s32 deltaY2;
-	u16 delta_f;
-	u16 phase_offset;
+	u16 phaseOffset;
 	u16 trigpos[4][2];
 	u16 maxPeak;
 	u16 corrDelta;
 	u16 corrFactor;
 	u16 maxPos;
-	u16 prevMaxPos;
 	s16 offsetX;
 	s16 offsetY1;
 	s16 offsetY2;
 };
 
-struct umirror
-{
-	struct um_peak horz;
-	struct um_peak vert;
-};
-
-//struct umirror um = {{0, 0, 0}, {0, 0, 0}};
-
-struct um_peak um;// = {0, 0, 0, 0, 0, 0, 0, 0, 0, {0, 0, 0}};
+struct um_peak um;
 
 void um_init (void)
 {
 	adc_set_pga(ADC_MIRROR, 32);
+	dac_set_limit(DAC_X1, DAC_1_V);
+	dac_set_limit(DAC_Y1, DAC_1_V);
+	dac_set_limit(DAC_Y2, 4095);
+
+	//turn on photodiode
+	dac_set_val(DAC_Y2, 4095);
 }
 
 #define DAC_HORZ	DAC_ZOFFSET_COARSE	
@@ -56,59 +49,38 @@ void um_init (void)
 #define DAC_L2		DAC_Y1
 #define UM_delay 	100
 #define COM_delay 	100
-
+#define SINPTS		64
 
 void um_track (void)
 {
-	// TODO: need to set phase_offset to something
-
 	u16 val;
 	u32 delay;
 	s32 i;
-	s32 dir = 1;
-	u16 vertpos = scan_numpts/2;
+
 	bool triggered=false;
 	u8 peakCnt=0;
 	u16 range;
 	u16 hysteresis=0;
 	u16 threshold=2000;
-	u16 prevmax=0;
-	u16 serpstep=0;
-	u8 xstate=0;
-	s8 xdir=1;
+
 	u16 xval=0;
-	u16 yindex=0;
-	u8 ystate=0;
-	s8 ydir=1;
 	u16 yval1=0;
 	u16 yval2=0;
-	u16 phase=scan_numpts/8+13;
-	const u16 sinpts=64;
-	float sintbl[sinpts];
-	float sqrtsintbl[sinpts];
+
+	float sintbl[SINPTS];
+	float sqrtsintbl[SINPTS];
 	float pi=3.14159;//265358979323846;
-	u16 j=0;
 
-	for (j = 0; j < (sinpts); j++)
+	for (i = 0; i < (SINPTS); i++)
 	{
-		sintbl[j]=0.5*(1+sin((float)j/sinpts*2*pi));
-		sqrtsintbl[j]=sqrt(sintbl[j]);
+		sintbl[i]=0.5*(1+sin((float)i/SINPTS*2*pi));
+		sqrtsintbl[i]=sqrt(sintbl[i]);
 	}
-
-	dac_set_limit(DAC_X1, DAC_1_V);
-	dac_set_limit(DAC_Y1, DAC_1_V);
-	dac_set_limit(DAC_Y2, 4095);
-	//turn on photodiode
-	dac_set_val(DAC_Y2, 4095);
-	//set pistons to midscale
-	//dac_set_val(DAC_X1, scan_l_points[vertpos]);
-	//dac_set_val(DAC_Y1, scan_r_points[vertpos]);
-	
 
 	um.deltaX = 0;
 	um.deltaY1 = 0;
 	um.deltaY2 = 0;
-	um.phase_offset = 0;
+	um.phaseOffset = 0;
 	um.offsetX = 0;
 	um.offsetY1 = 0;
 	um.offsetY2 = 0;
@@ -118,15 +90,15 @@ void um_track (void)
 		um.min = 4095;
 		peakCnt = 0;
 		um.maxPeak = 0;	
-		for (i = 0; i < (sinpts); i++)
+		for (i = 0; i < SINPTS; i++)
 		{
 			delay = UM_delay;
 			while (delay--);
 
 			// calculate next point
 			xval=2000*(sintbl[i]) + um.offsetX;
-			yval1=2000*(sqrtsintbl[(2*i)%sinpts]) + um.offsetY1;
-			yval2=2000*(sqrtsintbl[(2*i+32)%sinpts]) - um.offsetY2;
+			yval1=2000*(sqrtsintbl[(2*i)%SINPTS]) + um.offsetY1;
+			yval2=2000*(sqrtsintbl[(2*i+32)%SINPTS]) - um.offsetY2;
 			
 			// write next point
 			dac_set_val(DAC_HORZ, xval);
@@ -140,12 +112,12 @@ void um_track (void)
 			if (val > um.max)
 			{
 				um.max = val;
-				um.iMax = (i - um.phase_offset + sinpts) % sinpts;
+				um.iMax = (i - um.phaseOffset + SINPTS) % SINPTS;
 			}
 			if (val < um.min)
 			{
 				um.min = val;
-				um.iMin = (i - um.phase_offset + sinpts) % sinpts;
+				um.iMin = (i - um.phaseOffset + SINPTS) % SINPTS;
 			}
 
 			if (!triggered)
@@ -154,7 +126,7 @@ void um_track (void)
 				{
 					threshold = threshold - hysteresis;
 					triggered = true;
-					um.trigpos[peakCnt][0] = (i - um.phase_offset + sinpts) % sinpts;
+					um.trigpos[peakCnt][0] = (i - um.phaseOffset + SINPTS) % SINPTS;
 				}
 			}
 			if (triggered)
@@ -163,7 +135,7 @@ void um_track (void)
 				{
 					threshold = threshold + hysteresis;
 					triggered = false;
-					um.trigpos[peakCnt][1] = (i - um.phase_offset + sinpts) % sinpts;
+					um.trigpos[peakCnt][1] = (i - um.phaseOffset + SINPTS) % SINPTS;
 					peakCnt++;	
 				}
 			}
@@ -183,8 +155,8 @@ void um_track (void)
 
 		// calculate next point
 		um.deltaX = 500*(sintbl[um.maxPos] - sintbl[0]);
-		um.deltaY1 = 500*(sqrtsintbl[(2*um.maxPos)%sinpts] - sqrtsintbl[0]);
-		um.deltaY2 = 500*(sqrtsintbl[(2*um.maxPos+32)%sinpts] - sqrtsintbl[0]);
+		um.deltaY1 = 500*(sqrtsintbl[(2*um.maxPos)%SINPTS] - sqrtsintbl[0]);
+		um.deltaY2 = 500*(sqrtsintbl[(2*um.maxPos+32)%SINPTS] - sqrtsintbl[0]);
 
 		um.offsetX += um.deltaX;
 		um.offsetY1 += um.deltaY1;
@@ -203,8 +175,6 @@ void um_track (void)
 
 		uart_set_char (um.offsetY1);
 		uart_set_char (um.offsetY1 >> 8);
-
-		um.prevMaxPos = um.maxPos;
 	}
 
 	uart_reset_status ();
