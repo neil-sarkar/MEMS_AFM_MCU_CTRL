@@ -87,6 +87,7 @@ void uart_handler (void){
 
 			if (rx_fifo.rx == 'M')
 			{
+				// reset MCU
 				RSTSTA |= BIT2;
 			}
 		}
