@@ -68,13 +68,11 @@ void um_track (void)
 	u16 yval2=0;
 
 	float sintbl[SINPTS];
-	float sqrtsintbl[SINPTS];
 	float pi=3.14159;//265358979323846;
 
 	for (i = 0; i < (SINPTS); i++)
 	{
 		sintbl[i]=0.5*(1+sin((float)i/SINPTS*2*pi));
-		sqrtsintbl[i]=sqrt(sintbl[i]);
 	}
 
 	um.deltaX = 0;
@@ -97,8 +95,8 @@ void um_track (void)
 
 			// calculate next point
 			xval=2000*(sintbl[i]) + um.offsetX;
-			yval1=2000*(sqrtsintbl[(2*i)%SINPTS]) + um.offsetY1;
-			yval2=2000*(sqrtsintbl[(2*i+32)%SINPTS]) - um.offsetY2;
+			yval1=2000*(scan_l_points[(int)sintbl[(2*i)%SINPTS]]) + um.offsetY1;
+			yval2=2000*(scan_r_points[(int)sintbl[(2*i+32)%SINPTS]]) - um.offsetY2;
 			
 			// write next point
 			dac_set_val(DAC_HORZ, xval);
@@ -155,8 +153,8 @@ void um_track (void)
 
 		// calculate next point
 		um.deltaX = 500*(sintbl[um.maxPos] - sintbl[0]);
-		um.deltaY1 = 500*(sqrtsintbl[(2*um.maxPos)%SINPTS] - sqrtsintbl[0]);
-		um.deltaY2 = 500*(sqrtsintbl[(2*um.maxPos+32)%SINPTS] - sqrtsintbl[0]);
+		um.deltaY1 = 500*(scan_l_points[(int)sintbl[(2*um.maxPos)%SINPTS]] - scan_l_points[(int)sintbl[0]]);
+		um.deltaY2 = 500*(scan_r_points[(int)sintbl[(2*um.maxPos+32)%SINPTS]] - scan_r_points[(int)sintbl[0]]);
 
 		um.offsetX += um.deltaX;
 		um.offsetY1 += um.deltaY1;
