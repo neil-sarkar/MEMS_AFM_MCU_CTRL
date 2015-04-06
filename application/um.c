@@ -15,8 +15,8 @@ struct um_peak
 {
 	u16 max;
 	u16 iMax;
-	u16 previMax;
 	u16 min;
+	u16 iMin;
 	u16 edge_a;
 	u16 edge_b;
 	u16 peak_posn;
@@ -25,10 +25,15 @@ struct um_peak
 	s32 deltaY2;
 	u16 delta_f;
 	u16 phase_offset;
-	u16 trigpos[1][1];
+	u16 trigpos[4][2];
 	u16 maxPeak;
 	u16 corrDelta;
 	u16 corrFactor;
+	u16 maxPos;
+	u16 prevMaxPos;
+	s16 offsetX;
+	s16 offsetY1;
+	s16 offsetY2;
 };
 
 struct umirror
@@ -49,7 +54,7 @@ void um_init (void)
 #define DAC_HORZ	DAC_ZOFFSET_COARSE	
 #define DAC_L1		DAC_X1
 #define DAC_L2		DAC_Y1
-#define UM_delay 	0
+#define UM_delay 	100
 #define COM_delay 	100
 
 
@@ -78,10 +83,10 @@ void um_track (void)
 	u16 yval1=0;
 	u16 yval2=0;
 	u16 phase=scan_numpts/8+13;
-	const u16 sinpts=128;
+	const u16 sinpts=64;
 	float sintbl[sinpts];
 	float sqrtsintbl[sinpts];
-	float pi=3.14159265358979323846;
+	float pi=3.14159;//265358979323846;
 	u16 j=0;
 
 	for (j = 0; j < (sinpts); j++)
@@ -94,7 +99,7 @@ void um_track (void)
 	dac_set_limit(DAC_Y1, DAC_1_V);
 	dac_set_limit(DAC_Y2, 4095);
 	//turn on photodiode
-	//dac_set_val(DAC_Y2, 4095);
+	dac_set_val(DAC_Y2, 4095);
 	//set pistons to midscale
 	//dac_set_val(DAC_X1, scan_l_points[vertpos]);
 	//dac_set_val(DAC_Y1, scan_r_points[vertpos]);
@@ -104,6 +109,9 @@ void um_track (void)
 	um.deltaY1 = 0;
 	um.deltaY2 = 0;
 	um.phase_offset = 0;
+	um.offsetX = 0;
+	um.offsetY1 = 0;
+	um.offsetY2 = 0;
 	while (uart_get_char() != 'q')
 	{
 		um.max = 0;
@@ -116,9 +124,9 @@ void um_track (void)
 			while (delay--);
 
 			// calculate next point
-			xval=3000*(sintbl[i] + um.deltaX);
-			yval1=4000*(sqrtsintbl[(2*i)%sinpts] + um.deltaY1);
-			yval2=4000*(sqrtsintbl[(2*i+64-20)%sinpts] + um.deltaY2);
+			xval=2000*(sintbl[i]) + um.offsetX;
+			yval1=2000*(sqrtsintbl[(2*i)%sinpts]) + um.offsetY1;
+			yval2=2000*(sqrtsintbl[(2*i+32)%sinpts]) - um.offsetY2;
 			
 			// write next point
 			dac_set_val(DAC_HORZ, xval);
@@ -132,10 +140,12 @@ void um_track (void)
 			if (val > um.max)
 			{
 				um.max = val;
+				um.iMax = (i - um.phase_offset + sinpts) % sinpts;
 			}
 			if (val < um.min)
 			{
 				um.min = val;
+				um.iMin = (i - um.phase_offset + sinpts) % sinpts;
 			}
 
 			if (!triggered)
@@ -144,10 +154,7 @@ void um_track (void)
 				{
 					threshold = threshold - hysteresis;
 					triggered = true;
-					if (val == um.max)
-					{ 
-						um.iMax = (i - um.phase_offset + sinpts) % sinpts;
-					}
+					um.trigpos[peakCnt][0] = (i - um.phase_offset + sinpts) % sinpts;
 				}
 			}
 			if (triggered)
@@ -155,23 +162,49 @@ void um_track (void)
 				if (val < threshold)
 				{
 					threshold = threshold + hysteresis;
-					triggered = false;	
+					triggered = false;
+					um.trigpos[peakCnt][1] = (i - um.phase_offset + sinpts) % sinpts;
+					peakCnt++;	
 				}
 			}
 		}
 
+	   	for (i = 0; i < peakCnt; i++)
+		{
+			if (um.trigpos[i][0] < um.iMax && um.trigpos[i][1] > um.iMax)
+				break;
+		}
+
+		range = um.max - um.min;
+		threshold = um.min + 0.8*range;
+		hysteresis = range/10;
+
+		um.maxPos = (um.trigpos[i][0] + um.trigpos[i][1]) / 2;
+
 		// calculate next point
-		um.deltaX 	= sintbl[um.iMax] - sintbl[um.previMax];
-		um.deltaY1 	= sqrtsintbl[(2*um.iMax)%sinpts] - sqrtsintbl[(2*um.previMax)%sinpts];
-		um.deltaY2 	= sqrtsintbl[(2*um.iMax+64-20)%sinpts] - sqrtsintbl[(2*um.previMax+64-20)%sinpts];
+		um.deltaX = 500*(sintbl[um.maxPos] - sintbl[0]);
+		um.deltaY1 = 500*(sqrtsintbl[(2*um.maxPos)%sinpts] - sqrtsintbl[0]);
+		um.deltaY2 = 500*(sqrtsintbl[(2*um.maxPos+32)%sinpts] - sqrtsintbl[0]);
 
-		uart_set_char (um.iMax);
-		uart_set_char (um.iMax >> 8);
+		um.offsetX += um.deltaX;
+		um.offsetY1 += um.deltaY1;
+		um.offsetY2 += um.deltaY2;
 
-		uart_set_char ((2*um.iMax)%sinpts);
-		uart_set_char (((2*um.iMax)%sinpts) >> 8);
+		if (um.offsetX > 2095) um.offsetX = 2095;
+		if (um.offsetY1 > 2095) um.offsetY1 = 2095;
+		if (um.offsetY2 > 2095) um.offsetY2 = 2095;
+		
+		if (um.offsetX < 0) um.offsetX = 0;
+		if (um.offsetY1 < 0) um.offsetY1 = 0;
+		if (um.offsetY2 < 0) um.offsetY2 = 0;
+				  
+		uart_set_char (um.offsetX);
+		uart_set_char (um.offsetX >> 8);
 
-		um.previMax = um.iMax;
+		uart_set_char (um.offsetY1);
+		uart_set_char (um.offsetY1 >> 8);
+
+		um.prevMaxPos = um.maxPos;
 	}
 
 	uart_reset_status ();
