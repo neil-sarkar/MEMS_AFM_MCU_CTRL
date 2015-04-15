@@ -12,11 +12,14 @@ extern u16 scan_r_points[1024];
 
 struct um_peak
 {
+	u16 max;
+	u16 min;
 	u16 iMax;
-	u16 iMin;
 	u16 edge_a;
 	u16 edge_b;
 	u16 peak_posn;
+	u16 trigpos[2];
+	u8 edgenum;
 };
 
 struct umirror
@@ -38,23 +41,16 @@ void um_init (void)
 #define UM_delay 	0
 #define COM_delay 	100
 
-
 void um_track (void)
 {
 	u16 val;
 	u32 delay;
 	s32 i;
-	s32 dir = 1;
 	u16 vertpos = scan_numpts/2;
 	bool triggered=false;
-	u8 edgenum=0;
-	u16 trigpos[2]={0,0};
 	u16 range;
 	u16 hysteresis=0;
 	u16 threshold=2000;
-	u16 prevmax=0;
-
-	
 	
 	dac_set_limit(DAC_X1, DAC_1_V);
 	dac_set_limit(DAC_Y1, DAC_1_V);
@@ -69,9 +65,9 @@ void um_track (void)
 	while (COMRX != 'q')
 	{
 		// Horizontal Tracking
-		um.horz.iMax = 0;
-		um.horz.iMin = 4095;
-		edgenum=0;
+		um.horz.max = 0;
+		um.horz.min = 4095;
+		um.horz.edgenum=0;
 		for (i = 0; i < 4095; i += 20)
 		{
 			delay = UM_delay;
@@ -82,13 +78,13 @@ void um_track (void)
 			//val = adc_get_avgw_val(8, 100);
 			val = adc_get_val();
 			
-			if (val > um.horz.iMax) 
+			if (val > um.horz.max) 
 			{
-				um.horz.iMax = val;
+				um.horz.max = val;
 			}
-			if (val < um.horz.iMin) 
+			if (val < um.horz.min) 
 			{
-				um.horz.iMin = val;
+				um.horz.min = val;
 			}
 			if (!triggered)
 			{
@@ -96,8 +92,8 @@ void um_track (void)
 				{
 					threshold=threshold-hysteresis;
 					triggered = true;
-					trigpos[edgenum]=i;
-					edgenum++;
+					um.horz.trigpos[um.horz.edgenum]=i;
+					um.horz.edgenum++;
 				}
 			}
 			if (triggered)
@@ -109,9 +105,8 @@ void um_track (void)
 				}
  			}
 		}
-//		um.horz.max_b = 0;
-//		delay = 1000;
-//		while(delay--);
+		
+		// TODO: are we sure about not resetting the min/max values for the reverse scan?
 		for (i = 4095; i > 0; i -= 20)
 		{
 			delay = UM_delay;
@@ -121,13 +116,13 @@ void um_track (void)
 			adc_start_conv(ADC_MIRROR);
 			//val = adc_get_avgw_val(8, 100);
 			val = adc_get_val();
-			if (val > um.horz.iMax) 
+			if (val > um.horz.max) 
 			{
-				um.horz.iMax = val;
+				um.horz.max = val;
 			}
-			if (val < um.horz.iMin) 
+			if (val < um.horz.min) 
 			{
-				um.horz.iMin = val;
+				um.horz.min = val;
 			}
 			if (!triggered)
 			{
@@ -135,8 +130,8 @@ void um_track (void)
 				{
 					threshold=threshold-hysteresis;
 					triggered = true;
-					trigpos[edgenum]=i;
-					edgenum++;
+					um.horz.trigpos[um.horz.edgenum]=i;
+					um.horz.edgenum++;
 				}
 			}
 			if (triggered)
@@ -149,45 +144,109 @@ void um_track (void)
  			}
 		}
 
-		um.horz.peak_posn = (trigpos[0] + trigpos[1]) / 2;
-		//dac_set_val(DAC_HORZ, um.horz.peak_posn);
-		
-		range = um.horz.iMax - um.horz.iMin;
-		threshold = um.horz.iMin + .5*range;
-		hysteresis = range/10;
+		um.horz.iMax = (um.horz.trigpos[0] + um.horz.trigpos[1]) >> 1;
+		dac_set_val(DAC_HORZ, um.horz.iMax);
 
 		// Vertical Tracking
-		if (um.horz.iMax>prevmax)
+		um.vert.max = 0;
+		um.vert.min = 4095;
+		um.vert.edgenum = 0;
+		for (i = 0; i < 4095; i += 20)
 		{
-			if (dir>0) vertpos++;
-			if (dir<0) vertpos--;						
-		}	
-		else
-		{
-			dir=dir*-1;
-			if (dir>0) vertpos++;
-			if (dir<0) vertpos--;						
+			delay = UM_delay;
+			while (delay--);
+			
+			dac_set_val(DAC_X1, scan_r_points[i]);
+			dac_set_val(DAC_Y1, scan_l_points[i]);
+
+			adc_start_conv(ADC_MIRROR);
+			val = adc_get_val();
+			
+			if (val > um.vert.max) 
+			{
+				um.vert.max = val;
+			}
+			if (val < um.vert.min) 
+			{
+				um.vert.min = val;
+			}
+			if (!triggered)
+			{
+				if (val > threshold)
+				{
+					threshold = threshold-hysteresis;
+					triggered = true;
+					um.vert.trigpos[um.vert.edgenum] = i;
+					um.vert.edgenum++;
+				}
+			}
+			if (triggered)
+			{
+				if (val < threshold)
+				{
+					threshold = threshold + hysteresis;
+					triggered = false;
+				}
+			}
 		}
-						  
 
-		if (vertpos>scan_numpts) vertpos=scan_numpts-1;
-		//if (vertpos<0) vertpos=0;	
-	
-		dac_set_val(DAC_X1, scan_r_points[vertpos]);
-		dac_set_val(DAC_Y1, scan_l_points[vertpos]);
-		delay = UM_delay;
-		while (delay--);
-		prevmax=um.horz.iMax;
-	
+		// TODO: are we sure about not resetting the min/max values for the reverse scan?		
+		for (i = 4095; i < 0; i -= 20)
+		{ 
+			delay = UM_delay;
+			while (delay--);
 
-		// set voltage to maximum
-		// dac_set_val(DAC_VERT, dac_avg);
+			dac_set_val(DAC_X1, scan_r_points[i]);
+			dac_set_val(DAC_Y1, scan_l_points[i]);
+			
+			adc_start_conv(ADC_MIRROR);
+			val = adc_get_val();		
 
-		uart_set_char (um.horz.peak_posn);
-		uart_set_char (um.horz.peak_posn >> 8);
+			if (val > um.vert.max) 
+			{
+				um.vert.max = val;
+			}
+			if (val < um.vert.min) 
+			{
+				um.vert.min = val;
+			}
+			if (!triggered)
+			{
+				if (val > threshold)
+				{
+					threshold = threshold-hysteresis;
+					triggered = true;
+					um.vert.trigpos[um.vert.edgenum] = i;
+					um.vert.edgenum++;
+				}
+			}
+			if (triggered)
+			{
+				if (val < threshold)
+				{
+					threshold = threshold + hysteresis;
+					triggered = false;
+				}
+			}
+		}
+			
+		range = um.vert.max - um.vert.min;
+		threshold = um.vert.min + .5*range;
+		hysteresis = range/10;
 
-		uart_set_char (vertpos);
-		uart_set_char (vertpos >> 8);	
+		um.vert.iMax = (um.vert.trigpos[0] + um.vert.trigpos[1]) >> 1;
+
+		dac_set_val(DAC_X1, scan_r_points[um.vert.iMax]);
+		dac_set_val(DAC_Y1, scan_l_points[um.vert.iMax]);
+
+		// TODO what is thi?
+		// prevmax=um.horz.max;
+
+		uart_set_char (um.horz.iMax);
+		uart_set_char (um.horz.iMax >> 8);
+
+		uart_set_char (um.vert.iMax);
+		uart_set_char (um.vert.iMax >> 8);	
 		}
 	}
 
