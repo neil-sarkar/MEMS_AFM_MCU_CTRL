@@ -9,6 +9,7 @@
 u16 scan_numpts;
 extern u16 scan_l_points[1024];
 extern u16 scan_r_points[1024];
+extern u8 exitFlag;
 
 struct um_peak
 {
@@ -33,12 +34,17 @@ struct umirror um = {{0, 0, 0}, {0, 0, 0}};
 void um_init (void)
 {
 	adc_set_pga(ADC_MIRROR, 32);
+	dac_set_limit(DAC_X1, DAC_1_V);
+	dac_set_limit(DAC_Y1, DAC_1_V);
+	dac_set_limit(DAC_Y2, 4095);
+	//turn on photodiode
+	dac_set_val(DAC_Y2, 4095);
 }
 
 #define DAC_HORZ	DAC_ZOFFSET_COARSE	
 #define DAC_L1		DAC_X1
 #define DAC_L2		DAC_Y1
-#define UM_delay 	0
+#define UM_delay 	100
 #define COM_delay 	100
 
 void um_track (void)
@@ -52,17 +58,12 @@ void um_track (void)
 	u16 hysteresis=0;
 	u16 threshold=2000;
 	
-	dac_set_limit(DAC_X1, DAC_1_V);
-	dac_set_limit(DAC_Y1, DAC_1_V);
-	dac_set_limit(DAC_Y2, 4095);
-	//turn on photodiode
-	dac_set_val(DAC_Y2, 4095);
 	//set pistons to midscale
 	dac_set_val(DAC_X1, scan_l_points[vertpos]);
 	dac_set_val(DAC_Y1, scan_r_points[vertpos]);
 	
 
-	while (COMRX != 'q')
+	while (1)
 	{
 		// Horizontal Tracking
 		um.horz.max = 0;
@@ -70,8 +71,16 @@ void um_track (void)
 		um.horz.edgenum=0;
 		for (i = 0; i < 4095; i += 20)
 		{
-			delay = UM_delay;
-			while (delay--);
+			if (i == 0)
+			{
+				delay = 10000;
+				while (delay--);
+			}
+			else
+			{
+				delay = UM_delay;
+				while (delay--);
+			}
 			if (i > 4095) i = 4095;
 			dac_set_val(DAC_HORZ, i);
 			adc_start_conv(ADC_MIRROR);
@@ -151,8 +160,16 @@ void um_track (void)
 		um.vert.edgenum = 0;
 		for (i = 0; i < 4095; i += 20)
 		{
-			delay = UM_delay;
-			while (delay--);
+			if (i == 0)
+			{
+				delay = 10000;
+				while (delay--);
+			}
+			else
+			{
+				delay = UM_delay;
+				while (delay--);
+			}
 			
 			dac_set_val(DAC_X1, scan_r_points[i]);
 			dac_set_val(DAC_Y1, scan_l_points[i]);
@@ -245,6 +262,7 @@ void um_track (void)
 
 		uart_set_char (um.vert.iMax);
 		uart_set_char (um.vert.iMax >> 8);	
-		}
 	}
+	exitFlag = 0;
+}
 
