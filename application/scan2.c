@@ -8,6 +8,8 @@ static Actuator* l_act;
 static Actuator* r_act;																								 
 //static Actuator* z_act;
 
+static u8 sendBackCnt;
+
 /* Z-actuator sampling data to be returned over UART */
 static struct sample_data {
 	u16 num_samples;
@@ -107,7 +109,7 @@ void scan_step ()
 				z_write_data ();
 				num_outputted ++;
 				
-				if (num_outputted >= SCAN_OUT_SIZE){
+				if (num_outputted >= sendBackCnt){
 					return;
 				}
 			}
@@ -126,6 +128,10 @@ void scan_step ()
 	dac_set_val (scan_state.right_act, 0);	
 }
 
+void set_send_back_cnt (u8 cnt)
+{
+	sendBackCnt = cnt;
+}
 
 void z_init_sample (void)
 {

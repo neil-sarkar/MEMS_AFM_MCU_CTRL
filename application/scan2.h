@@ -12,7 +12,6 @@
 /* Device calibration constants */
 //#define ADC_GAIN 300.3939f
 //#define CURNT_SENSE_REST 1.00f
-#define SCAN_OUT_SIZE 8 // 6 bytes per point
 
 #define MEASURE_BIT 0x1000
 #define BFR_SIZE PAGE_SIZE/2 
@@ -32,3 +31,4 @@ void z_init_sample (void);
 void z_set_samples (u16 num_samples);
 u16 z_sample (void);
 void z_write_data (void);
+void set_send_back_cnt (u8 cnt);

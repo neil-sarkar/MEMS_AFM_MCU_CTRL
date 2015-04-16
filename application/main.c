@@ -183,6 +183,9 @@ int main(void)
 			case 'o':
 				device_calibration ();
 				break;
+			case 'Z':
+				set_send_back_cnt (uart_wait_get_char());
+				break;
 #endif
 			case '&':
 				set_dac_max ();
