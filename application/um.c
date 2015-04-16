@@ -75,7 +75,6 @@ void um_track (void)
 			if (i > 4095) i = 4095;
 			dac_set_val(DAC_HORZ, i);
 			adc_start_conv(ADC_MIRROR);
-			//val = adc_get_avgw_val(8, 100);
 			val = adc_get_val();
 			
 			if (val > um.horz.max) 
@@ -114,7 +113,6 @@ void um_track (void)
 			if (i < 0) i = 0;
 			dac_set_val(DAC_HORZ, i);
 			adc_start_conv(ADC_MIRROR);
-			//val = adc_get_avgw_val(8, 100);
 			val = adc_get_val();
 			if (val > um.horz.max) 
 			{
