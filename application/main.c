@@ -41,9 +41,11 @@ extern int dds_inc_cnt;
 extern int dds_AD9837_inc_cnt;
 #endif
 
+#ifdef configMEMS_2ACT
 static Actuator left_act;
 static Actuator right_act;
 static Actuator z_act;
+#endif
 
 static void sys_init (void);
 
@@ -183,6 +185,9 @@ int main(void)
 			case 'o':
 				device_calibration ();
 				break;
+			case '(':
+				s2_set_lvl_dir (uart_wait_get_char ());
+				break;
 #endif
 			case '&':
 				set_dac_max ();
@@ -239,6 +244,9 @@ int main(void)
 			case 'Z':
 				s4_set_send_back_cnt (uart_wait_get_char());
 				break;
+			case '(':
+				s4_set_lvl_dir (uart_wait_get_char());
+				break;
 #endif
 #ifdef configSYS_PGA_CS3308 
 			case 'T':
@@ -258,6 +266,7 @@ int main(void)
 			case 'C':
 				//set_pv_rel_manual_c ();
 				break;
+				
 		}
 	}
 }

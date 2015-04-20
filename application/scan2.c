@@ -8,6 +8,16 @@ static Actuator* l_act;
 static Actuator* r_act;																								 
 //static Actuator* z_act;
 
+struct leveling
+{
+	dac ch;
+	u16 val;
+	u16 delta;
+	u8  dir;
+};
+
+static struct leveling lvl;						 
+
 /* Z-actuator sampling data to be returned over UART */
 static struct sample_data {
 	u16 num_samples;
@@ -20,10 +30,14 @@ scan_params scan_state;
 
 static float get_max_linepwr (const u16 vmin_line, const u16 vmax);
 
-void init_scanner (Actuator* left_act, Actuator* right_act, Actuator* z_act){
-	l_act = left_act;
-	r_act = right_act;
-	z_act = z_act;
+void init_scanner (Actuator* left_act, Actuator* right_act, Actuator* z_act)
+{
+	l_act 	= left_act;
+	r_act 	= right_act;
+	z_act 	= z_act;
+	lvl.ch	= DAC_BFRD3;
+	// default
+	lvl.dir = 'f';
 }
 
 u8 scan_configure (const u16 vmin_line,
@@ -42,6 +56,9 @@ u8 scan_configure (const u16 vmin_line,
 	scan_state.numpts = numpts;
 	scan_state.numlines = numlines;
 
+   	// set the leveling increment value
+	lvl.delta = 4095 / numlines;
+
 	// Calculates first line and puts it into flash
 	return generate_line (vmin_line, vmax, numpts);
 }
@@ -53,10 +70,19 @@ void scan_start ()
 	scan_state.j = PAGE_SIZE;
 	scan_state.k = 0;
 	scan_state.adr = BLOCK0_BASE;
+	scan_state.outCnt = 0;
 	// TODO: what values are the lateral actuators being set to?
 	scan_state.left_act = l_act->out_dac;
 	scan_state.right_act = r_act->out_dac;
 
+	if (lvl.dir == 'f')
+	{
+		dac_set_val(lvl.ch, (lvl.val = 0));
+	}
+	else
+	{
+		dac_set_val(lvl.ch, (lvl.val = 4095));
+	}
 }
 
 void scan_step ()
@@ -72,8 +98,21 @@ void scan_step ()
 	float scale_factor = MAX_LINE_VOLT;
 	dac swap;
 
-	for (; scan_state.i < scan_state.numlines*2; scan_state.i ++)
+	for (; scan_state.i < scan_state.numlines*2; scan_state.i++)
 	{
+		if ( scan_state.outCnt == (scan_state.numpts << 1))
+		{
+			if (lvl.dir == 'f')								
+			{												
+				dac_set_val(lvl.ch, (lvl.val += lvl.delta));	
+			}													
+			else											
+			{													
+				dac_set_val(lvl.ch, (lvl.val -= lvl.delta));  	
+			}												   	
+			scan_state.outCnt = 0;
+		}
+
 		scale_factor = volt(l_act,MAX_LINE_PWR - POWER_INC*(scan_state.i/2))/MAX_LINE_VOLT;
 		
 		// value of k is incremented before execution of loop to allow for pausing
@@ -106,6 +145,7 @@ void scan_step ()
 				}
 				z_write_data ();
 				num_outputted ++;
+				scan_state.outCnt++;
 				
 				if (num_outputted >= SCAN_OUT_SIZE){
 					return;
@@ -126,6 +166,10 @@ void scan_step ()
 	dac_set_val (scan_state.right_act, 0);	
 }
 
+void s2_set_lvl_dir (u8 dir)
+{
+	lvl.dir = dir;					
+}
 
 void z_init_sample (void)
 {

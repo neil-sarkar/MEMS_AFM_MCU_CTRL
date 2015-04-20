@@ -32,3 +32,4 @@ void z_init_sample (void);
 void z_set_samples (u16 num_samples);
 u16 z_sample (void);
 void z_write_data (void);
+void s2_set_lvl_dir (u8 dir);

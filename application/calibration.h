@@ -31,6 +31,7 @@ typedef struct {
 	u16 vmax;
 	u16 numpts;																							
 	u16 numlines;
+	u16 outCnt;
 	u32 baseline_points;
 	u32 i;
 	u32 j;
