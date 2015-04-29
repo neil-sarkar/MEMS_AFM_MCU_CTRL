@@ -24,6 +24,7 @@ File 1,1,<..\system\pga_4ch_PGA4311.c><pga_4ch_PGA4311.c>
 File 1,1,<..\system\pga_8ch_CS3308.c><pga_8ch_CS3308.c>
 File 1,1,<..\system\dds_AD9837.c><dds_AD9837.c>
 File 1,1,<..\application\scan2.c><scan2.c>
+File 1,1,<..\application\scan4_ortho.c><scan4_ortho.c>
 
 
 Options 1,0,0  // Target 'Target 1'
