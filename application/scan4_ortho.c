@@ -6,6 +6,15 @@ extern u8 isPidOn;
 extern u16 pid_input;
 extern u16 pid_phase;
 
+struct leveling
+{
+	dac ch;
+	u16 val;
+	u16 delta;
+	u8  dir;
+};
+
+
 struct flash
 {
 	u32 adr;
@@ -52,7 +61,8 @@ struct scan4_o
 	struct 	img_data img;
 };
 
-struct scan4_o s4_o;
+static struct scan4_o s4_o;
+static struct leveling lvl;	
 
 #define GET_DAC_VAL(index) flash_Read2BytesBlk0((BLOCK0_BASE + (index << 1)) & BLOCK_MASK, &(s4_o.data));	
 																					  		
@@ -122,6 +132,15 @@ __inline static void SET_PAIRY(u16 v1, u16 v2)
 								s4_o.isDirFWD = false;															\
 							else				  																\
 								s4_o.isDirFWD = true;
+
+#define LEVEL				if (lvl.dir == 'f')																	\
+							{																					\
+								dac_set_val(lvl.ch, (lvl.val += lvl.delta));								   	\
+							}																				   	\
+							else																				\
+							{																					\
+								dac_set_val(lvl.ch, (lvl.val -= lvl.delta));									\
+							}
 				  
 void scan4_ortho_start (void)
 {
@@ -141,6 +160,15 @@ void scan4_ortho_start (void)
 
 	SET_PAIRX(s4_o.xp.a1StartVal, s4_o.xp.a2StartVal);
 	SET_PAIRY(s4_o.yp.a1StartVal, s4_o.yp.a2StartVal);
+
+	if (lvl.dir == 'f')
+	{
+		dac_set_val(lvl.ch, (lvl.val = 0));
+	}
+	else
+	{
+		dac_set_val(lvl.ch, (lvl.val = 4095));
+	}
 
 	// this is a wait so that the actuators settle at the starting point
 	// before starting the scan
@@ -202,6 +230,7 @@ void scan4_ortho_step (void)
 		}
 		s4_o.iLine = 0;
 		SCAN_NEXT_LINE;
+		LEVEL;
 	}
 	// reset for the next scan
 	s4_o.lineCnt = 0;
@@ -215,6 +244,9 @@ void scan4_ortho_init (void)
 
 	s4_o.yp.a1  		= DAC_Y2;
 	s4_o.yp.a2  		= DAC_Y1;
+
+	lvl.ch				= DAC_BFRD3;
+	lvl.dir 		 	= 'f';
 
 	s4_o.xStepCnt 		= 0;
 	s4_o.lineCnt 		= 0;
@@ -247,6 +279,8 @@ void scan4_ortho_get_data (void)
 
 	s4_o.xIncrement = 4096 / s4_o.numPts;
 	s4_o.yIncrement = 4096 / s4_o.numLines;
+
+	lvl.delta		= 4095 / s4_o.numLines;
 }
 
 bool scan4_ortho_get_dac_data (void)
@@ -273,6 +307,11 @@ bool scan4_ortho_get_dac_data (void)
 void s4_set_send_back_cnt (u8 send_back_cnt)
 {
 	s4_o.sendBackCnt = send_back_cnt;	
+}
+
+void s4_set_lvl_dir (u8 dir)
+{
+	lvl.dir = dir;	
 }
 
 #endif
