@@ -19,6 +19,7 @@
 #include "calibration.h"
 #include "scan2.h"
 #include "scan4.h"
+#include "scan4_ortho.h"
 
 #ifdef configSYS_DDS_AD9837
 tyVctHndlr    DDS     	= (tyVctHndlr)dds_98_handler;
@@ -41,9 +42,11 @@ extern int dds_inc_cnt;
 extern int dds_AD9837_inc_cnt;
 #endif
 
+#ifdef configMEMS_2ACT
 static Actuator left_act;
 static Actuator right_act;
 static Actuator z_act;
+#endif
 
 static void sys_init (void);
 
@@ -240,6 +243,34 @@ int main(void)
 				s4_set_send_back_cnt (uart_wait_get_char());
 				break;
 #endif
+
+#ifdef configMEMS_4ACT_ORTHO
+			case 'P':
+				scan4_ortho_get_data ();
+				break;
+			case 'Q':
+				scan4_ortho_start ();
+				break;
+			case 'R':
+				scan4_ortho_step ();
+				break;
+			case 'S':
+				if (scan4_ortho_get_dac_data () == true)
+					uart_set_char('o');
+				else
+					uart_set_char('f');
+				break;
+			case 'w':
+				s4_set_dwell_t_ms (uart_wait_get_char());
+				break;
+			case 'y':
+				s4_set_sample_cnt (uart_wait_get_char());
+				break;
+			case 'Z':
+				s4_set_send_back_cnt (uart_wait_get_char());
+				break;			
+#endif
+
 #ifdef configSYS_PGA_CS3308 
 			case 'T':
 				pga_get_data();
@@ -352,7 +383,11 @@ static void sys_init ()
 #ifdef configMEMS_4ACT
  	scan4_init();
 #endif
-		
+
+#ifdef configMEMS_4ACT_ORTHO
+	scan4_ortho_init();
+#endif
+
 	/* Disable filter and PID */
 	pid_enable(false);
 }
