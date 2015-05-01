@@ -268,6 +268,9 @@ int main(void)
 				break;
 			case 'Z':
 				s4_set_send_back_cnt (uart_wait_get_char());
+				break;
+			case '(':
+				s4_set_lvl_dir (uart_wait_get_char());
 				break;			
 #endif
 

@@ -14,7 +14,6 @@ struct leveling
 	u8  dir;
 };
 
-
 struct flash
 {
 	u32 adr;
