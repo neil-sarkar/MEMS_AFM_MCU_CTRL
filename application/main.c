@@ -46,7 +46,7 @@ u16 scan_l_points[1024];
 u16 scan_r_points[1024];
 extern u16 scan_numpts;
 
-u8 exitFlag = 0;
+//u8 exitFlag = 0;
 
 int main(void)
 {

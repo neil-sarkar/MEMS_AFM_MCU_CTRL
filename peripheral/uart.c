@@ -4,7 +4,7 @@
 #define CR     0x0D
 #define BFR_SIZE 64
 
-extern u8 exitFlag;
+u8 exitFlag = 0;
 
 static struct uart_fifo {
 	u8 buffer [BFR_SIZE];

@@ -9,6 +9,7 @@
 u16 scan_numpts;
 extern u16 scan_l_points[1024];
 extern u16 scan_r_points[1024];
+
 extern u8 exitFlag;
 
 struct um_peak
@@ -45,8 +46,8 @@ void um_init (void)
 #define DAC_HORZ	DAC_ZOFFSET_COARSE	
 #define DAC_L1		DAC_X1
 #define DAC_L2		DAC_Y1
-#define UM_delay 	100
-#define t_delay 	2000
+#define UM_delay 	70
+#define t_delay 	1000
 #define COM_delay 	100
 
 void um_track (void)
@@ -61,7 +62,7 @@ void um_track (void)
 	dac_set_val(DAC_Y1, scan_r_points[vertpos]);
 	
 
-	while (1)
+	while (exitFlag == 0)
 	{
 		// Horizontal Tracking
 		um.horz.max = 0;
