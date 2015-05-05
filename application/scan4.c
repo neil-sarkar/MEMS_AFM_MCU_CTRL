@@ -97,7 +97,7 @@ __inline static void SET_PAIRY(u16 v1, u16 v2)
 #define SCAN_PAIRY_UP 		SET_PAIRY((s4.yp.a1Val + s4.xIncrement), (s4.yp.a2Val - s4.xIncrement));
 
 #define SCAN_NEXT_LINE		SET_PAIRX((s4.xp.a1StartVal -= s4.yIncrement), s4.xp.a2StartVal += s4.yIncrement); 	\
-							SET_PAIRY((s4.yp.a1StartVal -= s4.yIncrement), s4.yp.a2StartVal += s4.yIncrement)
+							SET_PAIRY((s4.yp.a1StartVal -= s4.yIncrement), s4.yp.a2StartVal += s4.yIncrement) 			// TODO: why is the start val being set here?
 
 #define SAMPLE_WAIT_CNT_ABS	50
 
