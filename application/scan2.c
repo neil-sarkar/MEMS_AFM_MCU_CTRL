@@ -72,6 +72,9 @@ void scan_start ()
 	scan_state.k = 0;
 	scan_state.adr = BLOCK0_BASE;
 	scan_state.outCnt = 0;
+	// default for number of samples to send back
+	sendBackCnt  = 8;
+
 	// TODO: what values are the lateral actuators being set to?
 	scan_state.left_act = l_act->out_dac;
 	scan_state.right_act = r_act->out_dac;
