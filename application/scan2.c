@@ -17,6 +17,7 @@ struct leveling
 };
 
 static struct leveling lvl;						 
+static u8 sendBackCnt;
 
 /* Z-actuator sampling data to be returned over UART */
 static struct sample_data {
@@ -147,7 +148,7 @@ void scan_step ()
 				num_outputted ++;
 				scan_state.outCnt++;
 				
-				if (num_outputted >= SCAN_OUT_SIZE){
+				if (num_outputted >= sendBackCnt){
 					return;
 				}
 			}
@@ -169,6 +170,11 @@ void scan_step ()
 void s2_set_lvl_dir (u8 dir)
 {
 	lvl.dir = dir;					
+}
+
+void set_send_back_cnt (u8 cnt)
+{
+	sendBackCnt = cnt;
 }
 
 void z_init_sample (void)

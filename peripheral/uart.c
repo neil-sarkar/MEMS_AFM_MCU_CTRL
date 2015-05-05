@@ -85,11 +85,11 @@ void uart_handler (void){
 				rx_fifo.num_bytes ++;
 			}
 
-			if (rx_fifo.rx == 'M')
-			{
+			//if (rx_fifo.rx == 'M')
+			//{
 				// reset MCU
-				RSTSTA |= BIT2;
-			}
+			//	RSTSTA |= BIT2;
+			//}
 		}
 	}
 }
