@@ -191,6 +191,7 @@ int main(void)
 				break;
 			case '(':
 				s2_set_lvl_dir (uart_wait_get_char ());
+				break;
 #endif
 			case '&':
 				set_dac_max ();
