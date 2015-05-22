@@ -16,8 +16,9 @@ struct leveling
 	u8  dir;
 };
 
-static struct leveling lvl;						 
-static u8 sendBackCnt;
+static struct leveling lvl;
+// default for number of samples to send back						 
+static u8 sendBackCnt = 8;
 
 /* Z-actuator sampling data to be returned over UART */
 static struct sample_data {
@@ -72,8 +73,6 @@ void scan_start ()
 	scan_state.k = 0;
 	scan_state.adr = BLOCK0_BASE;
 	scan_state.outCnt = 0;
-	// default for number of samples to send back
-	sendBackCnt  = 8;
 
 	// TODO: what values are the lateral actuators being set to?
 	scan_state.left_act = l_act->out_dac;
@@ -144,11 +143,11 @@ void scan_step ()
 
 				z_init_sample ();
 				for (nsamples = 0; nsamples < scan_state.z_samples_req; nsamples++){
-					pid_wait_update ();
+					//pid_wait_update ();
 					z_sample ();
 				}
 				z_write_data ();
-				num_outputted ++;
+				num_outputted++;
 				scan_state.outCnt++;
 				
 				if (num_outputted >= sendBackCnt){
