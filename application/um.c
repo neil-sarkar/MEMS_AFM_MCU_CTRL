@@ -10,6 +10,8 @@ u16 scan_numpts;
 extern u16 scan_l_points[1024];
 extern u16 scan_r_points[1024];
 
+extern u8 exitFlag;
+
 struct um_peak
 {
 	u16 iMax;
@@ -66,7 +68,7 @@ void um_track (void)
 	dac_set_val(DAC_Y1, scan_r_points[vertpos]);
 	
 
-	while (COMRX != 'q')
+	while (exitFlag == 0)
 	{
 		// Horizontal Tracking
 		um.horz.iMax = 0;
@@ -188,6 +190,7 @@ void um_track (void)
 
 		uart_set_char (vertpos);
 		uart_set_char (vertpos >> 8);	
-		}
 	}
+	exitFlag = 0;
+}
 
