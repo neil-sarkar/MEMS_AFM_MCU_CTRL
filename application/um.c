@@ -46,20 +46,36 @@ void um_init (void)
 #define UM_delay 	0
 #define COM_delay 	100
 
+//pid variables
+float ki;
+float kp;
+
+s32 iTerm;
+s32 fb;
+// TODO what should this be set to?
+u16 outMax = 4095;
+u16 outMin = 0;
 void um_track (void)
 {
 	u16 val;
 	u32 delay;
 	s32 i;
 	s32 dir = 1;
-	u16 vertpos = scan_numpts/2;
+	s32 vertpos = scan_numpts/2;
+	u16 prevvertpos;
 	bool triggered=false;
 	u8 edgenum=0;
-	u16 trigpos[2]={0,0};
+	u16 trigpos[2] = {0,0};
 	u16 range;
-	u16 hysteresis=0;
+	u16 prevRange = 0;
+	u16 hysteresis = 0;
 	u16 threshold=2000;
-	u16 prevmax=0;
+	u16 prevMax=0;
+	// TODO make this float?
+	u16 error;
+	u16 setpoint = 0;
+	u16 iTerm;
+	u16 pidval;
 
 	//set pistons to midscale
 	dac_set_val(DAC_X1, scan_l_points[vertpos]);
@@ -155,29 +171,36 @@ void um_track (void)
 		threshold = um.horz.iMin + .5*range;
 		hysteresis = range/10;
 
+		fb = (range - prevRange) / (vertpos - prevvertpos);
+		error = setpoint - fb;
+		iTerm += (ki * error);
+		
+		if (iTerm > outMax) 			iTerm = outMax;
+		else if (iTerm < outMin) 	iTerm = outMin;
+		
+		pidval = kp * error + iTerm;
+		
 		// Vertical Tracking
-		if (um.horz.iMax>prevmax)
+		if (um.horz.iMax>prevMax)
 		{
-			if (dir>0) vertpos++;
-			if (dir<0) vertpos--;						
-		}	
+			if (dir>0) vertpos += pidval;
+			if (dir<0) vertpos -= pidval;					
+		}
 		else
 		{
 			dir=dir*-1;
-			if (dir>0) vertpos++;
-			if (dir<0) vertpos--;						
-		}
-						  
+			if (dir>0) vertpos += pidval;
+			if (dir<0) vertpos -= pidval;				
+		}				  
 
-		if (vertpos>scan_numpts) vertpos=scan_numpts-1;
-		//if (vertpos<0) vertpos=0;	
+		if (vertpos > scan_numpts) 	vertpos = scan_numpts-1;
+		if (vertpos < outMin) 			vertpos = outMin;	
 	
 		dac_set_val(DAC_X1, scan_r_points[vertpos]);
 		dac_set_val(DAC_Y1, scan_l_points[vertpos]);
 		delay = UM_delay;
 		while (delay--);
-		prevmax=um.horz.iMax;
-	
+		prevMax=um.horz.iMax;
 
 		// set voltage to maximum
 		// dac_set_val(DAC_VERT, dac_avg);
@@ -187,6 +210,8 @@ void um_track (void)
 
 		uart_set_char (vertpos);
 		uart_set_char (vertpos >> 8);	
+		
+		prevRange = range;
 	}
 	exitFlag = 0;
 }
