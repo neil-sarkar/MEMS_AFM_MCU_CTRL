@@ -32,6 +32,12 @@ struct umirror um = {{0, 0, 0}, {0, 0, 0}};
 void um_init (void)
 {
 	adc_set_pga(ADC_MIRROR, 32);
+	
+	dac_set_limit(DAC_X1, DAC_1_V);
+	dac_set_limit(DAC_Y1, DAC_1_V);
+	dac_set_limit(DAC_Y2, 4095);
+	//turn on photodiode
+	dac_set_val(DAC_Y2, 4095);
 }
 
 #define DAC_HORZ	DAC_ZOFFSET_COARSE	
@@ -39,7 +45,6 @@ void um_init (void)
 #define DAC_L2		DAC_Y1
 #define UM_delay 	0
 #define COM_delay 	100
-
 
 void um_track (void)
 {
@@ -56,18 +61,10 @@ void um_track (void)
 	u16 threshold=2000;
 	u16 prevmax=0;
 
-	
-	
-	dac_set_limit(DAC_X1, DAC_1_V);
-	dac_set_limit(DAC_Y1, DAC_1_V);
-	dac_set_limit(DAC_Y2, 4095);
-	//turn on photodiode
-	dac_set_val(DAC_Y2, 4095);
 	//set pistons to midscale
 	dac_set_val(DAC_X1, scan_l_points[vertpos]);
 	dac_set_val(DAC_Y1, scan_r_points[vertpos]);
 	
-
 	while (exitFlag == 0)
 	{
 		// Horizontal Tracking
