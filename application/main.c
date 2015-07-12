@@ -46,6 +46,8 @@ u16 scan_l_points[1024];
 u16 scan_r_points[1024];
 extern u16 scan_numpts;
 
+float param;
+
 int main(void)
 {
 	/*
@@ -115,7 +117,7 @@ int main(void)
 
 	init_scanner (&left_act, &right_act);
 
-   	um_init ();
+  um_init ();
 
 	/*
 	 * Main program loop
@@ -188,10 +190,18 @@ int main(void)
 				um_track();
 				break;
 			case 'p':
-				um_set_p();
+				*((u8*)(&param) + 0) = uart_wait_get_char();
+				*((u8*)(&param) + 1) = uart_wait_get_char();
+				*((u8*)(&param) + 2) = uart_wait_get_char();	
+				*((u8*)(&param) + 3) = uart_wait_get_char();
+				um_set_p(param);
 				break;
 			case 'i':
-				um_set_i();
+				*((u8*)(&param) + 0) = uart_wait_get_char();
+				*((u8*)(&param) + 1) = uart_wait_get_char();
+				*((u8*)(&param) + 2) = uart_wait_get_char();	
+				*((u8*)(&param) + 3) = uart_wait_get_char();
+				um_set_i(param);
 				break;
 		}
 	}
