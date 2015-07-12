@@ -47,14 +47,25 @@ void um_init (void)
 #define COM_delay 	100
 
 //pid variables
-float ki;
-float kp;
+float ki = 0;
+float kp = 1;
 
 s32 iTerm;
 s32 fb;
-// TODO what should this be set to?
-u16 outMax = 4095;
-u16 outMin = 0;
+s32 error;
+u16 pidval;
+u16 setpoint = 0;
+
+void um_set_ki (float param)
+{
+	ki = param;
+}
+
+void um_set_kp (float param)
+{
+	kp = param;
+}
+
 void um_track (void)
 {
 	u16 val;
@@ -62,7 +73,7 @@ void um_track (void)
 	s32 i;
 	s32 dir = 1;
 	s32 vertpos = scan_numpts/2;
-	u16 prevvertpos;
+	u16 prevVertPos = 0;
 	bool triggered=false;
 	u8 edgenum=0;
 	u16 trigpos[2] = {0,0};
@@ -72,10 +83,6 @@ void um_track (void)
 	u16 threshold=2000;
 	u16 prevMax=0;
 	// TODO make this float?
-	u16 error;
-	u16 setpoint = 0;
-	u16 iTerm;
-	u16 pidval;
 
 	//set pistons to midscale
 	dac_set_val(DAC_X1, scan_l_points[vertpos]);
@@ -171,12 +178,12 @@ void um_track (void)
 		threshold = um.horz.iMin + .5*range;
 		hysteresis = range/10;
 
-		fb = (range - prevRange) / (vertpos - prevvertpos);
+		fb = ((float)(range - prevRange)) / (vertpos - prevVertPos);
 		error = setpoint - fb;
 		iTerm += (ki * error);
 		
-		if (iTerm > outMax) 			iTerm = outMax;
-		else if (iTerm < outMin) 	iTerm = outMin;
+		if (iTerm > scan_numpts-1) iTerm = scan_numpts-1;
+		else if (iTerm < 0) 			 iTerm = 0;
 		
 		pidval = kp * error + iTerm;
 		
@@ -194,13 +201,14 @@ void um_track (void)
 		}				  
 
 		if (vertpos > scan_numpts) 	vertpos = scan_numpts-1;
-		if (vertpos < outMin) 			vertpos = outMin;	
+		if (vertpos < 0) 						vertpos = 0;	
 	
 		dac_set_val(DAC_X1, scan_r_points[vertpos]);
 		dac_set_val(DAC_Y1, scan_l_points[vertpos]);
+		
+		// delay
 		delay = UM_delay;
 		while (delay--);
-		prevMax=um.horz.iMax;
 
 		// set voltage to maximum
 		// dac_set_val(DAC_VERT, dac_avg);
@@ -211,7 +219,10 @@ void um_track (void)
 		uart_set_char (vertpos);
 		uart_set_char (vertpos >> 8);	
 		
-		prevRange = range;
+		prevMax			= um.horz.iMax;
+		prevRange 	= range;
+		prevVertPos = vertpos;
+		
 	}
 	exitFlag = 0;
 }
