@@ -187,6 +187,12 @@ int main(void)
 			case 'd':
 				um_track();
 				break;
+			case 'p':
+				um_set_p();
+				break;
+			case 'i':
+				um_set_i();
+				break;
 		}
 	}
 }

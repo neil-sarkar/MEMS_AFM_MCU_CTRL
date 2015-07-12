@@ -56,12 +56,12 @@ s32 error;
 u16 pidval;
 u16 setpoint = 0;
 
-void um_set_ki (float param)
+void um_set_i (float param)
 {
 	ki = param;
 }
 
-void um_set_kp (float param)
+void um_set_p (float param)
 {
 	kp = param;
 }
