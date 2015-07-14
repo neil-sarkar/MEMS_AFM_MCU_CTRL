@@ -27,6 +27,7 @@ struct um_peak
 	u8 edgenum;
 	u16 trigpos[2];
 	u16 range;
+	u16 iMaxscaled
 };
 
 struct umirror
@@ -51,17 +52,17 @@ void um_init (void)
 #define DAC_HORZ	DAC_ZOFFSET_COARSE	
 #define DAC_L1		DAC_X1
 #define DAC_L2		DAC_Y1
-#define UM_delay 	100
+#define UM_delay 	250
 #define COM_delay 	100
 
 //pid variables
-float ki = 0;
+float ki = 0.1;
 float kp = 1;
 
-s32 iTerm;
+s32 iTerm = 1;
 s32 fb;
 s32 error;
-u16 pidval;
+s16 pidval;
 u16 setpoint = 0;
 
 void um_set_i (float param)
@@ -92,6 +93,8 @@ void um_track (void)
 	u16 prevMax=0;
 	u16 horzpos=0;
 	u16 prevhorzpos=2048;
+	u16 diff;
+
 	// TODO make this float?
 
 	//set pistons to midscale
@@ -109,19 +112,16 @@ void um_track (void)
 			dac_set_val(DAC_X1, scan_r_points[i]);
 			dac_set_val(DAC_Y1, scan_l_points[i]);
 
-	/*		if (i == 0)
+			if (i == 0)
 			{
-				delay = t_delay;
-				while (delay--);
+				//delay = t_delay;
+				//while (delay--);
 			}
 			else
 			{
 				delay = UM_delay;
 				while (delay--);
-			}*/
-			
-			delay = UM_delay;
-				while (delay--);
+			}
 
 			adc_start_conv(ADC_MIRROR);
 			val = adc_get_val();
@@ -196,15 +196,20 @@ void um_track (void)
 
 		um.vert.iMax = (um.vert.trigpos[0] + um.vert.trigpos[1]) / 2;
 
-		dac_set_val(DAC_X1, scan_r_points[um.vert.iMax]);
-		dac_set_val(DAC_Y1, scan_l_points[um.vert.iMax]);
+		//dac_set_val(DAC_X1, scan_r_points[um.vert.iMax]);
+		//dac_set_val(DAC_Y1, scan_l_points[um.vert.iMax]);
 
 		um.vert.range = um.vert.max - um.vert.min;
-		um.vert.threshold = um.vert.min + .8*um.vert.range;
+		um.vert.threshold = um.vert.min + .5*um.vert.range;
 		um.vert.hysteresis = um.vert.range/10;
 
+		diff = (horzpos - prevhorzpos);  
+		if (diff == 0 )		// avoid divide by zero later
+		{
+			diff = 1;
+		}
 	//	fb = ((float)(range - prevRange)) / (vertpos - prevVertPos);
-		fb = ((float)(um.vert.max - prevMax)) / (horzpos - prevhorzpos);
+		fb = (um.vert.max - prevMax) / diff;
 		error = setpoint - fb;
 		iTerm += (ki * error);
 		
@@ -227,7 +232,7 @@ void um_track (void)
 		}				  
 
 		if (horzpos > 4095) 	horzpos = 4095;
-		if (horzpos < 0) 						horzpos = 0;	
+		if (horzpos < 0) 			horzpos = 0;	
 	
 		dac_set_val(DAC_HORZ, horzpos);
 		
@@ -239,11 +244,11 @@ void um_track (void)
 		// set voltage to maximum
 		// dac_set_val(DAC_VERT, dac_avg);
 
-		uart_set_char (um.vert.iMax);
-		uart_set_char (um.vert.iMax>> 8);
-
 		uart_set_char (horzpos);
 		uart_set_char (horzpos >> 8);	
+		um.vert.iMaxscaled = um.vert.iMax*(127/3.3);
+		uart_set_char (um.vert.iMaxscaled);
+		uart_set_char (um.vert.iMaxscaled >> 8);
 		
 		prevMax			= um.vert.max;
 		prevRange 	= range;
