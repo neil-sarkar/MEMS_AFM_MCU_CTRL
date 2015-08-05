@@ -187,6 +187,12 @@ int main(void)
 			case 'd':
 				um_track();
 				break;
+			case 'T':
+				um_raster();
+				break;
+			case 'U':
+				um_raster_step();
+				break;
 		}
 	}
 }

@@ -27,6 +27,12 @@ struct umirror
 	struct um_peak vert;
 };
 
+typedef enum
+{
+	UP,
+	DOWN
+} RASTER_DIR;
+
 struct umirror um = {{0, 0, 0}, {0, 0, 0}};
 
 void um_init (void)
@@ -45,6 +51,272 @@ void um_init (void)
 #define DAC_L2		DAC_Y1
 #define UM_delay 	0
 #define COM_delay 	100
+
+void um_raster (void)
+{
+	u16 val;
+	u32 delay;
+	s32 i;
+	u16 vertpos = scan_numpts;
+	bool triggered=false;
+	u8 edgenum=0;
+	u16 trigpos[2]={0,0};
+	u16 range;
+	u16 hysteresis=0;
+	u16 threshold=2000;
+
+	RASTER_DIR dir = DOWN;
+	
+	//set pistons to midscale
+	dac_set_val(DAC_X1, scan_l_points[vertpos]);
+	dac_set_val(DAC_Y1, scan_r_points[vertpos]);
+	
+	// raster scan loop
+	while (exitFlag == 0)
+	{
+		um.horz.iMax = 0;
+		um.horz.iMin = 4095;
+		edgenum=0;
+		for (i = 0; i < 4095; i += 20)
+		{
+			delay = UM_delay;
+			while (delay--);
+			if (i > 4095) i = 4095;
+			dac_set_val(DAC_HORZ, i);
+			adc_start_conv(ADC_MIRROR);
+			//val = adc_get_avgw_val(8, 100);
+			val = adc_get_val();
+			
+			if (val > um.horz.iMax) 
+			{
+				um.horz.iMax = val;
+			}
+			if (val < um.horz.iMin) 
+			{
+				um.horz.iMin = val;
+			}
+			if (!triggered)
+			{
+				if (val>threshold)
+				{
+					threshold=threshold-hysteresis;
+					triggered = true;
+					trigpos[edgenum]=i;
+					edgenum++;
+				}
+			}
+			if (triggered)
+			{	
+				if (val<threshold)
+				{
+					threshold=threshold+hysteresis;
+					triggered = false;
+				}
+ 			}
+		}
+		
+		for (i = 4095; i > 0; i -= 20)
+		{
+			delay = UM_delay;
+			while (delay--);
+			if (i < 0) i = 0;
+			dac_set_val(DAC_HORZ, i);
+			adc_start_conv(ADC_MIRROR);
+			//val = adc_get_avgw_val(8, 100);
+			val = adc_get_val();
+			if (val > um.horz.iMax) 
+			{
+				um.horz.iMax = val;
+			}
+			if (val < um.horz.iMin) 
+			{
+				um.horz.iMin = val;
+			}
+			if (!triggered)
+			{
+				if (val>threshold)
+				{
+					threshold=threshold-hysteresis;
+					triggered = true;
+					trigpos[edgenum]=i;
+					edgenum++;
+				}
+			}
+			if (triggered)
+			{	
+				if (val<threshold)
+				{
+					threshold=threshold+hysteresis;
+					triggered = false;
+				}
+ 			}
+		}
+
+		um.horz.peak_posn = (trigpos[0] + trigpos[1]) / 2;
+		//dac_set_val(DAC_HORZ, um.horz.peak_posn);
+		
+		range = um.horz.iMax - um.horz.iMin;
+		threshold = um.horz.iMin + .5*range;
+		hysteresis = range/10;
+	
+		// go to next vertical position - scan up and down - no sudden piston change
+		if (dir == DOWN)
+		{
+			dac_set_val(DAC_X1, scan_r_points[vertpos--]);
+			dac_set_val(DAC_Y1, scan_l_points[vertpos--]);
+			if (vertpos == 0)
+			{
+				dir = UP;
+			}
+		}
+		else
+		{
+			dac_set_val(DAC_X1, scan_r_points[vertpos++]);
+			dac_set_val(DAC_Y1, scan_l_points[vertpos++]);
+			if (vertpos == scan_numpts)
+			{
+				dir = DOWN;
+			}
+		}
+	}
+
+	exitFlag = 0;	
+}
+
+void um_raster_step(void)
+{
+	u16 val;
+	u32 delay;
+	s32 i;
+	u16 vertpos = scan_numpts;
+	bool triggered=false;
+	u8 edgenum=0;
+	u16 trigpos[2]={0,0};
+	u16 range;
+	u16 hysteresis=0;
+	u16 threshold=2000;
+
+	RASTER_DIR dir = DOWN;
+	
+	//set pistons to midscale
+	dac_set_val(DAC_X1, scan_l_points[vertpos]);
+	dac_set_val(DAC_Y1, scan_r_points[vertpos]);
+	
+	// raster scan loop
+	while (exitFlag == 0)
+	{
+		um.horz.iMax = 0;
+		um.horz.iMin = 4095;
+		edgenum=0;
+		for (i = 0; i < 4095; i += 20)
+		{
+			delay = UM_delay;
+			while (delay--);
+			if (i > 4095) i = 4095;
+			dac_set_val(DAC_HORZ, i);
+			adc_start_conv(ADC_MIRROR);
+			//val = adc_get_avgw_val(8, 100);
+			val = adc_get_val();
+			
+			if (val > um.horz.iMax) 
+			{
+				um.horz.iMax = val;
+			}
+			if (val < um.horz.iMin) 
+			{
+				um.horz.iMin = val;
+			}
+			if (!triggered)
+			{
+				if (val>threshold)
+				{
+					threshold=threshold-hysteresis;
+					triggered = true;
+					trigpos[edgenum]=i;
+					edgenum++;
+				}
+			}
+			if (triggered)
+			{	
+				if (val<threshold)
+				{
+					threshold=threshold+hysteresis;
+					triggered = false;
+				}
+ 			}
+		}
+		
+		for (i = 4095; i > 0; i -= 20)
+		{
+			delay = UM_delay;
+			while (delay--);
+			if (i < 0) i = 0;
+			dac_set_val(DAC_HORZ, i);
+			adc_start_conv(ADC_MIRROR);
+			//val = adc_get_avgw_val(8, 100);
+			val = adc_get_val();
+			if (val > um.horz.iMax) 
+			{
+				um.horz.iMax = val;
+			}
+			if (val < um.horz.iMin) 
+			{
+				um.horz.iMin = val;
+			}
+			if (!triggered)
+			{
+				if (val>threshold)
+				{
+					threshold=threshold-hysteresis;
+					triggered = true;
+					trigpos[edgenum]=i;
+					edgenum++;
+				}
+			}
+			if (triggered)
+			{	
+				if (val<threshold)
+				{
+					threshold=threshold+hysteresis;
+					triggered = false;
+				}
+ 			}
+		}
+
+		um.horz.peak_posn = (trigpos[0] + trigpos[1]) / 2;
+		//dac_set_val(DAC_HORZ, um.horz.peak_posn);
+		
+		range = um.horz.iMax - um.horz.iMin;
+		threshold = um.horz.iMin + .5*range;
+		hysteresis = range/10;
+	
+		// go to next vertical position - scan up and down - no sudden piston change
+		if (dir == DOWN)
+		{
+			dac_set_val(DAC_X1, scan_r_points[vertpos--]);
+			dac_set_val(DAC_Y1, scan_l_points[vertpos--]);
+			if (vertpos == 0)
+			{
+				dir = UP;
+			}
+		}
+		else
+		{
+			dac_set_val(DAC_X1, scan_r_points[vertpos++]);
+			dac_set_val(DAC_Y1, scan_l_points[vertpos++]);
+			if (vertpos == scan_numpts)
+			{
+				dir = DOWN;
+			}
+		}
+		
+		// wait to scan next line or until user wants to exit
+		while (uart_wait_get_char() != 'n' && exitFlag != 1) {}
+		
+	}
+
+	exitFlag = 0;	
+}
 
 void um_track (void)
 {

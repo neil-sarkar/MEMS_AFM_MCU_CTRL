@@ -7,3 +7,5 @@
 
 void um_init (void);
 void um_track (void);
+void um_raster (void);
+void um_raster_step(void);
