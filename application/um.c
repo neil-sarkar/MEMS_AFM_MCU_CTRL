@@ -49,7 +49,8 @@ void um_init (void)
 #define DAC_HORZ	DAC_ZOFFSET_COARSE	
 #define DAC_L1		DAC_X1
 #define DAC_L2		DAC_Y1
-#define UM_delay 	0
+#define UM_delay 	10
+#define T_delay 100
 #define COM_delay 	100
 
 void um_raster (void)
@@ -57,19 +58,29 @@ void um_raster (void)
 	u16 val;
 	u32 delay;
 	s32 i;
-	u16 vertpos = scan_numpts;
+	s16 vertpos = scan_numpts;
 	bool triggered=false;
 	u8 edgenum=0;
 	u16 trigpos[2]={0,0};
 	u16 range;
 	u16 hysteresis=0;
 	u16 threshold=2000;
-
+	u16 globvertimax=0;
+	u16 globhorzimax=0;
+	u16 prevglobvertimax=0;
+	u16 prevglobhorzimax=0;
+	u16 horzsize=4095;
+	u16 vertsize=scan_numpts;
+	s32 lefthorz=0;
+	s32 righthorz=4095;
+	s32 topvert=scan_numpts;
+	s32 botvert=0;
+	
 	RASTER_DIR dir = DOWN;
 	
-	//set pistons to midscale
-	dac_set_val(DAC_X1, scan_l_points[vertpos]);
-	dac_set_val(DAC_Y1, scan_r_points[vertpos]);
+	//set pistons to top
+	dac_set_val(DAC_X1, scan_l_points[topvert]);
+	dac_set_val(DAC_Y1, scan_r_points[topvert]);
 	
 	// raster scan loop
 	while (exitFlag == 0)
@@ -77,11 +88,12 @@ void um_raster (void)
 		um.horz.iMax = 0;
 		um.horz.iMin = 4095;
 		edgenum=0;
-		for (i = 0; i < 4095; i += 20)
+		for (i = lefthorz; i < righthorz; i += 20)
 		{
 			delay = UM_delay;
 			while (delay--);
 			if (i > 4095) i = 4095;
+			if (i < 0) i=0;
 			dac_set_val(DAC_HORZ, i);
 			adc_start_conv(ADC_MIRROR);
 			//val = adc_get_avgw_val(8, 100);
@@ -95,7 +107,7 @@ void um_raster (void)
 			{
 				um.horz.iMin = val;
 			}
-			if (!triggered)
+			if (!triggered)   /// make a global peak loop?
 			{
 				if (val>threshold)
 				{
@@ -115,11 +127,12 @@ void um_raster (void)
  			}
 		}
 		
-		for (i = 4095; i > 0; i -= 20)
+		for (i = righthorz; i > lefthorz; i -= 20)
 		{
 			delay = UM_delay;
 			while (delay--);
-			if (i < 0) i = 0;
+			if (i > 4095) i=4095;
+			if (i < 0) i=0;
 			dac_set_val(DAC_HORZ, i);
 			adc_start_conv(ADC_MIRROR);
 			//val = adc_get_avgw_val(8, 100);
@@ -132,7 +145,7 @@ void um_raster (void)
 			{
 				um.horz.iMin = val;
 			}
-			if (!triggered)
+			if (!triggered) //make a global peak loop?
 			{
 				if (val>threshold)
 				{
@@ -152,7 +165,12 @@ void um_raster (void)
  			}
 		}
 
-		um.horz.peak_posn = (trigpos[0] + trigpos[1]) / 2;
+		if(um.horz.iMax > globhorzimax)  // find global maximum intensity
+			{
+				globhorzimax = um.horz.iMax;
+				globvertimax = vertpos;
+				um.horz.peak_posn = (trigpos[0] + trigpos[1]) / 2;
+			}
 		//dac_set_val(DAC_HORZ, um.horz.peak_posn);
 		
 		range = um.horz.iMax - um.horz.iMin;
@@ -160,24 +178,153 @@ void um_raster (void)
 		hysteresis = range/10;
 	
 		// go to next vertical position - scan up and down - no sudden piston change
+		// report peak posns at both top and bottom of scan.
 		if (dir == DOWN)
 		{
+			if(vertpos >= scan_numpts) vertpos=scan_numpts-2;
+			if(vertpos <= 0) vertpos=2;
 			dac_set_val(DAC_X1, scan_r_points[vertpos--]);
 			dac_set_val(DAC_Y1, scan_l_points[vertpos--]);
-			if (vertpos == 0)
+			delay = T_delay;
+			while (delay--);
+			if (vertpos == botvert)
 			{
 				dir = UP;
+		uart_set_char (um.horz.peak_posn);				// report horz peak posn
+		uart_set_char (um.horz.peak_posn >> 8);
+				
+				if(globhorzimax >= prevglobhorzimax)	// adaptively scale scan size
+				{
+					horzsize = horzsize/2;
+					if (horzsize <= 300)
+					{
+						horzsize = 300;
+					}
+					lefthorz = um.horz.peak_posn - horzsize/2;
+					righthorz = um.horz.peak_posn + horzsize/2;
+					if(lefthorz < 0) lefthorz=0;
+					if(righthorz > 4095) righthorz=4095;
+					
+				}
+				else
+				{
+				horzsize = horzsize*2;
+					if (horzsize >=4095)
+					{
+						horzsize = 4095;
+					}
+					lefthorz = um.horz.peak_posn - horzsize/2;
+					righthorz = um.horz.peak_posn + horzsize/2;
+					if(lefthorz < 0) lefthorz=0;
+					if(righthorz > 4095) righthorz=4095;
+				}
+				prevglobhorzimax=globhorzimax;
+				globhorzimax=0;
+
+		uart_set_char (globvertimax);				// report verz peak posn
+		uart_set_char (globvertimax >> 8);
+				
+				if(globvertimax >= prevglobvertimax)	// adaptively scale scan size
+				{
+					vertsize = vertsize/2;
+					if (vertsize <= 8)
+					{
+						vertsize = 8;
+					}
+					topvert = globvertimax + vertsize/2;
+					botvert = globvertimax - vertsize/2;
+					if(botvert < 0) botvert=0;
+					if(topvert > scan_numpts) topvert=scan_numpts;
+				}
+				else
+				{
+				vertsize = vertsize*2;
+					if (vertsize >=scan_numpts)
+					{
+						vertsize = scan_numpts;
+					}
+					topvert = globvertimax + vertsize/2;
+					botvert = globvertimax - vertsize/2;
+					if(botvert < 0) botvert=0;
+					if(topvert > scan_numpts) topvert=scan_numpts;
+				}
+				prevglobvertimax=globvertimax;
+				globvertimax=0;
+				
 			}
 		}
-		else
+		else   // i.e. DIR==UP
 		{
+			if(vertpos >= scan_numpts) vertpos=scan_numpts-2;
+			if(vertpos <= 0) vertpos=2;
 			dac_set_val(DAC_X1, scan_r_points[vertpos++]);
 			dac_set_val(DAC_Y1, scan_l_points[vertpos++]);
-			if (vertpos == scan_numpts)
+			delay = T_delay;
+			while (delay--);
+			if (vertpos == topvert)
 			{
 				dir = DOWN;
+		uart_set_char (um.horz.peak_posn);				//report horz peak posn
+		uart_set_char (um.horz.peak_posn >> 8);
+				if(globhorzimax >= prevglobhorzimax)	// adaptively scale scan size
+				{
+					horzsize = horzsize/2;
+					if (horzsize <= 300)
+					{
+						horzsize = 300;
+					}
+					lefthorz = um.horz.peak_posn - horzsize/2;
+					righthorz = um.horz.peak_posn + horzsize/2;
+					if(lefthorz < 0) lefthorz=0;
+					if(righthorz > 4095) righthorz=4095;
+				}
+				else
+				{
+				horzsize = horzsize*2;
+					if (horzsize >=4095)
+					{
+						horzsize = 4095;
+					}
+					lefthorz = um.horz.peak_posn - horzsize/2;
+					righthorz = um.horz.peak_posn + horzsize/2;
+					if(lefthorz < 0) lefthorz=0;
+					if(righthorz > 4095) righthorz=4095;
+				}
+				prevglobhorzimax=globhorzimax;
+				globhorzimax=0;
+
+		uart_set_char (globvertimax);				// report verz peak posn
+		uart_set_char (globvertimax >> 8);
+				
+		if(globvertimax >= prevglobvertimax)	// adaptively scale scan size
+				{
+					vertsize = vertsize/2;
+					if (vertsize <= 8)
+					{
+						vertsize = 8;
+					}
+					topvert = globvertimax + vertsize/2;
+					botvert = globvertimax - vertsize/2;
+					if(botvert < 0) botvert=0;
+					if(topvert > scan_numpts) topvert=scan_numpts;
+				}
+				else
+				{
+				vertsize = vertsize*2;
+					if (vertsize >=scan_numpts)
+					{
+						vertsize = scan_numpts;
+					}
+					topvert = globvertimax + vertsize/2;
+					botvert = globvertimax - vertsize/2;
+					if(botvert < 0) botvert=0;
+					if(topvert > scan_numpts) topvert=scan_numpts;
+				}
+				prevglobvertimax=globvertimax;
+				globvertimax=0;
 			}
 		}
+
 	}
 
 	exitFlag = 0;	

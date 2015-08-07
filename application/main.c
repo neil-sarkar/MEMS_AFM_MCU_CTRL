@@ -185,7 +185,8 @@ int main(void)
 				scan_set_freq (uart_wait_get_char ());
 				break;
 			case 'd':
-				um_track();
+				//um_track();
+			um_raster();
 				break;
 			case 'T':
 				um_raster();
