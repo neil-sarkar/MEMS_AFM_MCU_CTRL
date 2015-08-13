@@ -4,6 +4,8 @@
 #define CR     0x0D
 #define BFR_SIZE 64
 
+volatile char G_exit_flag = 0;
+
 static struct uart_fifo {
 	u8 buffer [BFR_SIZE];
 	u8 head;
@@ -85,6 +87,11 @@ void uart_handler (void){
 				rx_fifo.num_bytes ++;
 			}
 
+			if (rx_fifo.rx == 'q')
+			{
+				G_exit_flag = 1;
+			}
+			
 			//if (rx_fifo.rx == 'M')
 			//{
 				// reset MCU

@@ -1,3 +1,7 @@
+/* TODO:
+* used configuration between motors
+*/
+
 #include "main.h"
 
 #include "../peripheral/uart.h"
@@ -10,6 +14,7 @@
 #include "../system/dds_AD5932.h"
 #include "../system/pid.h"
 #include "../system/motor.h"
+#include "../system/stpr_DRV8834.h"
 
 #include "../system/pga_1ch_LM1971.h"
 #include "../system/pga_4ch_PGA4311.h"
@@ -65,7 +70,8 @@ extern u8 calib_delay;
 int main(void)
 {
 	u8 rx_char;
-
+	u8 byte_l, byte_h;
+	
 	/*
 	 * MCU Initialization				  
 	 */
@@ -301,7 +307,31 @@ int main(void)
 			case 'C':
 				//set_pv_rel_manual_c ();
 				break;
-				
+			// Stepper motor
+			case '0':
+				stpr_set_step((STEP_MODE)uart_wait_get_char());
+				break;
+			case '1':
+				stpr_step();	
+				break;
+			case '2':
+				byte_l = uart_wait_get_char();
+				byte_h = uart_wait_get_char();
+	
+				stpr_set_speed(((byte_h << 8) | byte_l) & 0x0FFF);	
+				break;
+			case '3':
+				stpr_cont();	
+				break;
+			case '4':
+				stpr_sleep();
+				break;
+			case '5':
+				stpr_wake();
+				break;			
+			case '6':
+				stpr_set_dir(uart_wait_get_char());
+				break;
 		}
 	}
 }
@@ -364,6 +394,9 @@ static void sys_init ()
 
 	/* Init motor control */
 	mtr_init ();
+	
+	// TODO set up configuration between motors here
+	stpr_init ();
 
 #ifdef configSYS_PGA_LM1971_PGA4311
 	/* Init DAC attenuators */

@@ -58,8 +58,9 @@ void delay_25_us (u8 delay);
 void delay_1_ms (u16 delay);
 
 #define CNT_1_MS		3900
-#define CNT_25_US		90		
-			
+#define CNT_25_US		90
+#define CNT_200_US	780
+
 __inline void DELAY_MS(u16 delayCnt)
 {
 		u32 delay = CNT_1_MS*delayCnt;
@@ -69,6 +70,12 @@ __inline void DELAY_MS(u16 delayCnt)
 __inline void DELAY_25_US(u16 delayCnt) 	
 {
 	u32 delay = CNT_25_US*delayCnt;
+	while (delay--) {}
+}
+
+__inline void DELAY_200_US(u16 delayCnt) 	
+{
+	u32 delay = CNT_200_US*delayCnt;
 	while (delay--) {}
 }
 
