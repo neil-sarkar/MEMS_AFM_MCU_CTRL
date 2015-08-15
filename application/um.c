@@ -49,14 +49,14 @@ void um_init (void)
 #define DAC_HORZ	DAC_ZOFFSET_COARSE	
 #define DAC_L1		DAC_X1
 #define DAC_L2		DAC_Y1
-#define UM_delay 	10
-#define T_delay 100
-#define COM_delay 	100
+#define UM_delay 	0
+#define T_delay 0
+#define COM_delay 	0
 
 void um_raster (void)
 {
 	u16 val;
-	u32 delay;
+	u16 delay;
 	s32 i;
 	s16 vertpos = scan_numpts;
 	bool triggered=false;
@@ -71,10 +71,11 @@ void um_raster (void)
 	u16 prevglobhorzimax=0;
 	u16 horzsize=4095;
 	u16 vertsize=scan_numpts;
-	s32 lefthorz=0;
-	s32 righthorz=4095;
-	s32 topvert=scan_numpts;
-	s32 botvert=0;
+	s16 lefthorz=0;
+	u16 righthorz=4095;
+	u16 topvert=scan_numpts;
+	s16 botvert=0;
+	u16 vert_step=1;
 	
 	RASTER_DIR dir = DOWN;
 	
@@ -183,17 +184,17 @@ void um_raster (void)
 		{
 			if(vertpos >= scan_numpts) vertpos=scan_numpts-2;
 			if(vertpos <= 0) vertpos=2;
-			dac_set_val(DAC_X1, scan_r_points[vertpos--]);
-			dac_set_val(DAC_Y1, scan_l_points[vertpos--]);
+			dac_set_val(DAC_X1, scan_r_points[vertpos-= vert_step]);
+			dac_set_val(DAC_Y1, scan_l_points[vertpos-= vert_step]);
 			delay = T_delay;
 			while (delay--);
-			if (vertpos == botvert)
+			if (vertpos <= botvert)
 			{
 				dir = UP;
 		uart_set_char (um.horz.peak_posn);				// report horz peak posn
 		uart_set_char (um.horz.peak_posn >> 8);
 				
-				if(globhorzimax >= prevglobhorzimax)	// adaptively scale scan size
+/*				if(globhorzimax >= prevglobhorzimax)	// adaptively scale scan size
 				{
 					horzsize = horzsize/2;
 					if (horzsize <= 300)
@@ -218,55 +219,55 @@ void um_raster (void)
 					if(lefthorz < 0) lefthorz=0;
 					if(righthorz > 4095) righthorz=4095;
 				}
-				prevglobhorzimax=globhorzimax;
+			prevglobhorzimax=globhorzimax;
 				globhorzimax=0;
-
+*/
 		uart_set_char (globvertimax);				// report verz peak posn
 		uart_set_char (globvertimax >> 8);
 				
-				if(globvertimax >= prevglobvertimax)	// adaptively scale scan size
+				if(globhorzimax >= prevglobhorzimax)	// adaptively scale scan size
 				{
 					vertsize = vertsize/2;
-					if (vertsize <= 8)
+					if (vertsize < 16)
 					{
-						vertsize = 8;
-					}
-					topvert = globvertimax + vertsize/2;
-					botvert = globvertimax - vertsize/2;
-					if(botvert < 0) botvert=0;
-					if(topvert > scan_numpts) topvert=scan_numpts;
+						vertsize = 16;
+					}	
 				}
 				else
 				{
 				vertsize = vertsize*2;
-					if (vertsize >=scan_numpts)
+					if (vertsize >scan_numpts)
 					{
 						vertsize = scan_numpts;
 					}
-					topvert = globvertimax + vertsize/2;
-					botvert = globvertimax - vertsize/2;
-					if(botvert < 0) botvert=0;
-					if(topvert > scan_numpts) topvert=scan_numpts;
 				}
-				prevglobvertimax=globvertimax;
-				globvertimax=0;
+				vert_step = vertsize/16;
+				topvert = globvertimax + vertsize/2;
+				botvert = globvertimax - vertsize/2;
+				if(botvert < 0) botvert=0;
+				if(topvert > scan_numpts) topvert=scan_numpts;
+				prevglobhorzimax=globhorzimax;
+				globhorzimax=0;
+				vertpos=botvert;
+			dac_set_val(DAC_X1, scan_r_points[vertpos]);
+			dac_set_val(DAC_Y1, scan_l_points[vertpos]);
 				
 			}
 		}
-		else   // i.e. DIR==UP
+		else   // i.e. DIR==UP but not first UP loop
 		{
 			if(vertpos >= scan_numpts) vertpos=scan_numpts-2;
 			if(vertpos <= 0) vertpos=2;
-			dac_set_val(DAC_X1, scan_r_points[vertpos++]);
-			dac_set_val(DAC_Y1, scan_l_points[vertpos++]);
+			dac_set_val(DAC_X1, scan_r_points[vertpos+= vert_step]);
+			dac_set_val(DAC_Y1, scan_l_points[vertpos+= vert_step]);
 			delay = T_delay;
 			while (delay--);
-			if (vertpos == topvert)
+			if (vertpos >= topvert)
 			{
 				dir = DOWN;
 		uart_set_char (um.horz.peak_posn);				//report horz peak posn
 		uart_set_char (um.horz.peak_posn >> 8);
-				if(globhorzimax >= prevglobhorzimax)	// adaptively scale scan size
+/*				if(globhorzimax >= prevglobhorzimax)	// adaptively scale scan size
 				{
 					horzsize = horzsize/2;
 					if (horzsize <= 300)
@@ -292,39 +293,38 @@ void um_raster (void)
 				}
 				prevglobhorzimax=globhorzimax;
 				globhorzimax=0;
-
-		uart_set_char (globvertimax);				// report verz peak posn
+*/
+		uart_set_char (globvertimax);				// report vert peak posn
 		uart_set_char (globvertimax >> 8);
 				
-		if(globvertimax >= prevglobvertimax)	// adaptively scale scan size
+		if(globhorzimax >= prevglobhorzimax)	// adaptively scale scan size
 				{
 					vertsize = vertsize/2;
-					if (vertsize <= 8)
+					if (vertsize < 16)
 					{
-						vertsize = 8;
+						vertsize = 16;
 					}
-					topvert = globvertimax + vertsize/2;
-					botvert = globvertimax - vertsize/2;
-					if(botvert < 0) botvert=0;
-					if(topvert > scan_numpts) topvert=scan_numpts;
 				}
 				else
 				{
 				vertsize = vertsize*2;
-					if (vertsize >=scan_numpts)
+					if (vertsize > scan_numpts)
 					{
 						vertsize = scan_numpts;
 					}
-					topvert = globvertimax + vertsize/2;
-					botvert = globvertimax - vertsize/2;
-					if(botvert < 0) botvert=0;
-					if(topvert > scan_numpts) topvert=scan_numpts;
 				}
-				prevglobvertimax=globvertimax;
-				globvertimax=0;
+				vert_step = vertsize/16;
+				topvert = globvertimax + vertsize/2;
+				botvert = globvertimax - vertsize/2;
+				if(botvert < 0) botvert=0;
+				if(topvert > scan_numpts) topvert=scan_numpts;
+				prevglobhorzimax=globhorzimax;
+				globhorzimax=0;
+				vertpos=topvert;
+			dac_set_val(DAC_X1, scan_r_points[vertpos]);
+			dac_set_val(DAC_Y1, scan_l_points[vertpos]);
 			}
 		}
-
 	}
 
 	exitFlag = 0;	
