@@ -186,11 +186,12 @@ void um_track (void)
 		fb = ((float)(range - prevRange)) / (vertshift);
 		error = setpoint - fb;
 		iTerm += (ki * error);
-		
-		if (iTerm > scan_numpts-1) iTerm = scan_numpts-1;
-		else if (iTerm < 0) 			 iTerm = 0;
+		if (iTerm >= scan_numpts/2) iTerm=scan_numpts/2;
+		//if (iTerm > scan_numpts-1) iTerm = scan_numpts-1;
+		if (iTerm <= -1*scan_numpts/2) iTerm= -1*scan_numpts/2;
 		
 		pidval = (u16)(kp * error + iTerm);
+		if(pidval==0) pidval=1;  //to do: make this direction dependant
 		
 		// Vertical Tracking
 		if (um.horz.iMax>prevMax)
