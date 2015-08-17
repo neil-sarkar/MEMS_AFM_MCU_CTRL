@@ -43,18 +43,19 @@ void um_init (void)
 #define DAC_HORZ	DAC_ZOFFSET_COARSE	
 #define DAC_L1		DAC_X1
 #define DAC_L2		DAC_Y1
-#define UM_delay 	0
+#define UM_delay 	50
 #define COM_delay 	100
 
 //pid variables
-float ki = 0;
-float kp = 1;
+float ki = 0.01;
+float kp = 0;
 
 s32 iTerm;
 s32 fb;
 s32 error;
 u16 pidval;
 u16 setpoint = 0;
+s32 vertshift;
 
 void um_set_i (float param)
 {
@@ -177,15 +178,19 @@ void um_track (void)
 		range = um.horz.iMax - um.horz.iMin;
 		threshold = um.horz.iMin + .5*range;
 		hysteresis = range/10;
-
-		fb = ((float)(range - prevRange)) / (vertpos - prevVertPos);
+		vertshift=(vertpos - prevVertPos);
+		if (vertshift==0)
+		{
+			vertshift=1;
+		}
+		fb = ((float)(range - prevRange)) / (vertshift);
 		error = setpoint - fb;
 		iTerm += (ki * error);
 		
 		if (iTerm > scan_numpts-1) iTerm = scan_numpts-1;
 		else if (iTerm < 0) 			 iTerm = 0;
 		
-		pidval = kp * error + iTerm;
+		pidval = (u16)(kp * error + iTerm);
 		
 		// Vertical Tracking
 		if (um.horz.iMax>prevMax)
