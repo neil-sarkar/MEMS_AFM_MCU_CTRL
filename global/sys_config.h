@@ -27,10 +27,8 @@
 #define configAPPROACH_VERT
 
 // TODO: define these better
-#define configMOTOR_PCB
-// note that the steppr doesn't exists yet
-
-#define configMOTOR_STEPPER
+//#define configMOTOR_PCB
+#define configMOTOR_STEPPER_DRV8834
 
 // Determine controller characteristics
 #define featCONTROLLER_PID

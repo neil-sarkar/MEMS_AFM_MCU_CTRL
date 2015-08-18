@@ -59,17 +59,10 @@ void mtr_init (void)
 	MTR_DAT_REG &= ~MTR_DIR;
 	MTR_DAT_REG |= MTR_PWR;
 
-	/* Initilize Timer 0 for the coarse approach */
-	/*
-	T0LD  = TMR_DFLT;
-	T0CON = BIT6 + BIT9 + BIT10;				// Periodic mode, HCLK core clock 41.78Mhz
-    IRQEN = BIT2;								// Enable Timer 0 IRQ
-	*/
-
-	/* Initilize Timer 0 for the coarse approach */
+	/* Initilize Timer 2 for the coarse approach */
 	T2LD  = TMR_DFLT;
 	T2CON = BIT6 + BIT9;						// Periodic mode, core clock
-	IRQEN = BIT4;								// Enable Timer2 fast interrupt
+	IRQEN = BIT4;										// Enable Timer2 fast interrupt
 }
 
 u8 mtr_set_pw(u8 pw)

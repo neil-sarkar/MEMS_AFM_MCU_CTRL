@@ -35,9 +35,18 @@ tyVctHndlr    DDS     	= (tyVctHndlr)dds_handler;
 #endif
 
 tyVctHndlr    PID     	= (tyVctHndlr)pid_handler;
-tyVctHndlr 	  UART		= (tyVctHndlr)uart_handler;
-tyVctHndlr	  MTR		= (tyVctHndlr)mtr_handler;
-tyVctHndlr	  WIRE3		= (tyVctHndlr)wire3_handler;
+tyVctHndlr 	  UART			= (tyVctHndlr)uart_handler;
+
+// System level handlers
+#ifdef configMOTOR_PCB
+tyVctHndlr	  MTR				= (tyVctHndlr)mtr_handler;
+#endif
+
+#ifdef configMOTOR_STEPPER_DRV8834
+tyVctHndlr	  MTR				= (tyVctHndlr)stpr_handler;
+#endif
+
+tyVctHndlr	  WIRE3			= (tyVctHndlr)wire3_handler;
 
 
 #ifdef configSYS_DDS_AD5932						
@@ -133,6 +142,7 @@ int main(void)
 			case 's':
 				set_pid_setpoint();
 				break;
+#ifdef configMOTOR_PCB
 			case 'j':
 				set_pw();
 				break;
@@ -145,6 +155,11 @@ int main(void)
 			case 'm':
 				single_pulse();
 				break;
+			case 'v': 
+				auto_approach();
+				break;
+#endif // configMOTOR_PCB
+			
 #ifdef configSYS_DDS_AD9837
 			case 'n':
 				dds_AD9837_get_data();
@@ -164,9 +179,7 @@ int main(void)
 				dds_get_data();
 				break;
 #endif
-			case 'v': 
-				auto_approach();
-				break;
+
 			case 'z':
 				adc_set_pga(padc0, uart_wait_get_char());
 				break;
@@ -314,6 +327,7 @@ int main(void)
 			case '1':
 				stpr_step();	
 				break;
+#ifdef configMOTOR_STEPPER_DRV8834
 			case '2':
 				byte_l = uart_wait_get_char();
 				byte_h = uart_wait_get_char();
@@ -332,6 +346,7 @@ int main(void)
 			case '6':
 				stpr_set_dir(uart_wait_get_char());
 				break;
+#endif // configMOTOR_STEPPER_DRV8834
 		}
 	}
 }
@@ -393,10 +408,13 @@ static void sys_init ()
 	dac_init (dac11, dac_enable);
 
 	/* Init motor control */
+#ifdef configMOTOR_PCB
 	mtr_init ();
-	
-	// TODO set up configuration between motors here
+#endif // configMOTOR_PCB
+
+#ifdef configMOTOR_STEPPER_DRV8834
 	stpr_init ();
+#endif // configMOTOR_STEPPER_DRV8834
 
 #ifdef configSYS_PGA_LM1971_PGA4311
 	/* Init DAC attenuators */
@@ -410,7 +428,7 @@ static void sys_init ()
 	pga_4ch_set (pga_x2, 192);
 	pga_4ch_set (pga_y1, 192);
 	pga_4ch_set (pga_y2, 192);
-#endif
+#endif // configSYS_PGA_LM1971_PGA4311
 
 #ifdef configSYS_PGA_CS3308
 	/* Init the 8-PGA */
@@ -883,6 +901,7 @@ void freq_sweep_dds(void)
 }
 #endif
 
+#ifdef configMOTOR_PCB
 void set_dir(char dirchar)
 {
 	u8 fail = mtr_set_dir ((dirchar == 'l')?mtr_fwd:mtr_bwd);
@@ -934,6 +953,7 @@ void auto_approach (void)
 		uart_set_char ('s');
 	}
 }
+#endif // #ifdef configMOTOR_PCB
 
 #ifdef configMEMS_2ACT
 void device_calibration (void)

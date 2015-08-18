@@ -1,12 +1,19 @@
 #include "stpr_DRV8834.h"
 
+/*
+TODO:
+- What to do with the step function?
+
+*/
+#ifdef configMOTOR_STEPPER_DRV8834
+
 #define STP_CNT_100_US	100
 
 struct stpr
 {
 	u32 speed;
 	unsigned long delay;
-	unsigned long delay_tmp;
+	unsigned long delay_cnt;
 };
 
 static struct stpr s = {1, 	STP_CNT_100_US, STP_CNT_100_US};
@@ -37,6 +44,10 @@ extern volatile char G_exit_flag;
 
 #define SET_1(reg, bit) reg |= bit;
 #define SET_0(reg, bit) reg &= ~bit;
+#define SET_t(reg, bit) reg ^= bit;
+
+#define STPR_TMR_DFLT_500HZ  	41780
+#define STPR_TMR_DFLT_5KHZ  	4178
 
 void stpr_init()
 {
@@ -55,6 +66,10 @@ void stpr_init()
 	SET_0(REG_M1, BIT_M1_o);
 	SET_0(REG_M0, BIT_M0_o);
 
+	/* Initilize Timer 2 for the coarse approach */
+	T2LD  = STPR_TMR_DFLT_500HZ;
+	T2CON = BIT6 + BIT9;						// Periodic mode, core clock
+	IRQEN = BIT4;										// Enable Timer2 fast interrupt
 }
 
 void stpr_set_step(STEP_MODE stp_mode)
@@ -119,27 +134,43 @@ void stpr_wake()
 
 void stpr_cont()
 {
-	while (G_exit_flag == 0)
-	{
-		stpr_step();
-	}
+	// Enable timer
+	T2CON |= BIT7;
 	
+	while (G_exit_flag == 0) {}
 	G_exit_flag = 0;
+		
+	SET_0(REG_STP, BIT_STP_o);
+
+	// disable timer
+	T2CON &= ~BIT7;
 }
 
 void stpr_step()
 {
 
 	SET_1(REG_STP, BIT_STP_o);
-	s.delay_tmp = s.delay;
-	while(s.delay_tmp--) {};
+	s.delay_cnt = s.delay;
+	while(s.delay_cnt--) {};
 	SET_0(REG_STP, BIT_STP_o);
-	s.delay_tmp = s.delay;
-	while(s.delay_tmp--) {};
+	s.delay_cnt = s.delay;
+	while(s.delay_cnt--) {};
 }
 
 void stpr_set_speed(u16 speed)
 {
-	s.speed = speed;
-	s.delay = STP_CNT_100_US*s.speed;
+	u16 new_speed = STPR_TMR_DFLT_500HZ - speed;
+	
+	if (new_speed > STPR_TMR_DFLT_5KHZ)
+	{
+		T2LD = new_speed;
+		T2CLRI = 0x55;	
+	}
 }
+
+void stpr_handler()
+{
+	SET_t(REG_STP, BIT_STP_o);
+}
+
+#endif // configMOTOR_STEPPER_DRV8834
