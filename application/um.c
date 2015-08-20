@@ -83,6 +83,7 @@ void um_track (void)
 	u16 hysteresis = 0;
 	u16 threshold=2000;
 	u16 prevMax=0;
+	s32 DIR=1;
 	// TODO make this float?
 
 	//set pistons to midscale
@@ -178,6 +179,26 @@ void um_track (void)
 		range = um.horz.iMax - um.horz.iMin;
 		threshold = um.horz.iMin + .5*range;
 		hysteresis = range/10;
+		
+		if(range<=DAC_1_V)		//recovery loop; sparse raster scan
+		{
+		vertpos+=DIR*(scan_numpts/8);
+		if(vertpos>scan_numpts)  
+		{	
+		DIR=DIR*-1;
+		vertpos=scan_numpts;
+		}
+		if(vertpos<0) 
+		{	
+		DIR=DIR*-1;
+		vertpos=0;
+		}
+		iTerm=0;			
+		dac_set_val(DAC_X1, scan_r_points[vertpos]);
+		dac_set_val(DAC_Y1, scan_l_points[vertpos]);
+		}
+		else
+		{
 		vertshift=(vertpos - prevVertPos);
 		if (vertshift==0)
 		{
@@ -206,12 +227,12 @@ void um_track (void)
 			if (dir<0) vertpos -= pidval;				
 		}				  
 
-		if (vertpos > scan_numpts) 	vertpos = scan_numpts-1;
+		if (vertpos > scan_numpts) 	vertpos = scan_numpts;
 		if (vertpos < 0) 						vertpos = 0;	
 	
 		dac_set_val(DAC_X1, scan_r_points[vertpos]);
 		dac_set_val(DAC_Y1, scan_l_points[vertpos]);
-		
+		}
 		// delay
 		delay = UM_delay;
 		while (delay--);
