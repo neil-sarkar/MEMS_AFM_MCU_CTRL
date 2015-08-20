@@ -108,8 +108,6 @@ void wire3_handler (){
 	} else {
 		wire3_end_write ();
 	}
-	// Reset timer
-	T4CLRI = 0x01;
 }
 
 static void wire3_end_write (void)

@@ -1,24 +1,14 @@
 #include "stpr_DRV8834.h"
 
-/*
-TODO:
-- What to do with the step function?
-
-*/
 #ifdef configMOTOR_STEPPER_DRV8834
 
-#define STP_CNT_100_US	100
+typedef enum {
+	CONT = 0,
+	HIGH,
+	LOW
+} STEP_SIGNAL_STATE;
 
-struct stpr
-{
-	u32 speed;
-	unsigned long delay;
-	unsigned long delay_cnt;
-};
-
-static struct stpr s = {1, 	STP_CNT_100_US, STP_CNT_100_US};
-
-extern volatile char G_exit_flag;
+STEP_SIGNAL_STATE step_state = CONT;
 	
 // the suffix _d is gpio direction bit
 // the suffix _o is gpio output bit
@@ -46,6 +36,7 @@ extern volatile char G_exit_flag;
 #define SET_0(reg, bit) reg &= ~bit;
 #define SET_t(reg, bit) reg ^= bit;
 
+#define STPR_TMR_DFLT_20HZ  	(u32)1700000
 #define STPR_TMR_DFLT_500HZ  	41780
 #define STPR_TMR_DFLT_5KHZ  	4178
 
@@ -67,8 +58,8 @@ void stpr_init()
 	SET_0(REG_M0, BIT_M0_o);
 
 	/* Initilize Timer 2 for the coarse approach */
-	T2LD  = STPR_TMR_DFLT_500HZ;
 	T2CON = BIT6 + BIT9;						// Periodic mode, core clock
+	T2LD  = STPR_TMR_DFLT_20HZ;
 	IRQEN = BIT4;										// Enable Timer2 fast interrupt
 }
 
@@ -136,41 +127,60 @@ void stpr_cont()
 {
 	// Enable timer
 	T2CON |= BIT7;
-	
-	while (G_exit_flag == 0) {}
-	G_exit_flag = 0;
-		
-	SET_0(REG_STP, BIT_STP_o);
+}
 
+void stpr_exit_cont()
+{
+	SET_0(REG_STP, BIT_STP_o);	
+	
 	// disable timer
 	T2CON &= ~BIT7;
 }
 
 void stpr_step()
 {
-
-	SET_1(REG_STP, BIT_STP_o);
-	s.delay_cnt = s.delay;
-	while(s.delay_cnt--) {};
 	SET_0(REG_STP, BIT_STP_o);
-	s.delay_cnt = s.delay;
-	while(s.delay_cnt--) {};
+	// Enable timer
+	T2CON |= BIT7;
+	step_state = HIGH;
 }
 
 void stpr_set_speed(u16 speed)
 {
-	u16 new_speed = STPR_TMR_DFLT_500HZ - speed;
-	
-	if (new_speed > STPR_TMR_DFLT_5KHZ)
-	{
+	u32 new_speed;
+	new_speed = (u32)(STPR_TMR_DFLT_20HZ - (u32)(speed << 6));
+
+	// TODO: might need a limit
+	//if (new_speed > STPR_TMR_DFLT_5KHZ)
+	//{
 		T2LD = new_speed;
 		T2CLRI = 0x55;	
-	}
+	//}
 }
 
 void stpr_handler()
 {
-	SET_t(REG_STP, BIT_STP_o);
+	if (step_state == CONT)
+	{
+		SET_t(REG_STP, BIT_STP_o);
+	}
+	else
+	{
+		switch (step_state) 
+		{
+			case HIGH:
+					SET_1(REG_STP, BIT_STP_o);
+					step_state = LOW;
+					break;
+			case LOW: 
+					SET_0(REG_STP, BIT_STP_o);
+					step_state = CONT;
+					T2CON &= ~BIT7;							// disable timer
+				break;
+			default:												// HUGE ERROR!
+				break;
+		}
+	}
 }
 
 #endif // configMOTOR_STEPPER_DRV8834

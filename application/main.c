@@ -48,7 +48,6 @@ tyVctHndlr	  MTR				= (tyVctHndlr)stpr_handler;
 
 tyVctHndlr	  WIRE3			= (tyVctHndlr)wire3_handler;
 
-
 #ifdef configSYS_DDS_AD5932						
 extern int dds_inc_cnt;
 #endif
@@ -80,6 +79,7 @@ int main(void)
 {
 	u8 rx_char;
 	u8 byte_l, byte_h;
+	u16 byte_full;
 	
 	/*
 	 * MCU Initialization				  
@@ -331,8 +331,8 @@ int main(void)
 			case '2':
 				byte_l = uart_wait_get_char();
 				byte_h = uart_wait_get_char();
-	
-				stpr_set_speed(((byte_h << 8) | byte_l) & 0x0FFF);	
+				byte_full = (byte_h << 8) | byte_l;	
+				stpr_set_speed(byte_full);	
 				break;
 			case '3':
 				stpr_cont();	
@@ -345,6 +345,9 @@ int main(void)
 				break;			
 			case '6':
 				stpr_set_dir(uart_wait_get_char());
+				break;
+			case '7':
+				stpr_exit_cont();
 				break;
 #endif // configMOTOR_STEPPER_DRV8834
 		}
@@ -1103,19 +1106,20 @@ void FIQ_Handler(void) __irq
 	if ((FIQSTATUS & BIT3) == BIT3) // Timer1 interrupt source - PID
 	{
 		PID();
-		T1CLRI = 0x01;				// Clear interrupt, reload T1LD
+		T1CLRI = 0x55;				// Clear interrupt, reload T1LD
 	}
-	
-	// Timer 4 FIQs
-	if ((FIQSTATUS & BIT6) == BIT6)	//Timer4 interrupt source
-	{
-		WIRE3();
-	}					
 
 	if ((FIQSTATUS & BIT13) == BIT13)
 	{
 		// Interrupt caused by hardware RX/TX buffer being full, cleared when
 		// RX/TX buffer is read
 		UART ();
+	}
+	
+	// TODO: move this to IRQ; Timer 4 FIQs
+	if ((FIQSTATUS & BIT6) == BIT6)	//Timer4 interrupt source
+	{
+		WIRE3();
+		T4CLRI = 0x55;
 	}
 }

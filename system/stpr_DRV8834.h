@@ -22,3 +22,4 @@ void stpr_sleep(void);									// '4'
 void stpr_wake(void);										// '5'
 void stpr_set_dir(u8 dir);							// '6' - f or b
 void stpr_handler(void);
+void stpr_exit_cont(void);							// '7'

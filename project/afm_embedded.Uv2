@@ -25,6 +25,7 @@ File 1,1,<..\system\pga_8ch_CS3308.c><pga_8ch_CS3308.c>
 File 1,1,<..\system\dds_AD9837.c><dds_AD9837.c>
 File 1,1,<..\application\scan2.c><scan2.c>
 File 1,1,<..\application\scan4_ortho.c><scan4_ortho.c>
+File 1,1,<..\system\stpr_DRV8834.c><stpr_DRV8834.c>
 
 
 Options 1,0,0  // Target 'Target 1'
@@ -110,8 +111,8 @@ Options 1,0,0  // Target 'Target 1'
  ADSLDIF ()
  ADSLDDW ()
   OPTDL (SARM.DLL)(-cADuC70)(DARMAD.DLL)(-pADuC7122)(SARM.DLL)(-cADuC70)(TARMAD.DLL)(-pADuC7122)
-  OPTDBG 48126,6,()()()()()()()()()() (Segger\JLTAgdi.dll)()()()
- FLASH1 { 9,0,0,0,1,0,0,0,5,16,0,0,0,0,0,0,0,0,0,0 }
+  OPTDBG 48126,5,()()()()()()()()()() (Segger\JLTAgdi.dll)()()()
+ FLASH1 { 9,0,0,0,1,0,0,0,2,16,0,0,0,0,0,0,0,0,0,0 }
  FLASH2 (Segger\JLTAgdi.dll)
  FLASH3 ("" ())
  FLASH4 ()
