@@ -4,8 +4,64 @@
 #define CR     0x0D
 #define BFR_SIZE 64
 
-volatile char G_exit_flag = 0;
+typedef enum
+{
+	NO_RESET = 0,
+	LAYER1,
+	LAYER2,
+	LAYER3,
+	LAYER4
+} RST_STATES;
 
+#define RESET_INITIATOR_CHAR	'M'
+#define LAYER1_RESET_CHAR			'A'
+#define LAYER2_RESET_CHAR			'B'
+#define LAYER3_RESET_CHAR			'C'
+#define LAYER4_RESET_CHAR			'D'
+
+RST_STATES rst_state = NO_RESET;
+
+#define RESET_SEQUENCE()			if (rx_fifo.rx == RESET_INITIATOR_CHAR && rst_state == NO_RESET) 	\
+															{ 																																\
+																rst_state = LAYER1; 																						\
+															}																																	\
+															else if (rst_state != NO_RESET)																		\
+															{																																	\
+																switch (rst_state)																							\
+																{																																\
+																	case LAYER1:																									\
+																		if (rx_fifo.rx == LAYER1_RESET_CHAR)												\
+																			rst_state = LAYER2;																				\
+																		else																												\
+																			rst_state = NO_RESET;																			\
+																		break;																											\
+																	case LAYER2:																									\
+																		if (rx_fifo.rx == LAYER2_RESET_CHAR)												\
+																			rst_state = LAYER3;																				\
+																		else																												\
+																			rst_state = NO_RESET;																			\
+																		break;																											\
+																	case LAYER3:																									\
+																		if (rx_fifo.rx == LAYER3_RESET_CHAR)												\
+																			rst_state = LAYER4;																				\
+																		else																												\
+																			rst_state = NO_RESET;																			\
+																		break;																											\
+																	case LAYER4:																									\
+																		rst_state = NO_RESET;																				\
+																		if (rx_fifo.rx == LAYER4_RESET_CHAR)												\
+																			RSTSTA |= BIT2;																						\
+																		break;																											\
+																	default:																											\
+																		rst_state = NO_RESET;																				\
+																		break;																											\
+																}																																\
+															}																																	\
+
+// Gloabl reset variables
+#define 							G_EXIT_CHAR 		'q'
+volatile char 				G_EXIT_FLAG 		= 0;
+															
 static struct uart_fifo {
 	u8 buffer [BFR_SIZE];
 	u8 head;
@@ -87,16 +143,12 @@ void uart_handler (void){
 				rx_fifo.num_bytes ++;
 			}
 
-			if (rx_fifo.rx == 'q')
-			{
-				G_exit_flag = 1;
-			}
+			RESET_SEQUENCE();
 			
-			//if (rx_fifo.rx == 'M')
-			//{
-				// reset MCU
-			//	RSTSTA |= BIT2;
-			//}
+			if (rx_fifo.rx == G_EXIT_CHAR)
+			{
+				G_EXIT_FLAG = 1;
+			}
 		}
 	}
 }

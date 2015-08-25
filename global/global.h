@@ -61,6 +61,19 @@ void delay_1_ms (u16 delay);
 #define CNT_25_US		90
 #define CNT_200_US	780
 
+/* 
+ * X_ functions are functions that radically change the behaviour of the MCU and need
+ * only be called when absolutely necessary 
+*/
+
+#define 							X_RESET_MCU()		RSTSTA |= BIT2;
+
+/*
+ * G_ functions/characters are globally seen used.
+ */
+//volatile char 				G_EXIT_FLAG 		= 0;
+//#define 							G_EXIT_CHAR 		'q'
+
 __inline void DELAY_MS(u16 delayCnt)
 {
 		u32 delay = CNT_1_MS*delayCnt;

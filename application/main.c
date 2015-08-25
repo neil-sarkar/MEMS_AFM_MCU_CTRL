@@ -235,9 +235,6 @@ int main(void)
 				else
 					uart_set_char('f');
 				break;
-			case 'M':
-				reset_mcu ();
-				break;
 			case 'N':
 				force_curve ();
 				break;
@@ -1067,11 +1064,6 @@ void set_pga (void)
 	uart_write ("o");
 }
 #endif
-
-void reset_mcu ()
-{
-	RSTSTA |= BIT2; 	
-}
 
 /**********************************
 		interrupt handlers
