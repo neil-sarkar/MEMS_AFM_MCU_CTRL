@@ -139,10 +139,12 @@ int main(void)
 			case 'd':
 				set_d_gain();
 				break;
+			//AFM_PID_SETPOINT_SELECT
 			case 's':
 				set_pid_setpoint();
 				break;
 #ifdef configMOTOR_PCB
+			//AFM_STAGE_PW_SELECT
 			case 'j':
 				set_pw();
 				break;
@@ -151,7 +153,8 @@ int main(void)
 				break;
 			case 'l':
 				set_dir('l');
-				break;			
+				break;
+			//AFM_STAGE_STEP_SELECT			
 			case 'm':
 				single_pulse();
 				break;
@@ -212,6 +215,7 @@ int main(void)
 				s2_set_lvl_dir (uart_wait_get_char ());
 				break;
 #endif
+			//AFM_SET_DAC_MAX
 			case '&':
 				set_dac_max ();
 				break;

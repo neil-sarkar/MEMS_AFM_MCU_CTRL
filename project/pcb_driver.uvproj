@@ -141,7 +141,7 @@
             <RestoreToolbox>1</RestoreToolbox>
             <RestoreTracepoints>0</RestoreTracepoints>
             <RestoreSysVw>0</RestoreSysVw>
-            <UsePdscDebugDescription>0</UsePdscDebugDescription>
+            <UsePdscDebugDescription>1</UsePdscDebugDescription>
           </Target>
           <RunDebugAfterBuild>0</RunDebugAfterBuild>
           <TargetSelection>5</TargetSelection>
@@ -421,11 +421,6 @@
               <FilePath>..\application\main.c</FilePath>
             </File>
             <File>
-              <FileName>dds.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\system\dds.c</FilePath>
-            </File>
-            <File>
               <FileName>adc.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\peripheral\adc.c</FilePath>
@@ -446,11 +441,6 @@
               <FilePath>..\peripheral\uart.c</FilePath>
             </File>
             <File>
-              <FileName>scan.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\application\scan.c</FilePath>
-            </File>
-            <File>
               <FileName>calibration.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\application\calibration.c</FilePath>
@@ -461,24 +451,64 @@
               <FilePath>..\global\global.c</FilePath>
             </File>
             <File>
-              <FileName>pga_1ch.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\system\pga_1ch.c</FilePath>
-            </File>
-            <File>
-              <FileName>pga_4ch.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\system\pga_4ch.c</FilePath>
-            </File>
-            <File>
               <FileName>wire3.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\peripheral\wire3.c</FilePath>
             </File>
             <File>
-              <FileName>um.c</FileName>
+              <FileName>dds_AD5932.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\application\um.c</FilePath>
+              <FilePath>..\system\dds_AD5932.c</FilePath>
+            </File>
+            <File>
+              <FileName>dds_AD9837.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\system\dds_AD9837.c</FilePath>
+            </File>
+            <File>
+              <FileName>motor.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\system\motor.c</FilePath>
+            </File>
+            <File>
+              <FileName>pga_1ch_LM1971.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\system\pga_1ch_LM1971.c</FilePath>
+            </File>
+            <File>
+              <FileName>pga_4ch_PGA4311.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\system\pga_4ch_PGA4311.c</FilePath>
+            </File>
+            <File>
+              <FileName>pga_8ch_CS3308.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\system\pga_8ch_CS3308.c</FilePath>
+            </File>
+            <File>
+              <FileName>pid.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\system\pid.c</FilePath>
+            </File>
+            <File>
+              <FileName>stpr_DRV8834.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\system\stpr_DRV8834.c</FilePath>
+            </File>
+            <File>
+              <FileName>scan2.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\application\scan2.c</FilePath>
+            </File>
+            <File>
+              <FileName>scan4.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\application\scan4.c</FilePath>
+            </File>
+            <File>
+              <FileName>scan4_ortho.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\application\scan4_ortho.c</FilePath>
             </File>
           </Files>
         </Group>
