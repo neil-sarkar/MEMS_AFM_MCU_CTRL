@@ -26,6 +26,8 @@
 #include "scan4.h"
 #include "scan4_ortho.h"
 
+#define UART_ECHO(ack_char)	uart_set_char(ack_char)
+
 #ifdef configSYS_DDS_AD9837
 tyVctHndlr    DDS     	= (tyVctHndlr)dds_98_handler;
 #endif
@@ -352,7 +354,10 @@ int main(void)
 				break;
 #endif // configMOTOR_STEPPER_DRV8834
 		}
+	// return an acknowledge character
+		UART_ECHO(rx_char);
 	}
+	
 }
 
 /**********************************

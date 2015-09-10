@@ -29,7 +29,9 @@ void I2C_send(u8 channel, u8 val)
 void pga_init()
 {		
 	GP0CON |= BIT0 + BIT4; // Configure P0.0 and P0.1 for I2C mode
-	I2C0MCTL = BIT0;      // I2C master enable
+	//I2C0MCTL = BIT0;      // I2C master enable
+	I2C0MCON = BIT0;      // I2C master enable.
+												// in ADuC7122.h provided by Keil, 0xFFFF0880 is called I2C0MCON instead of I2C0MCTL for some reason!
 	I2C0DIV = 0xCFCF;     // Select 100kHz clock rate
 	I2C0ADR0 = 	CHP_ADDR;	//Write the chip address to the Address Register	 	
 	GP3DAT |= BIT27; // Set as output p3.3 (MUTE)
