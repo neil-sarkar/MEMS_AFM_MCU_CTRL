@@ -79,7 +79,7 @@ extern u8 calib_delay;
 
 int main(void)
 {
-	u8 rx_char;
+	u8 msg_id_char, msg_tag_char;
 	u8 byte_l, byte_h;
 	u16 byte_full;
 	
@@ -106,13 +106,30 @@ int main(void)
 			while (true);
 		} */
 
-		rx_char = uart_wait_get_char();
+		msg_tag_char = uart_wait_get_char();
 		
-		switch (rx_char)
+		UART_ECHO(msg_tag_char);
+		
+		// Process the incoming character
+		if (msg_tag_char == '\n'){
+			msg_tag_char = '\0';
+			msg_id_char = '\0';
+		} else {
+			msg_id_char = uart_wait_get_char();
+			//return the message tag
+			UART_ECHO(msg_tag_char);
+			// return the msg id received
+			UART_ECHO(msg_id_char);
+		}
+		
+		
+		
+		switch (msg_id_char)
 		{
 			// Set DAC
 			case 'a':
 				write_dac();
+				//pingpong();
 				break;
 			// Read DAC
 			case 'b':
@@ -354,10 +371,32 @@ int main(void)
 				break;
 #endif // configMOTOR_STEPPER_DRV8834
 		}
-	// return an acknowledge character
-		UART_ECHO(rx_char);
+		
+		
+		
+		//close the message
+		UART_ECHO('\n');
+		
 	}
 	
+}
+
+// Temporary Testing Fcn
+void pingpong(){
+	u8 pga;
+	u8 db;
+
+	// Get pga and pga's db to set
+	pga = uart_wait_get_char();
+	db = uart_wait_get_char();
+
+		switch (pga)
+	{
+	}
+
+	uart_write_payload ("o");
+	uart_write_payload (&pga);
+	uart_write_payload (&db);
 }
 
 /**********************************
@@ -734,6 +773,8 @@ void write_dac(void)
 
 	//write new value
 	dac_set_val (dac_ch, new_dac_val);
+	
+	uart_write_payload("o");
 }
 
 void read_adc(void)
@@ -1070,7 +1111,7 @@ void set_pga (void)
 			break;
 	}
 
-	uart_write ("o");
+	uart_write_payload ("o");
 }
 #endif
 

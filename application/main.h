@@ -39,6 +39,9 @@ Functional TODOs
 
 /***** function definitions *****/
 
+// temp debug
+void pingpong(void);
+
 void print_menu(void);
 
 void set_dac_max (void);

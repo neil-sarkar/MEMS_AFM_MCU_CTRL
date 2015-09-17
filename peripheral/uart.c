@@ -1,6 +1,11 @@
 #include "uart.h"
 
+#define SERIAL_MSG_NEWLINE 0x0A
+#define SERIAL_MSG_ESCAPE 0x10
+#define SERIAL_MSG_MASK 0x80
+
 /* carriage return ASCII value */
+#define LF     0x0A
 #define CR     0x0D
 #define BFR_SIZE 64
 
@@ -174,7 +179,8 @@ u8 uart_reset_status (void)
 }
 
 /* Non-blocking call */
-u8 uart_get_char (void)
+// Obtains the raw char
+u8 uart_get_char_raw (void)
 {
 	u8 data;
 	if (rx_fifo.num_bytes <= 0){
@@ -187,8 +193,23 @@ u8 uart_get_char (void)
 	return data;
 }
 
+/* Non-blocking call */
+// Obtains the unmasked char
+u8 uart_get_char (void)
+{
+	u8 rx_char = uart_get_char_raw();
+	
+	if(rx_char == SERIAL_MSG_ESCAPE){
+		rx_char = uart_get_char_raw();
+		return rx_char & ~SERIAL_MSG_MASK;
+	} else {
+		return rx_char;
+	}
+}
+
 /* Blocking call */
-u8 uart_wait_get_char (void)
+// Obtains the raw character
+u8 uart_wait_get_char_raw (void)
 {
 	u8 data;
 	while (rx_fifo.num_bytes <= 0);
@@ -196,6 +217,20 @@ u8 uart_wait_get_char (void)
 	rx_fifo.head = (rx_fifo.head + 1)%BFR_SIZE;
 	rx_fifo.num_bytes --;
 	return data;
+}
+
+/* Blocking call */
+// Obtains the unmasked character
+u8 uart_wait_get_char (void)
+{
+	u8 rx_char = uart_wait_get_char_raw();
+	
+	if(rx_char == SERIAL_MSG_ESCAPE){
+		rx_char = uart_wait_get_char_raw();
+		return rx_char & ~SERIAL_MSG_MASK;
+	} else {
+		return rx_char;
+	}
 }
 
 /* Blocking call */
@@ -223,11 +258,36 @@ u32 uart_write (u8 *ptr)
 	return len;
 }
 
+
+/*
+Masks appropriate bytes before sending it out to UART
+Can be used for all functions that writes to UART, since the special characters
+are not allowed for message tag and ID. 
+*/
+u32 uart_write_payload (u8 *ptr) 
+{
+	u32 len = 0;
+	
+	if(*ptr == SERIAL_MSG_NEWLINE || *ptr == SERIAL_MSG_ESCAPE){
+		set_char (SERIAL_MSG_ESCAPE);
+		set_char (*ptr++ | SERIAL_MSG_MASK);
+		len++;
+	} else {
+		for ( ; *ptr != '\0' ; len++) {
+			set_char (*ptr++);
+		}
+	}
+
+	return len;
+}
+
 u32 uart_write_bytes (u8* ptr, u32 size)
 {
 	u32 len = size;
-		if (*((u16*)(ptr)) > 4095)
+	
+	if (*((u16*)(ptr)) > 4095)
 		*((u16*)(ptr))=4095;
+		
 	while (size--)
 	{
 		while (!(0x020==(COMSTA0 & 0x020)));
@@ -261,8 +321,8 @@ static s16 set_char (s16 ch)
 	{
 	
 		while(!(0x020==(COMSTA0 & 0x020))) {};
-		/*  output CR */
-		COMTX = CR;
+		/*  output LineFeed for newline */
+		COMTX = LF;
 		
 	}
     
