@@ -3,8 +3,8 @@
 
 // TODO: somehow ensure that only one board is define at a time
 // TODO: somehow check for configBOARD_...
-//#define configBOARD_V2_0
-#define configBOARD_V3_0
+#define configBOARD_V2_0
+//#define configBOARD_V3_0
 
 // choose one or the other
 // TODO: use ifdef to manage both?

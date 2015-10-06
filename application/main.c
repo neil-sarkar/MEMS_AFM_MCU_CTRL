@@ -82,6 +82,7 @@ int main(void)
 	u8 msg_id_char, msg_tag_char;
 	u8 byte_l, byte_h;
 	u16 byte_full;
+	bool msg_id_found;
 	
 	/*
 	 * MCU Initialization				  
@@ -94,21 +95,21 @@ int main(void)
 
 	/* initialize all relevant modules */
    	sys_init ();
+	
+	UART_ECHO(0xFF);
+	UART_ECHO('a');
+	UART_ECHO('f');
+	UART_ECHO('m');
+	UART_ECHO('!');
+	UART_ECHO('\n');
 
 	/*
 	 * Main program loop
 	 */
 	while (true)
 	{
-		/* Enable to catch errors in UART
-		if (uart_get_status () != UART_OK)
-		{
-			while (true);
-		} */
-
-		msg_tag_char = uart_wait_get_char();
 		
-		UART_ECHO(msg_tag_char);
+		msg_tag_char = uart_wait_get_char();
 		
 		// Process the incoming character
 		if (msg_tag_char == '\n'){
@@ -118,12 +119,13 @@ int main(void)
 			msg_id_char = uart_wait_get_char();
 			//return the message tag
 			UART_ECHO(msg_tag_char);
-			// return the msg id received
+			//return message id
 			UART_ECHO(msg_id_char);
+			//
+			//TODO #14 do not return msg_id yet. check first that it exists. 
 		}
 		
-		
-		
+		msg_id_found = true;
 		switch (msg_id_char)
 		{
 			// Set DAC
@@ -201,7 +203,6 @@ int main(void)
 				dds_get_data();
 				break;
 #endif
-
 			case 'z':
 				adc_set_pga(padc0, uart_wait_get_char());
 				break;
@@ -248,15 +249,15 @@ int main(void)
 				break;
 			case 'K':
 				if (set_fine_speed(uart_wait_get_char()) == true)
-					uart_set_char('o');
+					uart_write_char('o');
 				else
-					uart_set_char('f');
+					uart_write_char('f');
 				break;
 			case 'L':
 				if (set_coarse_speed(uart_wait_get_char()) == true)
-					uart_set_char('o');
+					uart_write_char('o');
 				else
-					uart_set_char('f');
+					uart_write_char('f');
 				break;
 			case 'N':
 				force_curve ();
@@ -274,9 +275,9 @@ int main(void)
 				break;
 			case 'S':
 				if (scan4_get_dac_data () == true)
-					uart_set_char('o');
+					uart_write_char('o');
 				else
-					uart_set_char('f');
+					uart_write_char('f');
 				break;
 			case 'w':
 				s4_set_dwell_t_ms (uart_wait_get_char());
@@ -304,9 +305,9 @@ int main(void)
 				break;
 			case 'S':
 				if (scan4_ortho_get_dac_data () == true)
-					uart_set_char('o');
+					uart_write_char('o');
 				else
-					uart_set_char('f');
+					uart_write_char('f');
 				break;
 			case 'w':
 				s4_set_dwell_t_ms (uart_wait_get_char());
@@ -370,13 +371,20 @@ int main(void)
 				stpr_exit_cont();
 				break;
 #endif // configMOTOR_STEPPER_DRV8834
+			default:
+				// No valid message received. Return the AFM_MSG_CMD_NOT_FOUND
+				if(msg_id_char != '\0'){ //Except newline or empty msg
+					UART_ECHO(AFM_CMD_NOTFOUND);
+					UART_ECHO(AFM_CMD_NOTFOUND);
+					UART_ECHO(AFM_CMD_NOTFOUND);
+					UART_ECHO(AFM_CMD_NOTFOUND);
+					UART_ECHO(AFM_CMD_NOTFOUND);
+				}
+				break; 
 		}
-		
-		
 		
 		//close the message
 		UART_ECHO('\n');
-		
 	}
 	
 }
@@ -394,9 +402,9 @@ void pingpong(){
 	{
 	}
 
-	uart_write_payload ("o");
-	uart_write_payload (&pga);
-	uart_write_payload (&db);
+	uart_write ("o");
+	uart_write (&pga);
+	uart_write (&db);
 }
 
 /**********************************
@@ -523,14 +531,14 @@ void force_curve (void)
 	   	adc_start_conv(ADC_ZAMP);
 		adc_val = adc_get_avgw_val(FC_AVG_CNT, 300);
 
-		uart_set_char(adc_val);
-		uart_set_char((adc_val & 0x0F00) >> 8);
+		uart_write_char(adc_val);
+		uart_write_char((adc_val & 0x0F00) >> 8);
 
 	   	adc_start_conv(ADC_PHASE);
 		adc_val = adc_get_avgw_val(FC_AVG_CNT, 300);
 
-		uart_set_char(adc_val);
-		uart_set_char((adc_val & 0x0F00) >> 8);
+		uart_write_char(adc_val);
+		uart_write_char((adc_val & 0x0F00) >> 8);
 	}
 
 	for (dac_val = 0; dac_val < FC_INITIAL_Z; dac_val += FC_STEP)
@@ -540,14 +548,14 @@ void force_curve (void)
 		adc_start_conv(ADC_ZAMP);
 		adc_val = adc_get_avgw_val(FC_AVG_CNT, 300);
 
-		uart_set_char(adc_val);
-		uart_set_char((adc_val & 0x0F00) >> 8);	
+		uart_write_char(adc_val);
+		uart_write_char((adc_val & 0x0F00) >> 8);	
 		
 	   	adc_start_conv(ADC_PHASE);
 		adc_val = adc_get_avgw_val(FC_AVG_CNT, 300);
 
-		uart_set_char(adc_val);
-		uart_set_char((adc_val & 0x0F00) >> 8);	
+		uart_write_char(adc_val);
+		uart_write_char((adc_val & 0x0F00) >> 8);	
 	}		
 }
 
@@ -574,14 +582,14 @@ void read_z (void)
 		z_phase 	= adc_get_val();
 	}
 
-	uart_set_char((u8)((z_amp) & 0xFF));
-	uart_set_char((u8)((z_amp >> 8) & 0xFF));
+	uart_write_char((u8)((z_amp) & 0xFF));
+	uart_write_char((u8)((z_amp >> 8) & 0xFF));
 
-	uart_set_char((u8)(z_offset & 0xFF));
-	uart_set_char((u8)((z_offset >> 8) & 0xFF));
+	uart_write_char((u8)(z_offset & 0xFF));
+	uart_write_char((u8)((z_offset >> 8) & 0xFF));
 
-	uart_set_char((u8)(z_phase & 0xFF));
-	uart_set_char((u8)((z_phase >> 8) & 0xFF));
+	uart_write_char((u8)(z_phase & 0xFF));
+	uart_write_char((u8)((z_phase >> 8) & 0xFF));
 }
 
 #define MV_TO_ABS_200	248
@@ -613,36 +621,36 @@ void act_res_test (void)
 //	adc_val = adc_get_val();
 	adc_val = adc_get_avgw_val(32, 500);
 		
-	uart_set_char(adc_val & 0xFF);
-	uart_set_char((adc_val & 0x0F00) >> 8);
+	uart_write_char(adc_val & 0xFF);
+	uart_write_char((adc_val & 0x0F00) >> 8);
 
 	adc_start_conv(ADC_X2);
 //	adc_val = adc_get_val();
 	adc_val = adc_get_avgw_val(32, 500);
 	
-	uart_set_char(adc_val & 0xFF);
-	uart_set_char((adc_val & 0x0F00) >> 8);
+	uart_write_char(adc_val & 0xFF);
+	uart_write_char((adc_val & 0x0F00) >> 8);
 
 	adc_start_conv(ADC_Y1);
 //	adc_val = adc_get_val();
 	adc_val = adc_get_avgw_val(32, 500);
 	
-	uart_set_char(adc_val & 0xFF);
-	uart_set_char((adc_val & 0x0F00) >> 8);
+	uart_write_char(adc_val & 0xFF);
+	uart_write_char((adc_val & 0x0F00) >> 8);
 
 	adc_start_conv(ADC_Y2);
 //	adc_val = adc_get_val();
 	adc_val = adc_get_avgw_val(32, 500);
 	
-	uart_set_char(adc_val & 0xFF);
-	uart_set_char((adc_val & 0x0F00) >> 8);
+	uart_write_char(adc_val & 0xFF);
+	uart_write_char((adc_val & 0x0F00) >> 8);
 
 	adc_start_conv(ADC_ZOFFSET);
 //	adc_val = adc_get_val();
 	adc_val = adc_get_avgw_val(32, 500);
 	
-	uart_set_char(adc_val & 0xFF);
-	uart_set_char((adc_val & 0x0F00) >> 8);
+	uart_write_char(adc_val & 0xFF);
+	uart_write_char((adc_val & 0x0F00) >> 8);
 
 	// TODO: CONVERT FROM VOLTAGE TO RESISTANCE 
 
@@ -749,6 +757,8 @@ void set_dac_max (void)
 	// Get new DAC limit
 	uart_wait_get_bytes((u8*)(&new_dac_limit), 2);
 
+	// Reply DAC channel
+	uart_write_char(dac_ch);
 	if (dac_set_limit (dac_ch, new_dac_limit) == 0){
 		uart_write ("o");
 	} else {
@@ -774,7 +784,7 @@ void write_dac(void)
 	//write new value
 	dac_set_val (dac_ch, new_dac_val);
 	
-	uart_write_payload("o");
+	uart_write("o");
 }
 
 void read_adc(void)
@@ -789,8 +799,10 @@ void read_adc(void)
 	adc_start_conv(adc_ch);
 	adc_val = adc_get_val();
 	
-	uart_set_char(adc_val & 0xFF);
-	uart_set_char((adc_val >> 8) & 0xFF);
+	// Reply the ADC channel along with DAC value
+	uart_write_char(adc_ch);  //Response byte 2
+	uart_write_char(adc_val & 0xFF);
+	uart_write_char((adc_val >> 8) & 0xFF);
 }
 
 void read_dac(void)
@@ -804,8 +816,10 @@ void read_dac(void)
 	// Get DAC value
 	dac_val = dac_get_val(dac_ch);
 
-	uart_set_char(dac_val & 0xFF);
-	uart_set_char((dac_val >> 8) & 0xFF);		
+	// Reply the DAC channel along with DAC value
+	uart_write_char(dac_ch);  //Response byte 2
+	uart_write_char(dac_val & 0xFF);  // 3
+	uart_write_char((dac_val >> 8) & 0xFF);		 //4
 }
 
 void set_actuators(void)
@@ -895,16 +909,16 @@ void freq_sweep_AD9837(void)
 		adc_val = adc_get_val();
 
 	 	// Send data out
-		uart_set_char((adc_val));
-		uart_set_char(((adc_val >> 8)));
+		uart_write_char((adc_val));
+		uart_write_char(((adc_val >> 8)));
 
 		// read adc for phase data
 		adc_start_conv(ADC_PHASE);
 		adc_val = adc_get_val();
 
 	 	// Send data out
-		uart_set_char((adc_val));
-		uart_set_char(((adc_val >> 8)));
+		uart_write_char((adc_val));
+		uart_write_char(((adc_val >> 8)));
 
 		dds_AD9837_increment(i+1);
 
@@ -929,10 +943,10 @@ void freq_sweep_dds(void)
 		adc_val = adc_get_val();
 
 	 	// Send data out
-		//uart_set_char((u8)(adc_val & 0xFF));
-		//uart_set_char((u8)((adc_val >> 8) & 0xFF));
-		uart_set_char((adc_val));
-		uart_set_char(((adc_val >> 8)));
+		//uart_write_char((u8)(adc_val & 0xFF));
+		//uart_write_char((u8)((adc_val >> 8) & 0xFF));
+		uart_write_char((adc_val));
+		uart_write_char(((adc_val >> 8)));
 
 
 		// read adc for phase data
@@ -940,8 +954,8 @@ void freq_sweep_dds(void)
 		adc_val = adc_get_val();
 
 	 	// Send data out
-		uart_set_char((adc_val));
-		uart_set_char(((adc_val >> 8)));
+		uart_write_char((adc_val));
+		uart_write_char(((adc_val >> 8)));
 
 		delay = 12500;
 		while(delay--){};
@@ -996,11 +1010,11 @@ void auto_approach (void)
 	coarse_voltage = dac_get_val (DAC_ZOFFSET_COARSE);
 
 	if (!approach_fail){
-		uart_set_char ('o');
-		uart_set_char((u8)((coarse_voltage) & 0xFF));
-		uart_set_char((u8)((coarse_voltage >> 8) & 0xFF));
+		uart_write_char ('o');
+		uart_write_char((u8)((coarse_voltage) & 0xFF));
+		uart_write_char((u8)((coarse_voltage >> 8) & 0xFF));
 	} else {
-		uart_set_char ('s');
+		uart_write_char ('s');
 	}
 }
 #endif // #ifdef configMOTOR_PCB
@@ -1111,7 +1125,7 @@ void set_pga (void)
 			break;
 	}
 
-	uart_write_payload ("o");
+	uart_write ("o");
 }
 #endif
 

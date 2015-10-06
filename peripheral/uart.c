@@ -247,7 +247,9 @@ u32 uart_wait_get_bytes (u8 * buffer, u32 num_bytes)
 	return (len);
 }
 
-u32 uart_write (u8 *ptr) 
+
+/* Writes a raw byte (no masking or escaping) */
+u32 uart_write_raw (u8 *ptr) 
 {
 	u32 len = 0;
 
@@ -264,13 +266,13 @@ Masks appropriate bytes before sending it out to UART
 Can be used for all functions that writes to UART, since the special characters
 are not allowed for message tag and ID. 
 */
-u32 uart_write_payload (u8 *ptr) 
+u32 uart_write (u8 *ptr) 
 {
 	u32 len = 0;
 	
 	if(*ptr == SERIAL_MSG_NEWLINE || *ptr == SERIAL_MSG_ESCAPE){
 		set_char (SERIAL_MSG_ESCAPE);
-		set_char (*ptr++ | SERIAL_MSG_MASK);
+		set_char (*ptr | SERIAL_MSG_MASK);
 		len++;
 	} else {
 		for ( ; *ptr != '\0' ; len++) {
@@ -279,6 +281,27 @@ u32 uart_write_payload (u8 *ptr)
 	}
 
 	return len;
+}
+
+/* Masks appropriate bytes before seding out.
+ * Should be used by everyone that sends, unless
+ * supressing the message masking is needed. 
+ *
+ * Call uart_set_char() to write directly and bypass masking.
+ */
+void uart_write_char (u8 ch) 
+{
+	u32 len = 0;
+	
+	if(ch == SERIAL_MSG_NEWLINE || ch == SERIAL_MSG_ESCAPE){
+		set_char (SERIAL_MSG_ESCAPE);
+		set_char (ch | SERIAL_MSG_MASK);
+		len++;
+	} else {
+		uart_set_char (ch);
+	}
+
+	return;
 }
 
 u32 uart_write_bytes (u8* ptr, u32 size)
@@ -296,6 +319,7 @@ u32 uart_write_bytes (u8* ptr, u32 size)
 	return (len - size);
 }
 
+// Sets the COMTX register for sending UART
 void uart_set_char (u8 ch)
 {
 	while(!(0x020==(COMSTA0 & 0x020))) {};
@@ -316,20 +340,20 @@ bool is_received(void)
 							
 static s16 set_char (s16 ch)
 {
+	u8 chchchoo; //Debug only
 
 	if (ch == '\n')  
 	{
-	
 		while(!(0x020==(COMSTA0 & 0x020))) {};
 		/*  output LineFeed for newline */
 		COMTX = LF;
-		
 	}
     
 	while(!(0x020==(COMSTA0 & 0x020))) {};
+		
+	chchchoo = ch; //For debugging only
  
  	return (COMTX = ch);
-	
 }
 
 static u8 init_buffer (void)

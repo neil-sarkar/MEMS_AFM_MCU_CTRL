@@ -13,7 +13,6 @@
     <tExt>*.txt; *.h; *.inc</tExt>
     <pExt>*.plm</pExt>
     <CppX>*.cpp</CppX>
-    <nMigrate>0</nMigrate>
   </Extensions>
 
   <DaveTm>
@@ -32,7 +31,6 @@
         <BeepAtEnd>1</BeepAtEnd>
         <RunSim>1</RunSim>
         <RunTarget>0</RunTarget>
-        <RunAbUc>0</RunAbUc>
       </OPTTT>
       <OPTHX>
         <HexSelection>1</HexSelection>
@@ -98,6 +96,7 @@
         <tRtrace>0</tRtrace>
         <sRSysVw>0</sRSysVw>
         <tRSysVw>0</tRSysVw>
+        <tPdscDbg>1</tPdscDbg>
         <sRunDeb>0</sRunDeb>
         <sLrtime>0</sLrtime>
         <nTsel>5</nTsel>
@@ -139,7 +138,55 @@
         <Bp>
           <Number>0</Number>
           <Type>0</Type>
-          <LineNumber>1106</LineNumber>
+          <LineNumber>118</LineNumber>
+          <EnabledFlag>1</EnabledFlag>
+          <Address>0</Address>
+          <ByteObject>0</ByteObject>
+          <HtxType>0</HtxType>
+          <ManyObjects>0</ManyObjects>
+          <SizeOfObject>0</SizeOfObject>
+          <BreakByAccess>0</BreakByAccess>
+          <BreakIfRCount>0</BreakIfRCount>
+          <Filename>..\application\main.c</Filename>
+          <ExecCommand></ExecCommand>
+          <Expression></Expression>
+        </Bp>
+        <Bp>
+          <Number>1</Number>
+          <Type>0</Type>
+          <LineNumber>124</LineNumber>
+          <EnabledFlag>1</EnabledFlag>
+          <Address>0</Address>
+          <ByteObject>0</ByteObject>
+          <HtxType>0</HtxType>
+          <ManyObjects>0</ManyObjects>
+          <SizeOfObject>0</SizeOfObject>
+          <BreakByAccess>0</BreakByAccess>
+          <BreakIfRCount>0</BreakIfRCount>
+          <Filename>..\application\main.c</Filename>
+          <ExecCommand></ExecCommand>
+          <Expression></Expression>
+        </Bp>
+        <Bp>
+          <Number>2</Number>
+          <Type>0</Type>
+          <LineNumber>119</LineNumber>
+          <EnabledFlag>1</EnabledFlag>
+          <Address>0</Address>
+          <ByteObject>0</ByteObject>
+          <HtxType>0</HtxType>
+          <ManyObjects>0</ManyObjects>
+          <SizeOfObject>0</SizeOfObject>
+          <BreakByAccess>0</BreakByAccess>
+          <BreakIfRCount>0</BreakIfRCount>
+          <Filename>..\application\main.c</Filename>
+          <ExecCommand></ExecCommand>
+          <Expression></Expression>
+        </Bp>
+        <Bp>
+          <Number>3</Number>
+          <Type>0</Type>
+          <LineNumber>125</LineNumber>
           <EnabledFlag>1</EnabledFlag>
           <Address>0</Address>
           <ByteObject>0</ByteObject>
@@ -153,6 +200,13 @@
           <Expression></Expression>
         </Bp>
       </Breakpoint>
+      <WatchWindow1>
+        <Ww>
+          <count>0</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>uart_fifo</ItemText>
+        </Ww>
+      </WatchWindow1>
       <Tracepoint>
         <THDelay>0</THDelay>
       </Tracepoint>
@@ -184,7 +238,6 @@
       </DebugFlag>
       <LintExecutable></LintExecutable>
       <LintConfigFile></LintConfigFile>
-      <bLintAuto>0</bLintAuto>
     </TargetOption>
   </Target>
 
@@ -200,7 +253,10 @@
       <FileType>2</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
+      <ColumnNumber>57545428</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>0</TopLine>
+      <CurrentLine>5</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>.\ADuC7122.s</PathWithFileName>
       <FilenameWithoutPath>ADuC7122.s</FilenameWithoutPath>
@@ -213,7 +269,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
+      <ColumnNumber>57545428</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>0</TopLine>
+      <CurrentLine>5</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\global\irq_arm.c</PathWithFileName>
       <FilenameWithoutPath>irq_arm.c</FilenameWithoutPath>
@@ -226,7 +285,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
+      <ColumnNumber>22</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>1098</TopLine>
+      <CurrentLine>1124</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\application\main.c</PathWithFileName>
       <FilenameWithoutPath>main.c</FilenameWithoutPath>
@@ -239,7 +301,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
+      <ColumnNumber>57545428</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>0</TopLine>
+      <CurrentLine>5</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\peripheral\adc.c</PathWithFileName>
       <FilenameWithoutPath>adc.c</FilenameWithoutPath>
@@ -252,7 +317,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
+      <ColumnNumber>57545428</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>0</TopLine>
+      <CurrentLine>5</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\peripheral\dac.c</PathWithFileName>
       <FilenameWithoutPath>dac.c</FilenameWithoutPath>
@@ -265,7 +333,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
+      <ColumnNumber>57545428</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>0</TopLine>
+      <CurrentLine>5</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\peripheral\flash.c</PathWithFileName>
       <FilenameWithoutPath>flash.c</FilenameWithoutPath>
@@ -276,9 +347,12 @@
       <GroupNumber>1</GroupNumber>
       <FileNumber>7</FileNumber>
       <FileType>1</FileType>
-      <tvExp>0</tvExp>
+      <tvExp>1</tvExp>
       <Focus>0</Focus>
+      <ColumnNumber>1</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>154</TopLine>
+      <CurrentLine>172</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\peripheral\uart.c</PathWithFileName>
       <FilenameWithoutPath>uart.c</FilenameWithoutPath>
@@ -291,7 +365,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
+      <ColumnNumber>57545428</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>0</TopLine>
+      <CurrentLine>5</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\application\calibration.c</PathWithFileName>
       <FilenameWithoutPath>calibration.c</FilenameWithoutPath>
@@ -304,7 +381,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
+      <ColumnNumber>57545428</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>0</TopLine>
+      <CurrentLine>5</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\global\global.c</PathWithFileName>
       <FilenameWithoutPath>global.c</FilenameWithoutPath>
@@ -317,7 +397,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
+      <ColumnNumber>57545428</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>0</TopLine>
+      <CurrentLine>5</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\peripheral\wire3.c</PathWithFileName>
       <FilenameWithoutPath>wire3.c</FilenameWithoutPath>
@@ -330,7 +413,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
+      <ColumnNumber>14</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>110</TopLine>
+      <CurrentLine>136</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\system\dds_AD5932.c</PathWithFileName>
       <FilenameWithoutPath>dds_AD5932.c</FilenameWithoutPath>
@@ -343,7 +429,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
+      <ColumnNumber>28</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>118</TopLine>
+      <CurrentLine>120</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\system\dds_AD9837.c</PathWithFileName>
       <FilenameWithoutPath>dds_AD9837.c</FilenameWithoutPath>
@@ -356,7 +445,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
+      <ColumnNumber>57545428</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>0</TopLine>
+      <CurrentLine>5</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\system\motor.c</PathWithFileName>
       <FilenameWithoutPath>motor.c</FilenameWithoutPath>
@@ -369,7 +461,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
+      <ColumnNumber>57545428</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>0</TopLine>
+      <CurrentLine>5</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\system\pga_1ch_LM1971.c</PathWithFileName>
       <FilenameWithoutPath>pga_1ch_LM1971.c</FilenameWithoutPath>
@@ -382,7 +477,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
+      <ColumnNumber>57545428</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>0</TopLine>
+      <CurrentLine>5</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\system\pga_4ch_PGA4311.c</PathWithFileName>
       <FilenameWithoutPath>pga_4ch_PGA4311.c</FilenameWithoutPath>
@@ -395,7 +493,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
+      <ColumnNumber>57545428</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>0</TopLine>
+      <CurrentLine>5</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\system\pga_8ch_CS3308.c</PathWithFileName>
       <FilenameWithoutPath>pga_8ch_CS3308.c</FilenameWithoutPath>
@@ -408,7 +509,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
+      <ColumnNumber>57545428</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>0</TopLine>
+      <CurrentLine>5</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\system\pid.c</PathWithFileName>
       <FilenameWithoutPath>pid.c</FilenameWithoutPath>
@@ -421,7 +525,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
+      <ColumnNumber>57545428</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>0</TopLine>
+      <CurrentLine>5</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\system\stpr_DRV8834.c</PathWithFileName>
       <FilenameWithoutPath>stpr_DRV8834.c</FilenameWithoutPath>
@@ -434,7 +541,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
+      <ColumnNumber>57545428</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>0</TopLine>
+      <CurrentLine>5</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\application\scan2.c</PathWithFileName>
       <FilenameWithoutPath>scan2.c</FilenameWithoutPath>
@@ -447,7 +557,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
+      <ColumnNumber>57545428</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>0</TopLine>
+      <CurrentLine>5</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\application\scan4.c</PathWithFileName>
       <FilenameWithoutPath>scan4.c</FilenameWithoutPath>
@@ -460,7 +573,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
+      <ColumnNumber>41</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>98</TopLine>
+      <CurrentLine>111</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\application\scan4_ortho.c</PathWithFileName>
       <FilenameWithoutPath>scan4_ortho.c</FilenameWithoutPath>

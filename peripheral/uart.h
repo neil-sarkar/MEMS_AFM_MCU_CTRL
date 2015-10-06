@@ -24,8 +24,9 @@ u8 uart_wait_get_char (void);
 u32 uart_wait_get_bytes (u8 * buffer, u32 num_bytes);
 
 void uart_set_char (u8 ch);
-u32 uart_write_payload (u8 *ptr);
+u32 uart_write_raw (u8 *ptr);
 u32 uart_write (u8 * ptr);
+void uart_write_char (u8 ch);
 u32 uart_write_bytes (u8* ptr, u32 size);
 
 bool is_received (void);

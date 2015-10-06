@@ -31,7 +31,7 @@ int dds_inc_cnt = 0;
 
 unsigned char dds_data[14] = {
 	// Write ctrl register 	
-    0x0F,
+  0x0F,
 	0xFF,
 	
 	// Write start frequency
@@ -99,7 +99,7 @@ void dds_write()
 
 	dds_inc_cnt = ((dds_data[10] & 0x0F) << 8) | dds_data[11];
 
-   	writeCnt = 0;
+  writeCnt = 0;
 	SPITX = dds_data[writeCnt++];
 	SPITX = dds_data[writeCnt++];	
 }

@@ -39,6 +39,10 @@
 #define BIT30  0x40000000u
 #define BIT31  0x80000000u
 
+//Message Definitions
+/* AUTOGENERATION CANDIDATE */
+#define AFM_CMD_NOTFOUND  0xF1u
+
 typedef enum
 {
 	false=0,
