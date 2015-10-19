@@ -183,7 +183,6 @@ int main(void)
 				auto_approach();
 				break;
 #endif // configMOTOR_PCB
-			
 #ifdef configSYS_DDS_AD9837
 			case 'n':
 				dds_AD9837_get_data();
