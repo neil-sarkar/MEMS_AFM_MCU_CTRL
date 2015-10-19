@@ -44,6 +44,12 @@ Functional TODOs
 // temp debug
 
 void do_someting(void);
+void set_address(void);
+void print_i2c_read(void);
 void i2c_send_init(void);
 void i2c_send_test1(void);
+void i2c_send_data_bytes(int num_bytes);
+void request_slave_read(int num_bytes);
+void erase_memory(int pages);
+void run_memory(void);
 #endif

@@ -9,8 +9,8 @@ void i2c_init(){
 	I2C0MCON = BIT0 + BIT4  			// Enable I2C Master + Enable Rx interrupt
 			+ BIT5 + BIT8;  			// Enable Tx interrupt + Enable transmission complete interrupt
 	I2C0DIV  = 0xCFCF;	   				// Select 100.3kHz clock rate
-	IRQEN = BIT15 + BIT19; 				// Enable I2C Master and XIRQ0 interrupts
-        IRQCONE=BIT0+BIT1;          	// External IRQ0 triggers on falling edge
+	IRQEN = BIT15; 				// Enable I2C Master interrupts
+        //IRQCONE=BIT0+BIT1;          	// External IRQ0 triggers on falling edge
 }
 
 void i2c_handler(){

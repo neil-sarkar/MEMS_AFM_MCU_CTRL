@@ -196,6 +196,26 @@ u8 uart_get_char_raw (void)
 }
 
 /* Non-blocking call */
+/* 	Returns raw char in the order which it was received.
+		If no new char was received during the last call and 
+		current call, return a special char to denote that nothing
+		new was received. So, you should not expect to receive
+		that special char.
+*/ 
+u8 uart_get_char_raw_no_memory (void)
+{
+	u8 data;
+	if (rx_fifo.num_bytes <= 0){
+		return 0xF1;
+	} else {
+		data = rx_fifo.buffer [rx_fifo.head];
+		rx_fifo.head = (rx_fifo.head + 1)%BFR_SIZE;
+		rx_fifo.num_bytes --;
+		return data;
+	}
+}
+
+/* Non-blocking call */
 // Obtains the unmasked char
 u8 uart_get_char (void)
 {
