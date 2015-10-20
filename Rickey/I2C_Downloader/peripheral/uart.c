@@ -106,7 +106,7 @@ void uart_init (void)
 
 	/* Enable uart interrupts */
 	COMIEN0 |= BIT0 + BIT2;
-	FIQEN |= BIT13;
+	IRQEN |= BIT13;
 	
 	/* Initialize software buffer */
 	init_buffer ();

@@ -37,11 +37,11 @@ int main(void)
 	/* initialize all relevant modules */
 	
 	// Initialize Timer1 for 
-	T1LD = MS_TO_CLK(400);
+	T1LD = MS_TO_CLK(1111);
 	// Periodic mode, core clock
 	T1CON = BIT6 + BIT9;
 	// Enable Timer1 fast interrupt
-	FIQEN |= BIT3;
+	IRQEN |= BIT3;
 	// Start clock
 	T1CON |= BIT7;
 	
@@ -54,9 +54,9 @@ int main(void)
 	GP3DAT = 0xFF000000;
 	
 	uart_set_char('i');
-	uart_set_char('2');
-	uart_set_char('c');
-	uart_set_char('f');
+	uart_set_char('!');
+	uart_set_char('!');
+	uart_set_char('!');
 	uart_set_char('!');
 	uart_set_char('\n');
 
@@ -79,7 +79,7 @@ int main(void)
 			*/
 		//}
 		
-		rx_char = uart_wait_get_char_raw();
+		rx_char = uart_get_char_raw_no_memory();
 		switch (rx_char)
 		{
 			// Send init message
@@ -103,8 +103,21 @@ int main(void)
 			case 'e':
 				param1 = uart_wait_get_char_raw();
 				erase_memory(param1);
+			//Go run
 			case 'g':
 				run_memory();
+				break;
+			//Cancel pending operation
+			case 'c':
+				uart_set_char('c');
+				ucRxCountMax = 0;
+				ucTxCountMax = 0;
+				ucTxCount = 0; 
+				ucRxCount = 0; 
+				I2C0FSTA = BIT9;					// Flush Master Tx FIFO
+				I2C0FSTA &= ~BIT9;
+				I2C0FSTA = BIT8;					// Flush Master Rx FIFO
+				I2C0FSTA &= ~BIT8;
 				break;
 		}
 	
@@ -118,7 +131,25 @@ void run_memory(){
 	TxDataBytes[2] = 0x00;
 	TxDataBytes[3] = 0x00;
 	TxDataBytes[4] = 0x01;
-	i2c_send_data_bytes(5);
+//	i2c_send_data_bytes(5);
+	
+	szTxData[0] = 0x07;
+	szTxData[1] = 0x0E;
+	szTxData[2] = 0x05;
+	szTxData[3] = 0x52;
+	szTxData[4] = 0x00;
+	szTxData[5] = 0x00;
+	szTxData[6] = 0x00;
+	szTxData[7] = 0x01;
+	szTxData[8] = 0xA8;
+		// Begin Master Transmit sequence
+	ucTxCountMax = 5 + 2 + 1 + 1; //Start ID, Num Bytes, and Checksum
+	ucTxCount = 0;
+	I2C0FSTA = BIT9;					// Flush Master Tx FIFO
+	I2C0FSTA &= ~BIT9;
+	uart_set_char(szTxData[ucTxCount]);
+	I2C0MTX = szTxData[ucTxCount++];
+	I2C0ADR0 = 0x04; 				    // Write to the slave
 }
 
 void request_slave_read(int num_bytes) {
@@ -144,7 +175,7 @@ void set_address() {
 // Erase number of pages of memory starting at memory specified
 void erase_memory(int pages){
 	TxDataBytes[0] = 'E';
-	TxDataBytes[5] = (char)pages;
+	TxDataBytes[5] = pages;
 	i2c_send_data_bytes(6);
 }
 
@@ -169,16 +200,16 @@ void i2c_send_data_bytes(int num_bytes){
 	szTxData[0] = 0x07;
 	szTxData[1] = 0x0E;
 	//Number of Data Bytes
-	szTxData[2] = (char)num_bytes;
+	szTxData[2] = num_bytes;
 	//Data Bytes and compute checksum
 	for(i=0; i<num_bytes; i++){
-		checksum += TxDataBytes[i];
+		checksum = TxDataBytes[i] + checksum;
 		szTxData[i + 3] = TxDataBytes[i];
 	}
 	//Compute Checksum
 	//Subtract num of data bytes, then two's complement
 	checksum = 0x00 - (num_bytes + checksum);
-	szTxData[num_bytes + 3] = (char)checksum;
+	szTxData[num_bytes + 3] = checksum;
 	
 	uart_set_char('W');
 	//for(i=0; i<=(num_bytes+3); i++){
@@ -228,6 +259,17 @@ void i2c_send_init(){
 }
 
 void do_something(){
+	
+	uart_set_char(I2C0FSTA);
+	
+					ucRxCountMax = 0;
+				ucTxCountMax = 0;
+				ucTxCount = 0; 
+				ucRxCount = 0; 
+				I2C0FSTA = BIT9;					// Flush Master Tx FIFO
+				I2C0FSTA &= ~BIT9;
+				I2C0FSTA = BIT8;					// Flush Master Rx FIFO
+				I2C0FSTA &= ~BIT8;
 
 	if(!isLEDOn){
 		GP3CLR |= BIT19;
@@ -250,19 +292,35 @@ void IRQ_Handler(void)  __irq
 	   I2C0MSTATUS = I2C0MSTA;
 	   if ((I2C0MSTATUS & BIT2) == BIT2)		// If I2C Master Tx IRQ
 	   {
-			if (ucTxCount < ucTxCountMax)					// Have max 6 bytes been sent?
+			if (ucTxCount < ucTxCountMax)					// Have max bytes been sent?
 				uart_set_char(szTxData[ucTxCount]);
 				I2C0MTX = szTxData[ucTxCount++];// Load Tx buffer
 	   }
 	   if ((I2C0MSTATUS & BIT3) == BIT3) 		// If I2C Master Rx IRQ
 	   {
-			if (ucRxCount < ucRxCountMax)					// Have max 6 bytes been received?
+			if (ucRxCount < ucRxCountMax)					// Have max bytes been received?
 			{
 				szRxData[ucRxCount] = I2C0MRX;  // Read Rx buffer
 				uart_set_char(szRxData[ucRxCount]);
 				ucRxCount++;
 			}
 	   }
+		 if ((I2C0MSTATUS & BIT8) == BIT8){ // stop condition
+			 uart_set_char('S');
+		 }
+	}
+	
+	if ((IRQSTATUS & BIT3) == BIT3) // Timer1 interrupt source - PID
+	{
+		do_something();
+		T1CLRI = 0x55;				// Clear interrupt, reload T1LD
+	}
+	
+	if ((IRQSTATUS & BIT13) == BIT13)
+	{
+		// Interrupt caused by hardware RX/TX buffer being full, cleared when
+		// RX/TX buffer is read
+		uart_handler();
 	}
 }
 
@@ -273,16 +331,5 @@ void FIQ_Handler(void) __irq
 
 	FIQSTATUS = FIQSTA;
 
-	if ((FIQSTATUS & BIT3) == BIT3) // Timer1 interrupt source - PID
-	{
-		do_something();
-		T1CLRI = 0x55;				// Clear interrupt, reload T1LD
-	}
-	
-		if ((FIQSTATUS & BIT13) == BIT13)
-	{
-		// Interrupt caused by hardware RX/TX buffer being full, cleared when
-		// RX/TX buffer is read
-		uart_handler();
-	}
+
 }
