@@ -183,7 +183,7 @@ void um_track (void)
 		threshold = um.horz.iMin + .7*range;
 		hysteresis = range/10;
 		
-		if(range<=550)//DAC_1_V)		//recovery loop; sparse raster scan
+		if(range<=250)//DAC_1_V)		//recovery loop; sparse raster scan
 		{
 		vertpos+=DIR*(scan_numpts/8);
 		if(vertpos>(scan_numpts-1))  
