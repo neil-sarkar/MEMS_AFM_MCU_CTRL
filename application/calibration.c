@@ -68,7 +68,7 @@ void calibrate_actuator (Actuator* act, u16 max_voltage){
 		dac_set_val (act->out_dac, i);
 
 		// Delay
-		delay_25_us(calib_delay);
+		//delay_25_us(calib_delay);
 
 		// Measures differential voltage across current sense resistor
 		// Averaging loop for lateral actuator TCR measurement and send it across UART

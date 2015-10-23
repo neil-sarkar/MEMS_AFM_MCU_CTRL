@@ -169,7 +169,7 @@
             <RunIndependent>0</RunIndependent>
             <UpdateFlashBeforeDebugging>1</UpdateFlashBeforeDebugging>
             <Capability>1</Capability>
-            <DriverSelection>4101</DriverSelection>
+            <DriverSelection>4098</DriverSelection>
           </Flash1>
           <bUseTDR>0</bUseTDR>
           <Flash2>Segger\JLTAgdi.dll</Flash2>
@@ -457,9 +457,9 @@
               <FilePath>..\application\calibration.c</FilePath>
             </File>
             <File>
-              <FileName>global.c</FileName>
+              <FileName>um.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\global\global.c</FilePath>
+              <FilePath>..\application\um.c</FilePath>
             </File>
             <File>
               <FileName>pga_1ch.c</FileName>
@@ -475,11 +475,6 @@
               <FileName>wire3.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\peripheral\wire3.c</FilePath>
-            </File>
-            <File>
-              <FileName>um.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\application\um.c</FilePath>
             </File>
           </Files>
         </Group>
