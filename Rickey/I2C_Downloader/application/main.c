@@ -12,6 +12,7 @@
 
 unsigned char szTxData[255 + 2 + 1 + 1];	// 255 Data Bytes, 2 Start ID bytes, 1 Num of Bytes, and 1 Checksum byte
 unsigned char TxDataBytes[255];
+unsigned char TxDataBytesLen = 0;
 unsigned char ucTxCount = 0;  			// Array index variable for szTxData[]
 unsigned char szRxData[32];				// Array for reading Data from Slave
 unsigned char ucRxCount = 0;  			// Array index variable for szRxData[]
@@ -103,6 +104,9 @@ int main(void)
 			case 'e':
 				param1 = uart_wait_get_char_raw();
 				erase_memory(param1);
+				break;
+			case 'd':
+				set_data();
 			//Go run
 			case 'g':
 				run_memory();
@@ -177,6 +181,49 @@ void erase_memory(int pages){
 	TxDataBytes[0] = 'E';
 	TxDataBytes[5] = pages;
 	i2c_send_data_bytes(6);
+}
+
+// Set the data bytes. From 1 to 250. 
+void set_data(){
+	unsigned int i;
+	uart_set_char('d');
+	TxDataBytesLen = TxDataBytes[4] = uart_wait_get_char_raw();
+	uart_set_char(TxDataBytesLen);
+	//uart_set_char('-');
+	//Complemented Data Bytes (ARMv7)
+	for(i=0; i<TxDataBytesLen; i++){
+		TxDataBytes[i] = uart_wait_get_char_raw();
+	}
+}
+
+// Write Flash Contents
+void write_flash(){
+	TxDataBytes[0]='W';
+	//send it out
+	i2c_send_data_bytes(TxDataBytesLen);
+}
+
+// Verify Flash Contents
+// Computes complemented data bytes using existing set_data, then send out
+void verify_flash(){
+	unsigned int i;
+	TxDataBytes[0]='V';
+	//Complemented Data Bytes (ARMv7)
+	/* Not the most efficient. 
+		 Rotate Left by three bytes
+		 But we want to just use i2c_send_data_bytes function for all sending activities
+	*/
+	for(i=0; i<TxDataBytesLen; i++){
+		TxDataBytes[i+5] = rotl8(TxDataBytes[i+5], 3);
+	}
+	
+	i2c_send_data_bytes(TxDataBytesLen);
+}
+
+u8 rotl8 (u8 value, unsigned int count) {
+    const unsigned int mask = (8*sizeof(value)-1);
+    count &= mask;
+    return (value<<count) | (value>>( (-count)&mask ));
 }
 
 void print_i2c_read(){
@@ -260,9 +307,9 @@ void i2c_send_init(){
 
 void do_something(){
 	
-	uart_set_char(I2C0FSTA);
+	//uart_set_char(I2C0FSTA);
 	
-					ucRxCountMax = 0;
+				ucRxCountMax = 0;
 				ucTxCountMax = 0;
 				ucTxCount = 0; 
 				ucRxCount = 0; 
@@ -327,9 +374,9 @@ void IRQ_Handler(void)  __irq
 void FIQ_Handler(void) __irq
 {
 
-	u32 FIQSTATUS = 0;
+//	u32 FIQSTATUS = 0;
 
-	FIQSTATUS = FIQSTA;
+//	FIQSTATUS = FIQSTA;
 
 
 }

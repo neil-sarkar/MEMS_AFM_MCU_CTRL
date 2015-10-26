@@ -52,4 +52,6 @@ void i2c_send_data_bytes(int num_bytes);
 void request_slave_read(int num_bytes);
 void erase_memory(int pages);
 void run_memory(void);
+void set_data(void);
+u8 rotl8 (u8 value, unsigned int count);
 #endif
