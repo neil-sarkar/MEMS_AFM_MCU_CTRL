@@ -16,6 +16,7 @@ unsigned char ucWaitingForXIRQ0 = 1;  // Flag to begin reading from Slave - cont
 unsigned int ucTxCountMax = 1; //Must be int. The send message could be longer than 255
 unsigned char ucRxCountMax = 1;
 unsigned long szAddr = 0x0;
+String debug_info = String(150);
 
 /*************************
 **   Custom functions   **
@@ -59,7 +60,8 @@ void set_address() {
 // Set the data bytes. From 1 to 250. 
 void set_data(){
 	unsigned int i;
-	Serial.print(" d|0x");
+	debug_info = " d|0x";
+	//Serial.print(" d|0x");
 	Serial.flush();
 	while (Serial.available() == 0);
 	TxPayloadBytesLen = Serial.read();
@@ -67,16 +69,16 @@ void set_data(){
 		Serial.print('TOO BIG');
 		return;
 	}
-	Serial.print(TxPayloadBytesLen, HEX);
-	Serial.print(" BEGIN ");
+	//Serial.print(TxPayloadBytesLen, HEX);
+	//Serial.print(" BEGIN ");
 	//Put Data Bytes into buffer
 	for(i=0; i<TxPayloadBytesLen; i++){
 		Serial.flush();
 		while (Serial.available() == 0);
 		TxDataBytesOriginal[i+5] = Serial.read();
-		Serial.print(">");
+		//Serial.print(">");
 	}
-	Serial.print(" END OK \n");
+	//Serial.print(" END OK \n");
 }
 
 // Write Flash Contents
@@ -154,18 +156,20 @@ void i2c_send_data_bytes(int num_bytes){
     // Begin Master Transmit sequence
     ucTxCountMax = num_bytes + 2 + 1 + 1; //Start ID, Num Bytes, and Checksum
 	
+	/*
 	Serial.print(" W|Bytes");
 	Serial.print(ucTxCountMax);
 	Serial.print("|numbytes");
 	Serial.print(num_bytes);
+	*/
     
     Wire.beginTransmission(_i2caddr); // transmit to device
-    Serial.print(" | 0x");
+    //Serial.print(" | 0x");
     for(i=0; i<ucTxCountMax; i++){
         Wire.write(szTxData[i]); 
-        Serial.print(" ");
-        Serial.print(szTxData[i], HEX);
-		delay(1); //small delay 
+        //Serial.print(" ");
+        //Serial.print(szTxData[i], HEX);
+		//delay(1); //small delay 
     }
     Wire.endTransmission();    // stop transmitting
 	Serial.print(" TXDONE \n");
