@@ -189,9 +189,9 @@ int main(void)
 			case 'd':
 				um_track();
 				break;
-			case 'Z':
-				um_genmap();
-				break;
+			//case 'Z':
+				//um_genmap();
+				//break;
 			case 'p':
 				*((u8*)(&param) + 0) = uart_wait_get_char();
 				*((u8*)(&param) + 1) = uart_wait_get_char();

@@ -43,12 +43,12 @@ void um_init (void)
 #define DAC_HORZ	DAC_ZOFFSET_COARSE	
 #define DAC_L1		DAC_X1
 #define DAC_L2		DAC_Y1
-#define UM_delay 	1
+#define UM_delay 	5
 #define COM_delay 	100
 
 //pid variables
-float ki = 0.01;
-float kp = 0;
+float ki = 1;
+float kp = 0.1;
 
 s32 iTerm;
 s32 fb;
@@ -183,24 +183,24 @@ void um_track (void)
 		threshold = um.horz.iMin + .7*range;
 		hysteresis = range/10;
 		
-		if(range<=250)//DAC_1_V)		//recovery loop; sparse raster scan
+		if((range<=250)&&(exitFlag==0))		//recovery loop; sparse raster scan
 		{
-		vertpos+=DIR*(scan_numpts/8);
+		vertpos+=DIR*(scan_numpts/4);
 		if(vertpos>(scan_numpts-1))  
-		{	
-		DIR=DIR*-1;
-		vertpos=scan_numpts-1;
-		}
+			{	
+				DIR=DIR*-1;
+				vertpos=scan_numpts-1;
+			}
 		if(vertpos<0) 
-		{	
-		DIR=DIR*-1;
-		vertpos=0;
-		}
+			{	
+			DIR=DIR*-1;
+			vertpos=0;
+			}
 		iTerm=0;			
 		dac_set_val(DAC_X1, scan_r_points[vertpos]);
 		dac_set_val(DAC_Y1, scan_l_points[vertpos]);
 		}
-		else
+		else  //vertical tracking
 		{
 		vertshift=(vertpos - prevVertPos);
 		if (vertshift==0)
@@ -218,7 +218,10 @@ void um_track (void)
 		if(pidval==0) pidval=1;  //to do: make this direction dependant
 		
 		// Vertical Tracking
+		//should we use range or max value to determine whether to switch directions?
 		if (um.horz.iMax>prevMax)
+		//if (range>prevRange)
+		
 		{
 			if (dir>0) vertpos += pidval;
 			if (dir<0) vertpos -= pidval;					
@@ -226,8 +229,12 @@ void um_track (void)
 		else
 		{
 			dir=dir*-1;
-			if (dir>0) vertpos += pidval;
-			if (dir<0) vertpos -= pidval;				
+			//if (dir>0) vertpos += pidval;
+			//if (dir<0) vertpos -= pidval; //when the pistons change directions, reset the iTerm
+			iTerm=0;
+			if (dir>0) vertpos += 1;
+			if (dir<0) vertpos -= 1;
+			
 		}				  
 
 		if (vertpos > scan_numpts) 	vertpos = scan_numpts;
@@ -271,6 +278,7 @@ void printHex(u16 val)
 	}
 }
 
+/*
 void um_genmap (void)
 {
 	u16 val;
@@ -335,6 +343,8 @@ void um_genmap (void)
 		uart_set_char('\r');
 	}
 }
+*/
+
 
 
 
