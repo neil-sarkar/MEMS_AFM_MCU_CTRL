@@ -47,8 +47,8 @@ void um_init (void)
 #define COM_delay 	100
 
 //pid variables
-float ki = 1;
-float kp = 0.1;
+float ki = 0.01;
+float kp = 0;
 
 s32 iTerm;
 s32 fb;
@@ -67,26 +67,27 @@ void um_set_p (float param)
 	kp = param;
 }
 
+static u16 val;
+static u32 delay;
+static s32 i;
+static s32 dir = 1;
+static u16 prevVertPos = 0;
+static bool triggered=false;
+static u8 edgenum=0;
+static u16 trigpos[2] = {0,0};
+static u16 range;
+static u16 prevRange = 0;
+static u16 hysteresis = 0;
+static u16 threshold=2000;
+static u16 prevMax=0;
+static s32 DIR=1;
+static u16 vertdata;
+	
 void um_track (void)
 {
-	u16 val;
-	u32 delay;
-	s32 i;
-	s32 dir = 1;
-	s32 vertpos = scan_numpts/2;
-	u16 prevVertPos = 0;
-	bool triggered=false;
-	u8 edgenum=0;
-	u16 trigpos[2] = {0,0};
-	u16 range;
-	u16 prevRange = 0;
-	u16 hysteresis = 0;
-	u16 threshold=2000;
-	u16 prevMax=0;
-	s32 DIR=1;
-	u16 vertdata;
-	// TODO make this float?
 
+	s32 vertpos = scan_numpts/2;
+	
 	//set pistons to midscale
 	dac_set_val(DAC_X1, scan_l_points[vertpos]);
 	dac_set_val(DAC_Y1, scan_r_points[vertpos]);
@@ -185,7 +186,7 @@ void um_track (void)
 		
 		if((range<=250)&&(exitFlag==0))		//recovery loop; sparse raster scan
 		{
-		vertpos+=DIR*(scan_numpts/4);
+		vertpos+=DIR*(scan_numpts/8);
 		if(vertpos>(scan_numpts-1))  
 			{	
 				DIR=DIR*-1;
@@ -196,23 +197,27 @@ void um_track (void)
 			DIR=DIR*-1;
 			vertpos=0;
 			}
-		iTerm=0;			
+		iTerm=0;
+			
+		if (vertpos > scan_numpts) 	vertpos = scan_numpts;
+		if (vertpos < 0) 						vertpos = 0;
+	
 		dac_set_val(DAC_X1, scan_r_points[vertpos]);
 		dac_set_val(DAC_Y1, scan_l_points[vertpos]);
 		}
 		else  //vertical tracking
 		{
-		vertshift=(vertpos - prevVertPos);
-		if (vertshift==0)
-		{
-			vertshift=1;
-		}
-		fb = ((float)(range - prevRange)) / (vertshift);
-		error = setpoint - fb;
-		iTerm += (ki * error);
-		if (iTerm >= scan_numpts/2) iTerm=scan_numpts/2;
+			vertshift=(vertpos - prevVertPos);
+				if (vertshift==0)
+				{
+					vertshift=1;
+				}
+			fb = ((float)(range - prevRange)) / (vertshift);
+			error = setpoint - fb;
+			iTerm += (ki * error);
+			if (iTerm >= scan_numpts/2) iTerm=scan_numpts/2;
 		//if (iTerm > scan_numpts-1) iTerm = scan_numpts-1;
-		if (iTerm <= -1*scan_numpts/2) iTerm= -1*scan_numpts/2;
+			if (iTerm <= -1*scan_numpts/2) iTerm= -1*scan_numpts/2;
 		
 		pidval = (u16)(kp * error + iTerm);
 		if(pidval==0) pidval=1;  //to do: make this direction dependant
@@ -229,11 +234,11 @@ void um_track (void)
 		else
 		{
 			dir=dir*-1;
-			//if (dir>0) vertpos += pidval;
-			//if (dir<0) vertpos -= pidval; //when the pistons change directions, reset the iTerm
-			iTerm=0;
-			if (dir>0) vertpos += 1;
-			if (dir<0) vertpos -= 1;
+			if (dir>0) vertpos += pidval;
+			if (dir<0) vertpos -= pidval; //when the pistons change directions, reset the iTerm?
+			//iTerm=0;
+			//if (dir>0) vertpos += 1;
+			//if (dir<0) vertpos -= 1;
 			
 		}				  
 
@@ -262,6 +267,7 @@ void um_track (void)
 		
 	}
 	exitFlag = 0;
+	
 }
 
 
