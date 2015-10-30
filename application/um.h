@@ -9,4 +9,4 @@ void um_init (void);
 void um_track (void);
 void um_set_i (float param);
 void um_set_p (float param);
-void um_genmap (void);
+void um_genmap (u16 xpts, u16 ypts);

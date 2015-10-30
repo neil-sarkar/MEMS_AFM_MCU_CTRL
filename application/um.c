@@ -43,7 +43,7 @@ void um_init (void)
 #define DAC_HORZ	DAC_ZOFFSET_COARSE	
 #define DAC_L1		DAC_X1
 #define DAC_L2		DAC_Y1
-#define UM_delay 	5
+#define UM_delay 	1
 #define COM_delay 	100
 
 //pid variables
@@ -184,7 +184,7 @@ void um_track (void)
 		threshold = um.horz.iMin + .7*range;
 		hysteresis = range/10;
 		
-		if((range<=250)&&(exitFlag==0))		//recovery loop; sparse raster scan
+		if((range<=200)&&(exitFlag==0))		//recovery loop; sparse raster scan
 		{
 		vertpos+=DIR*(scan_numpts/8);
 		if(vertpos>(scan_numpts-1))  
@@ -220,7 +220,7 @@ void um_track (void)
 			if (iTerm <= -1*scan_numpts/2) iTerm= -1*scan_numpts/2;
 		
 		pidval = (u16)(kp * error + iTerm);
-		if(pidval==0) pidval=1;  //to do: make this direction dependant
+		if(pidval==0) pidval=-1*DIR;  //to do: make this direction dependant
 		
 		// Vertical Tracking
 		//should we use range or max value to determine whether to switch directions?
@@ -284,8 +284,8 @@ void printHex(u16 val)
 	}
 }
 
-/*
-void um_genmap (void)
+
+void um_genmap (u16 xpts, u16 ypts)
 {
 	u16 val;
 	u32 delay;
@@ -305,51 +305,60 @@ void um_genmap (void)
 	u16 vertdata;
 	u32 d,denom;
 
+	u16 xscanpts=xpts;
+	u16 yscanpts=ypts;
+	u16 xsteps=((4095-1500)/xscanpts);
+	
+	/*
 	uart_set_char('S');
 	uart_set_char('t');
 	uart_set_char('a');
 	uart_set_char('r');
 	uart_set_char('t');
 	uart_set_char('\r');
+	*/
 	
 	vertpos = 0;
   // Set pistons to min-scale (vertpos initialized)	
 	dac_set_val(DAC_X1, scan_r_points[vertpos]);
 	dac_set_val(DAC_Y1, scan_l_points[vertpos]);	
 	
-	delay = 50;
+	delay = 10;
 	while (delay--);
 	
-	for (j = 0; j < scan_numpts; j++) {
+	for (j = 0; j < yscanpts; j++) {
 		dac_set_val(DAC_X1, scan_r_points[j]);
 		dac_set_val(DAC_Y1, scan_l_points[j]);		
 		
-		i=1500;
+		/* i=1500;
 		dac_set_val(DAC_HORZ, i);
 		adc_start_conv(ADC_MIRROR);
 		val = adc_get_val();
 		printHex(val);
-
-		for (; i < 4095; i += 20) {
-			uart_set_char(',');
+		*/
+		
+		for (i=1500; i < 4095; i += xsteps) {
+			//uart_set_char(',');
 			if (i > 4095) i = 4095;
 			dac_set_val(DAC_HORZ, i);
 			adc_start_conv(ADC_MIRROR);
 			val = adc_get_val();
-			printHex(val);
+			uart_set_char (val);
+			uart_set_char (val >> 8);	
 		}
-		for (i=4095; i > 1500; i -= 20) {
-			uart_set_char(',');
+		for (i=4095; i > 1500; i -= xsteps) {
+			//uart_set_char(',');
 			if (i > 4095) i = 4095;
 			dac_set_val(DAC_HORZ, i);
 			adc_start_conv(ADC_MIRROR);
 			val = adc_get_val();
-			printHex(val);
+			uart_set_char (val);
+			uart_set_char (val >> 8);	
 		}
-		uart_set_char('\r');
+		//uart_set_char('\r');
 	}
 }
-*/
+
 
 
 

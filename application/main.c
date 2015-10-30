@@ -47,6 +47,7 @@ u16 scan_r_points[1024];
 extern u16 scan_numpts;
 
 float param;
+u16 xpts_received, ypts_received;
 
 int main(void)
 {
@@ -189,9 +190,13 @@ int main(void)
 			case 'd':
 				um_track();
 				break;
-			//case 'Z':
-				//um_genmap();
-				//break;
+			case '8':
+				*((u8*)(&xpts_received) + 0) = uart_wait_get_char();
+				*((u8*)(&xpts_received) + 1) = uart_wait_get_char();
+				*((u8*)(&ypts_received) + 2) = uart_wait_get_char();	
+				*((u8*)(&ypts_received) + 3) = uart_wait_get_char();
+				um_genmap(xpts_received,ypts_received);
+				break;
 			case 'p':
 				*((u8*)(&param) + 0) = uart_wait_get_char();
 				*((u8*)(&param) + 1) = uart_wait_get_char();
