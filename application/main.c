@@ -193,8 +193,8 @@ int main(void)
 			case '8':
 				*((u8*)(&xpts_received) + 0) = uart_wait_get_char();
 				*((u8*)(&xpts_received) + 1) = uart_wait_get_char();
-				*((u8*)(&ypts_received) + 2) = uart_wait_get_char();	
-				*((u8*)(&ypts_received) + 3) = uart_wait_get_char();
+				*((u8*)(&ypts_received) + 0) = uart_wait_get_char();	
+				*((u8*)(&ypts_received) + 1) = uart_wait_get_char();
 				um_genmap(xpts_received,ypts_received);
 				break;
 			case 'p':
