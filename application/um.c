@@ -304,10 +304,15 @@ void um_genmap (u16 xpts, u16 ypts)
 	s32 DIR=1;
 	u16 vertdata;
 	u32 d,denom;
-
-	u16 xscanpts=xpts;
-	u16 yscanpts=ypts;
-	u16 xsteps=((4095-1500)/xscanpts);
+	u16 horzVal;
+	
+	//u16 xscanpts=xpts;
+	//u16 yscanpts=ypts;
+	
+	u16 xsteps=(float)((4095-1500)/xpts);
+	u16 xmax=4095, xmin=1500;
+	u16 stepsize=(xmax-xmin)/xpts;
+	
 	
 	/*
 	uart_set_char('S');
@@ -320,13 +325,13 @@ void um_genmap (u16 xpts, u16 ypts)
 	
 	vertpos = 0;
   // Set pistons to min-scale (vertpos initialized)	
-	dac_set_val(DAC_X1, scan_r_points[vertpos]);
-	dac_set_val(DAC_Y1, scan_l_points[vertpos]);	
+	//dac_set_val(DAC_X1, scan_r_points[vertpos]);
+	//dac_set_val(DAC_Y1, scan_l_points[vertpos]);	
 	
-	delay = 10;
-	while (delay--);
+	//delay = 10;
+	//while (delay--);
 	
-	for (j = 0; j < yscanpts; j++) {
+	for (j = 0; j < ypts; j++) {
 		dac_set_val(DAC_X1, scan_r_points[j]);
 		dac_set_val(DAC_Y1, scan_l_points[j]);		
 		
@@ -337,23 +342,32 @@ void um_genmap (u16 xpts, u16 ypts)
 		printHex(val);
 		*/
 		
-		for (i=1500; i < 4095; i += xsteps) {
+		for (i=0; i < xpts; i++) {
 			//uart_set_char(',');
-			if (i > 4095) i = 4095;
-			dac_set_val(DAC_HORZ, i);
+			//if (i > 4000) i = 4000;
+			horzVal = xmin+stepsize*i;
+			
+			dac_set_val(DAC_HORZ, horzVal);
 			adc_start_conv(ADC_MIRROR);
 			val = adc_get_val();
 			uart_set_char (val);
 			uart_set_char (val >> 8);	
+				delay = 50;
+				while (delay--);
 		}
-		for (i=4095; i > 1500; i -= xsteps) {
+		for (i=xpts; i > 0; i--) {
 			//uart_set_char(',');
-			if (i > 4095) i = 4095;
-			dac_set_val(DAC_HORZ, i);
+			//if (i > 4000) i = 4000;
+			
+			horzVal = xmax-stepsize*i;
+			dac_set_val(DAC_HORZ, horzVal);
+			
 			adc_start_conv(ADC_MIRROR);
 			val = adc_get_val();
 			uart_set_char (val);
-			uart_set_char (val >> 8);	
+			uart_set_char (val >> 8);
+				delay = 50;
+				while (delay--);			
 		}
 		//uart_set_char('\r');
 	}
