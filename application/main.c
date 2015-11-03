@@ -508,13 +508,13 @@ void configure_scan (void)
 	uart_wait_get_bytes (temp_buffer, 2);
 	numpts = (temp_buffer[0]) | (temp_buffer[1] << 8);
 
-	for (i = 0; i < numpts; i++)
+	for (i = 1; i <= numpts; i++)
 	{
 		uart_wait_get_bytes (temp_buffer, 2);
 		scan_l_points[i]   =  ((temp_buffer[0]) | (temp_buffer[1] << 8)) & 0x0FFF;
 	} 
 
-	for (i = 0; i < numpts; i++)
+	for (i = 1; i <= numpts; i++)
 	{
 		uart_wait_get_bytes (temp_buffer, 2);
 		scan_r_points[i]   =  ((temp_buffer[0]) | (temp_buffer[1] << 8)) & 0x0FFF;

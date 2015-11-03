@@ -97,7 +97,7 @@ void writeWordToUart(u16 wordToWrite)
 void setPistonPosIdx(u16 posIdx)
 {
 	if (posIdx > scan_numpts) 	posIdx = scan_numpts;
-	if (posIdx < 0) 						posIdx = 0;
+	if (posIdx < 1) 						posIdx = 1;
 
 	dac_set_val(DAC_X1, scan_r_points[posIdx]);
 	dac_set_val(DAC_Y1, scan_l_points[posIdx]);
@@ -163,6 +163,7 @@ void um_track (void)
 	//set pistons to midscale
 	setPistonPosIdx(vertpos);
 	
+	exitFlag=0;
 	while (exitFlag == 0)
 	{
 		// Horizontal Tracking
@@ -273,7 +274,7 @@ void um_genmap (u16 xpts, u16 ypts)
 {
 	u16 val;
 	u32 delay;
-	s32 i,j;
+	u16 i,j,k;
 	s32 dir = 1;
 	s32 vertpos = scan_numpts/2;
 	u16 prevVertPos = 0;
@@ -293,10 +294,10 @@ void um_genmap (u16 xpts, u16 ypts)
 	//u16 xscanpts=xpts;
 	//u16 yscanpts=ypts;
 	
-	u16 xsteps=(float)((4095-1500)/xpts);
-	u16 xmax=4095, xmin=1500;
+	//u16 xsteps=(float)((4095-1500)/xpts);
+	u16 xmax=4000, xmin=1500;
 	u16 stepsize=(xmax-xmin)/xpts;
-	
+	exitFlag=0;
 	
 	/*
 	uart_set_char('S');
@@ -315,7 +316,7 @@ void um_genmap (u16 xpts, u16 ypts)
 	//delay = 10;
 	//while (delay--);
 	
-	for (j = 0; j < ypts; j++) {
+	for (j = 1; j <= ypts; j++) {
 		dac_set_val(DAC_X1, scan_r_points[j]);
 		dac_set_val(DAC_Y1, scan_l_points[j]);		
 		
@@ -339,11 +340,11 @@ void um_genmap (u16 xpts, u16 ypts)
 				delay = 50;
 				while (delay--);
 		}
-		for (i=xpts; i > 0; i--) {
+		for (k=0; k < xpts; k++) {
 			//uart_set_char(',');
 			//if (i > 4000) i = 4000;
 			
-			horzVal = xmax-stepsize*i;
+			horzVal = xmax-stepsize*k;
 			dac_set_val(DAC_HORZ, horzVal);
 			
 			adc_start_conv(ADC_MIRROR);
