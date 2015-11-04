@@ -82,7 +82,6 @@ int main(void)
 	u8 msg_id_char, msg_tag_char;
 	u8 byte_l, byte_h;
 	u16 byte_full;
-	bool msg_id_found;
 	
 	/*
 	 * MCU Initialization				  
@@ -125,7 +124,6 @@ int main(void)
 			//TODO #14 do not return msg_id yet. check first that it exists. 
 		}
 		
-		msg_id_found = true;
 		switch (msg_id_char)
 		{
 			// Set DAC
@@ -798,8 +796,8 @@ void read_adc(void)
 	adc_start_conv(adc_ch);
 	adc_val = adc_get_val();
 	
-	// Reply the ADC channel along with DAC value
-	uart_write_char(adc_ch);  //Response byte 2
+	// Reply the ADC channel along with measured value
+	uart_write_char(adc_ch);  //Response byte 2, ADC channel requested
 	uart_write_char(adc_val & 0xFF);
 	uart_write_char((adc_val >> 8) & 0xFF);
 }
