@@ -65,7 +65,8 @@
       <compileType>
         <linkerTool>
           <linkerLibItems>
-            <linkerLibFileItem>../../../../../Program Files (x86)/Microchip/xc16/v1.25/lib/libq-dsp-coff.a</linkerLibFileItem>
+            <linkerLibFileItem>C:/Program Files (x86)/Microchip/xc16/v1.25/lib/libdsp-coff.a</linkerLibFileItem>
+            <linkerLibFileItem>C:/Program Files (x86)/Microchip/xc16/v1.25/lib/libdsp-elf.a</linkerLibFileItem>
           </linkerLibItems>
         </linkerTool>
         <archiverTool>
@@ -284,7 +285,7 @@
       <compileType>
         <linkerTool>
           <linkerLibItems>
-            <linkerLibFileItem>../../../../../Program Files (x86)/Microchip/xc16/v1.25/lib/libdsp-elf.a</linkerLibFileItem>
+            <linkerLibFileItem>C:/Program Files (x86)/Microchip/xc16/v1.25/lib/libdsp-elf.a</linkerLibFileItem>
           </linkerLibItems>
         </linkerTool>
         <archiverTool>

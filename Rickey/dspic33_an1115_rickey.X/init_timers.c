@@ -59,6 +59,9 @@
 /// and will be used to generate the 25kHz output waveform. TMR 3 is
 /// set to generate a 100kHz interrupt used for the ADC start conversion
 ///////////////////////////////////////////////////////////////////
+
+int TMR2_Freq = 6; //Frequency of the sine wave in kHz
+
 void Init_Timers( void )
 {
 	// set up timer 2 to interrupt at at a rate of 16 points per full
@@ -66,14 +69,14 @@ void Init_Timers( void )
 	T2CON = 0;
 	IFS0bits.T2IF = 0;
 	IPC1bits.T2IP = 5;
-	PR2 = 99;
+	PR2 = (40000/(16*TMR2_Freq))-1;
 	TMR2 = 0;
 	IEC0bits.T2IE = 1;
 	
 	// set up TMR3 to generate signals for the ADC convert
 	// every 400 cycles or 100kHz
 	T3CON = 0;
-	PR3 = 399;
+	PR3 = (40000/(16*TMR2_Freq))*4-1; //4 Sample points per waveform point
 	TMR3 = 0;
 	IFS0bits.T3IF = 0;
 	
