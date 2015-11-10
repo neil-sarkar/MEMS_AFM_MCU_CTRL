@@ -51,8 +51,7 @@ Icon
 *.lnp
 *.bak
 *.plg
-*.Opt
 project/mems_mcu.plg
 *.hex
 *.uvgui.*
-*.uvopt
+*.uvguix.*
