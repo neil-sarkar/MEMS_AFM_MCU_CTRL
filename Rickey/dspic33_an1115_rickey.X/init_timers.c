@@ -60,7 +60,7 @@
 /// set to generate a 100kHz interrupt used for the ADC start conversion
 ///////////////////////////////////////////////////////////////////
 
-int TMR2_Freq = 6; //Frequency of the sine wave in kHz
+int TMR2_Freq = 5; //Frequency of the sine wave in kHz
 
 void Init_Timers( void )
 {

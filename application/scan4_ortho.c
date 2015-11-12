@@ -108,12 +108,12 @@ __inline static void SET_PAIRY(u16 v1, u16 v2)
 								s4_o.img.zPhase = adc_get_avgw_val(s4_o.sampleCnt, SAMPLE_WAIT_CNT_ABS);		\
 							}
 
-#define SEND_DATA_TO_CLIENT uart_set_char((s4_o.img.zAmplitude & 0xFF)); 										\
-							uart_set_char((s4_o.img.zAmplitude >> 8) & 0x0F); 									\
-							uart_set_char(s4_o.img.zOffset & 0xFF); 											\
-							uart_set_char((s4_o.img.zOffset >> 8) & 0x0F); 										\
-							uart_set_char(s4_o.img.zPhase & 0xFF); 												\
-							uart_set_char((s4_o.img.zPhase >> 8) & 0x0F);				
+#define SEND_DATA_TO_CLIENT uart_write_char((s4_o.img.zAmplitude & 0xFF)); 										\
+							uart_write_char((s4_o.img.zAmplitude >> 8) & 0x0F); 									\
+							uart_write_char(s4_o.img.zOffset & 0xFF); 											\
+							uart_write_char((s4_o.img.zOffset >> 8) & 0x0F); 										\
+							uart_write_char(s4_o.img.zPhase & 0xFF); 												\
+							uart_write_char((s4_o.img.zPhase >> 8) & 0x0F);				
 
 #define SCAN				if (s4_o.isDirFWD)																	\
 							{														  							\

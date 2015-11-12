@@ -225,14 +225,14 @@ void z_write_data (void)
 	u16 z_off = (u16)(z_data.z_off_samples/z_data.num_samples);
 	u16 z_phs = (u16)(z_data.z_phs_samples/z_data.num_samples);
 
-	uart_set_char((u8)((z_amp) & 0xFF));
-	uart_set_char((u8)((z_amp >> 8) & 0xFF));
+	uart_write_char((u8)((z_amp) & 0xFF));
+	uart_write_char((u8)((z_amp >> 8) & 0xFF));
 
-	uart_set_char((u8)(z_off & 0xFF));
-	uart_set_char((u8)((z_off >> 8) & 0xFF));
+	uart_write_char((u8)(z_off & 0xFF));
+	uart_write_char((u8)((z_off >> 8) & 0xFF));
 
-	uart_set_char((u8)(z_phs & 0xFF));
-	uart_set_char((u8)((z_phs >> 8) & 0xFF));
+	uart_write_char((u8)(z_phs & 0xFF));
+	uart_write_char((u8)((z_phs >> 8) & 0xFF));
 }
 
 /* 	Generates line of power coefficients given DAC values in *bits*.
