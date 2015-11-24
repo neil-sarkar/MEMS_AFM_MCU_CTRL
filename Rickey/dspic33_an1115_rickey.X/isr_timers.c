@@ -49,6 +49,7 @@
 /// \file isr_timers.c
 
 #include <p33Fxxxx.h>
+#include  <stdbool.h>
 #include "common.h"
 
 /// 16 point table describing the reference signal 
@@ -63,6 +64,9 @@ static unsigned char sinTable[] = {
 /// static variables to reduce stack frame setup in ISR
 volatile unsigned char _sinTableIndex;
 volatile unsigned int _outVal;
+
+extern float freqVal;
+extern int sweep_in_progress;
 
 ///////////////////////////////////////////////////////////////////
 ///
@@ -86,3 +90,31 @@ void __attribute__((__interrupt__,no_auto_psv)) _T2Interrupt( void )
 	IFS0bits.T2IF = 0;
 }
 
+///////////////////////////////////////////////////////////////////
+///
+/// _T4Interrupt
+///
+/// Timer 4 is a one-ms interrupt. It interrupts every ms and updates the values
+// http://www.microchip.com/forums/m874835.aspx
+///////////////////////////////////////////////////////////////////
+void __attribute__((__interrupt__,no_auto_psv)) _T4Interrupt( void )
+{
+	/* Interrupt Service Routine code goes here */
+    if(sweep_in_progress == 1){         
+    if(freqVal > 25){
+               sweep_in_progress = 0;
+               freqVal = 3.0;
+            } else {
+                freqVal = freqVal + 0.01;
+                T2CONbits.TON = 0;
+                PR2 = (double)(40000 / (double)(16 * freqVal)) - 1;
+                TMR2 = 0;
+                T2CONbits.TON = 1;
+                T3CONbits.TON = 0;
+                PR3 = (double)(40000 / (double)(16 * freqVal))*4 - 1; //4 Sample points per full wave
+                TMR3 = 0;
+                T3CONbits.TON = 1;
+            }
+    }
+    IFS1bits.T4IF = 0; // Clear Timer4 Interrupt Flag
+}

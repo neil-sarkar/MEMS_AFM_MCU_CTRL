@@ -510,6 +510,11 @@
               <FileType>1</FileType>
               <FilePath>..\application\scan4_ortho.c</FilePath>
             </File>
+            <File>
+              <FileName>auto_approach.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\application\auto_approach.c</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>

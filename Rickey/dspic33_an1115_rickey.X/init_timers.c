@@ -60,26 +60,40 @@
 /// set to generate a 100kHz interrupt used for the ADC start conversion
 ///////////////////////////////////////////////////////////////////
 
-int TMR2_Freq = 5; //Frequency of the sine wave in kHz
+// Frequency Sweep Globals
+extern float freqVal;
+extern int sweep_in_progress;
 
 void Init_Timers( void )
 {
+    freqVal = 5.0; //Frequency of the sine wave in kHz
+    sweep_in_progress = 0;
+    
 	// set up timer 2 to interrupt at at a rate of 16 points per full
 	// wave at 25kHz (this equals an interrupt rate of 400kHz)
 	T2CON = 0;
 	IFS0bits.T2IF = 0;
 	IPC1bits.T2IP = 5;
-	PR2 = (40000/(16*TMR2_Freq))-1;
+	PR2 = (40000/(16*freqVal))-1;
 	TMR2 = 0;
 	IEC0bits.T2IE = 1;
 	
 	// set up TMR3 to generate signals for the ADC convert
 	// every 400 cycles or 100kHz
 	T3CON = 0;
-	PR3 = (40000/(16*TMR2_Freq))*4-1; //4 Sample points per waveform point
+	PR3 = (40000/(16*freqVal))*4-1; //4 Sample points per full wave
 	TMR3 = 0;
 	IFS0bits.T3IF = 0;
 	
 	// delay turning the output timer on until the main loop
 	T2CONbits.TON = 0;
+    
+    // Set up TMR4 for interrupting the frequency sweep increment
+    T4CON = 0;
+    T4CONbits.TCKPS = 0x2;  //Prescaler to 256
+	PR4 = 65500; //Something like 400ms?
+	TMR4 = 0;
+    IFS1bits.T4IF = 0; // Clear Timer4 Interrupt Flag
+    IEC1bits.T4IE = 1; // Enable Timer4 interrupt
+  
 }
