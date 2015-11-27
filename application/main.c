@@ -25,6 +25,7 @@
 #include "scan2.h"
 #include "scan4.h"
 #include "scan4_ortho.h"
+#include "auto_approach.h"
 
 #define UART_ECHO(ack_char)	uart_set_char(ack_char)
 
@@ -49,6 +50,7 @@ tyVctHndlr	  MTR				= (tyVctHndlr)stpr_handler;
 #endif
 
 tyVctHndlr	  WIRE3			= (tyVctHndlr)wire3_handler;
+tyVctHndlr	  AAPPR			= (tyVctHndlr)auto_approach_count;
 
 #ifdef configSYS_DDS_AD5932						
 extern int dds_inc_cnt;
@@ -95,7 +97,7 @@ int main(void)
 	/* initialize all relevant modules */
    	sys_init ();
 	
-	UART_ECHO(0xFF);
+	UART_ECHO('\n');
 	UART_ECHO('a');
 	UART_ECHO('f');
 	UART_ECHO('m');
@@ -368,6 +370,12 @@ int main(void)
 				stpr_exit_cont();
 				break;
 #endif // configMOTOR_STEPPER_DRV8834
+			case 0x9a:
+				auto_approach_begin();
+			break;
+			case 0x9c:
+				auto_approach_get_info();
+			break;
 			default:
 				// No valid message received. Return the AFM_MSG_CMD_NOT_FOUND
 				if(msg_id_char != '\0'){ //Except newline or empty msg
@@ -507,6 +515,15 @@ static void sys_init ()
 
 	/* Disable filter and PID */
 	pid_enable(false);
+	
+	// Initialize Timer1 for pid and auto approach use
+	T1LD = MS_TO_CLK(1);
+	// Periodic mode, core clock
+	T1CON = BIT6 + BIT9;
+	// Enable Timer1 fast interrupt
+	FIQEN |= BIT3;
+	// Start clock
+	T1CON |= BIT7;
 }
 
 #define FC_INITIAL_Z	2500
@@ -1156,9 +1173,14 @@ void FIQ_Handler(void) __irq
 
 	FIQSTATUS = FIQSTA;
 
-	if ((FIQSTATUS & BIT3) == BIT3) // Timer1 interrupt source - PID
+	if ((FIQSTATUS & BIT3) == BIT3) // Timer1 interrupt source - PID and Auto Approach.
+		//Timer1 is invoked every ms, making it universally available for others to use.
 	{
-		PID();
+		if(isPidOn){
+			PID();
+		}
+		//add a check for aappr 
+		AAPPR();
 		T1CLRI = 0x55;				// Clear interrupt, reload T1LD
 	}
 

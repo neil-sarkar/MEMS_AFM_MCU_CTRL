@@ -1,7 +1,10 @@
 #include "auto_approach.h"
+#include "../system/stpr_DRV8834.h"
 
 // Default number of ticks for approach timer 
 #define TMR_DFLT  5000
+
+#define UART_ECHO(ack_char)	uart_set_char(ack_char)
 
 /*
 	A generic, motor-independent, auto approach alogirthm 
@@ -13,234 +16,193 @@ struct auto_approach
 	u16 setpoint;
 	u16 measurement_init;
 	u16 measurement;
-	
-
-/* Auto Approach Feature */
-QTimer *task1_timer;   //For auto approach
-
-bool autoapproach_abort = false;
-
-
-
-int autoapproach_fault_count = 0;
+	u16 timer_count;
 };
 
 struct auto_approach aappr;
 
-void auto_approach_init (void)
+void auto_approach_begin(void)
 {
-	/* Initilize Timer 2 for the coarse approach */
-	T2LD  = TMR_DFLT;
-	T2CON = BIT6 + BIT9;						// Periodic mode, core clock
-
+	u8 msg_id_char, msg_tag_char;
+	aappr.state = 1;
+	aappr.timer_count = 0;
+	uart_wait_get_bytes((u8*)(&aappr.setpoint), 2);
+	UART_ECHO('\n');
+	
+	while(aappr.state != 0){
+		//Message processing sequence from main.c need to be duplicated here
+		//to take care of the abort signal
+		msg_tag_char = uart_get_char();
+		msg_id_char = uart_get_char();
+		// Process the incoming character
+		if (msg_tag_char == '\n'){
+			msg_tag_char = '\0';
+			msg_id_char = '\0';
+		} 
+		switch(msg_id_char){
+			case 0x9b:
+				//return the message tag
+				UART_ECHO(msg_tag_char);
+				//return message id
+				UART_ECHO(0x9b);
+				aappr.state=0;
+				UART_ECHO('\n');
+			break;
+			case 0x9c:
+				//return the message tag
+				UART_ECHO(msg_tag_char);
+				//return message id
+				UART_ECHO(0x9c);
+				auto_approach_get_info();
+				UART_ECHO('\n');
+			break;
+		}
+		auto_approach_state_machine();
+	}
 }
 
-void auto_approach_start(void)
+void auto_approach_count(void)
 {
-		/*
-	u8 val_l, val_h;
-
-	val_l = uart_wait_get_char();
-	val_h = uart_wait_get_char();
-		*/
-	//Init Timers
-	
-	
-	aappr.state = 1;
-	uart_wait_get_bytes((u8*)(&aappr.setpoint), 2);
-							// Enable Timer2 fast interrupt
+	aappr.timer_count++;
 }
 
 void auto_approach_get_info(void){
-	
-	
+	uart_write_char(aappr.state);
+	uart_write_char((aappr.measurement));
+	uart_write_char(((aappr.measurement >> 8)));
 }
+
+
+/**
+The general 1-ms timer, timer1, will call this function every ms.
+To introduce a delay, simply count up on the aappr.timer_count variable until
+desired ms is reached. 
+*/
 
 void auto_approach_state_machine(){
 	switch(aappr.state) {
-    case 0: //Disabled state
-				// Stop timer
-				stpr_exit_cont();
-				stpr_sleep();
+    case 0: //Disabled state or Aborted state... safe shutdown
+			stpr_exit_cont();
+      stpr_sleep();
+			aappr.state = 0;
+				//Do nothing
         break;
     case 1: //Wake up and intialization.
+				//Clear the vars
+				aappr.measurement = 0;
+				aappr.measurement_init = 0;
+				aappr.timer_count = 0;
         //Turn OFF PID
 				pid_enable(false);
         //Stop and sleep the motor
-        stpr_exit_cont();
-				stpr_sleep();
+        //stpr_exit_cont();
+				//stpr_sleep();
         //Now wake it up
 				stpr_wake();
 				stpr_set_dir('f'); //Forward is down...
-				stpr_set_speed(0xbc66);	//Very fast
-				stpr_set_step(0x01);
+				stpr_set_speed(0x66BC);	//Very fast
+				stpr_set_step(STEP_FULL);
+		    stpr_cont(); //Back-up a bit
         aappr.state++;
 				//callback required here
+				aappr.timer_count = 0;
         break;
-    case 2: //Back-up a bit
-        stpr_cont();
-				
-        aappr.state++;
-				//200 millseconds later...
-        QTimer::singleShot(200, this, SLOT(autoApproach_state_machine()));
+    case 2: 
+				//200 millseconds of moving down...
+				if(aappr.timer_count<200){
+					//do nothing
+				} else {
+					aappr.state++;
+				}
         break;
     case 3: //Get initial measurement
+				//Stop, switch direction, slow down a bit
         stpr_exit_cont();
+				stpr_set_dir('b'); 
+				stpr_set_speed(0x647D);	//A bit slower..
         //Measure Signal... ADC_ZOFFSET
         //Clear existing first
-        aappr.measurement_init = -1;
+        aappr.measurement_init = 0;
         //Read the ADC #5
-				// Read ADC
+				// Read ADC, save measurement_init and proceed.
 				adc_start_conv(0x05);
-				aappr.measurement_init = adc_get_val();
+				aappr.measurement_init = adc_get_val(); 
         aappr.state++;
-        QTimer::singleShot(600, this, SLOT(autoApproach_state_machine()));
+				aappr.timer_count = 0;
+				break;
+		case 4: //Hold for 600msec
+				if(aappr.timer_count<600){
+					//do nothing
+				} else {
+					aappr.state++;
+				}
         break;
-    case 4: //Continuous ON
+    case 5: //High-speed operation
 				//Get data from ADC
 				adc_start_conv(0x05);
-				aappr.measurement = adc_get_val(); //adc_get_val() apparantely has race condition... maybe we shouldn't have it here?
-		//Like, it could die...
+				aappr.measurement = adc_get_val(); //adc_get_val() apparantely has race condition... to fix
         // The callback for readADC ADCZOFFSET should update autoappr_measurement
-            if(aappr.measurement <= aappr.setpoint) {
-                //Make sure that setpoint is OK.
-                aappr.state = 8;
-                QTimer::singleShot(1, this, SLOT(autoApproach_state_machine()));
-                break;
-            } else {
-                //if signal received then save measurement_init and proceed.
-                // VERY IMPORTANT We also double check that the target is less than 95% of the init to begin with.
-                // If it is more than 95%, then we should skip straight to state 6.
-                if(aappr.setpoint <= (0.95*aappr.measurement_init)) {
-                    commandQueue.push(new commandNode(stepMotContGo));
-                    autoapproach_state++;
-                    task1_timer->start(20);
-                } else {
-                    autoapproach_state = 6;
-                    QTimer::singleShot(1, this, SLOT(autoApproach_state_machine()));
-                }
-            }
+				if(aappr.measurement <= aappr.setpoint) {
+						//Make sure that setpoint is OK.
+						aappr.state = 9;
+						break;
+				} else {
+						// VERY IMPORTANT We also double check that the target is less than 95% of the init to begin with.
+						// If it is more than 95%, then we should skip straight to state 6.
+						if(aappr.setpoint <= (0.90*aappr.measurement_init)) {
+								stpr_cont();
+								aappr.state++;
+								aappr.timer_count = 0;
+						} else {
+								aappr.state = 6;
+						}
+				}
         break;
-    case 5: //Abort available here.
-        // Get measured signal. If measured signal expected has not been received, then uhhh
+    case 6: //High speed up, Abort available here.
+        // Get measured signal. 
         // If measured signal is less than whatever, do whatever
-        // if not yet at .95 init, etc...)
-
+        // if not yet at .95 init, etc...
         // Actual logic
-        // First check measurement validity
-        if (aappr.measurement == -1 && autoapproach_fault_count < MAX_AUTOAPPR_FAULT_COUNT) {
-            qDebug() << "autoappr_measurement has not been updated yet!";
-            autoapproach_fault_count++;
-        } else if (autoapproach_fault_count >= MAX_AUTOAPPR_FAULT_COUNT) {
-            autoapproach_state = 0;
-            qDebug() << "AutoAppr automatic abort. autoappr_measurement=" << autoappr_measurement << " autoapproach_fault_count="<<autoapproach_fault_count;
-            break;
-        } else {
-            autoapproach_fault_count = 0;
-        }
         // Now check measurement against target value.
-        if((autoappr_measurement <= (0.95*autoappr_measurement_init)) && autoappr_measurement > 0) {
-            task1_timer->stop();
-            autoapproach_state++;
-            QTimer::singleShot(1, this, SLOT(autoApproach_state_machine()));
-        } else if (autoappr_measurement != -1) {
-            //Continue running the motor
-            //Measure Signal... from ADC_ZOFFSET
-            //task1_timer will keep calling the state machine
-            commandQueue.push(new commandNode(readADC, (qint8)ADC_ZOFFSET));
-        }
-        // Reset measurement var
-        autoappr_measurement = -1;
-        break;
-    case 6: //Reduce speed
-        ui->progbar_autoappr->setValue(6);
-        commandQueue.push(new commandNode(stepMotSetMicrostep, (qint8)3));
-        commandQueue.push(new commandNode(stepMotSetSpeed, (double)20000));
-        commandQueue.push(new commandNode(readADC, (qint8)ADC_ZOFFSET));
-        commandQueue.push(new commandNode(stepMotContGo));
-        autoapproach_state++;
-        task1_timer->start(20);
-    case 7://Abort available here.
-        ui->progbar_autoappr->setValue(7);
-        // Update display
-        if(autoappr_measurement > 0) {
-            QString s = QString::number(autoappr_measurement);
-            ui->label_autoappr_meas->setText(s);
-        }
-        //Loop like state #5
-        // First check measurement validity
-        if (autoappr_measurement == -1 && autoapproach_fault_count < MAX_AUTOAPPR_FAULT_COUNT) {
-            qDebug() << "autoappr_measurement has not been updated yet!";
-            autoapproach_fault_count++;
-        } else if (autoapproach_fault_count >= MAX_AUTOAPPR_FAULT_COUNT) {
-            autoapproach_state = 0;
-            qDebug() << "AutoAppr automatic abort. autoappr_measurement=" << autoappr_measurement << " autoapproach_fault_count="<<autoapproach_fault_count;
-            break;
+        if((aappr.measurement <= (0.95*aappr.measurement_init)) && aappr.measurement > 0) {
+            aappr.state++;
+            aappr.timer_count = 0;
         } else {
-            autoapproach_fault_count = 0;
-        }
-        // Check if measurement is at setpoint autoappr_setpoint
-        if((autoappr_measurement <= autoappr_setpoint) && autoappr_measurement > 0) {
-            task1_timer->stop();
-            autoapproach_state++;
-            QTimer::singleShot(1, this, SLOT(autoApproach_state_machine()));
-        } else if (autoappr_measurement != -1) {
             //Continue running the motor
             //Measure Signal... from ADC_ZOFFSET
             //task1_timer will keep calling the state machine
-            commandQueue.push(new commandNode(readADC, (qint8)ADC_ZOFFSET));
+            adc_start_conv(0x05);
+						aappr.measurement = adc_get_val();
         }
-        autoappr_measurement = -1;
         break;
-    case 8:
-        ui->progbar_autoappr->setValue(8);
-        commandQueue.push(new commandNode(stepMotContStop));
-        commandQueue.push(new commandNode(stepMotSetState, qint8(MOT_SLEEP)));
-        //UPDATE UI
+    case 7: //Reduce speed
+				stpr_set_step(STEP_8);
+				stpr_set_speed(0x4e20); //equivalent to 20000
+				adc_start_conv(0x05);
+				aappr.measurement = adc_get_val();
+        stpr_cont();
+        aappr.state++;
+    case 8://Abort available here.
+        //Loop like state #5
+        // Check if measurement is at setpoint autoappr_setpoint
+        if((aappr.measurement <= aappr.setpoint) && aappr.measurement > 0) {
+            stpr_exit_cont();
+            aappr.state++;
+        } else {
+            //Continue running the motor
+            //Measure Signal... from ADC_ZOFFSET
+            adc_start_conv(0x05);
+						aappr.measurement = adc_get_val();
+        }
+        break;
+    case 9: 
+        stpr_exit_cont();
+        stpr_sleep();
         //Turn on PID
-        commandQueue.push(new commandNode(pidEnable));
+        pid_enable(true);
         //Clean Up
-        autoapproach_state = 0;
-        QTimer::singleShot(1, this, SLOT(autoApproach_state_machine()));
+        aappr.state = 10;
         break;
+	}
 }
 
-
-
-
-if (rx_fifo.rx == RESET_INITIATOR_CHAR && rst_state == NO_RESET) 	
-															{ 																																
-																rst_state = LAYER1; 																						
-															}																																	
-															else if (rst_state != NO_RESET)																		
-															{																																	
-																switch (rst_state)																							
-																{																																
-																	case LAYER1:																									
-																		if (rx_fifo.rx == LAYER1_RESET_CHAR)												
-																			rst_state = LAYER2;																				
-																		else																												
-																			rst_state = NO_RESET;																			
-																		break;																											
-																	case LAYER2:																									
-																		if (rx_fifo.rx == LAYER2_RESET_CHAR)												
-																			rst_state = LAYER3;																				
-																		else																												
-																			rst_state = NO_RESET;																			
-																		break;																											
-																	case LAYER3:																									
-																		if (rx_fifo.rx == LAYER3_RESET_CHAR)												
-																			rst_state = LAYER4;																				
-																		else																												
-																			rst_state = NO_RESET;																			
-																		break;																											
-																	case LAYER4:																									
-																		rst_state = NO_RESET;																				
-																		if (rx_fifo.rx == LAYER4_RESET_CHAR)												
-																			RSTSTA |= BIT2;																						
-																		break;																											
-																	default:																											
-																		rst_state = NO_RESET;																				
-																		break;																											
-																}																																
-															}																		

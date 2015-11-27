@@ -21,8 +21,6 @@ volatile float  kp = 1.6,
 				ki = 0, 
 				kd = 0;
 
-u8 isPidOn;
-
 // Sample time is in ms for now (could be changed to us)
 u16 sampleTime = 1;
 
@@ -34,9 +32,6 @@ static volatile bool pid_update_flag = false;
 bool inAuto = false;
 
 u8 isPidOn;
-
-#define MICROSEC_CLK 41780
-#define MS_TO_CLK(X) (X * MICROSEC_CLK)
 
 void pid_set_p (float param)
 {
@@ -69,21 +64,12 @@ void pid_enable(bool enable)
 {
 	if (enable)
 	{
-		// Initialize Timer1 for pid
-		T1LD = MS_TO_CLK(sampleTime);
-		// Periodic mode, core clock
-		T1CON = BIT6 + BIT9;
-		// Enable Timer1 fast interrupt
-		FIQEN |= BIT3;
-		// Start clock
-		T1CON |= BIT7;
-
 		outMax = dac_get_limit (PID_OUTPUT);
 		isPidOn = 1;
 	}
 	else
 	{
-		T1CON &= ~BIT7;
+		//T1CON &= ~BIT7;
 		isPidOn = 0;
 	}
 }

@@ -66,7 +66,7 @@ extern int sweep_in_progress;
 
 void Init_Timers( void )
 {
-    freqVal = 5.0; //Frequency of the sine wave in kHz
+    freqVal = 3.0; //Frequency of the sine wave in kHz
     sweep_in_progress = 0;
     
 	// set up timer 2 to interrupt at at a rate of 16 points per full
@@ -88,10 +88,10 @@ void Init_Timers( void )
 	// delay turning the output timer on until the main loop
 	T2CONbits.TON = 0;
     
-    // Set up TMR4 for interrupting the frequency sweep increment
+    // Set up TMR4 for interrupting our ms counter
     T4CON = 0;
-    T4CONbits.TCKPS = 0x2;  //Prescaler to 256
-	PR4 = 65500; //Something like 400ms?
+    T4CONbits.TCKPS = 0x0;  //Prescaler to 0
+	PR4 = 40000-1; //One tick each 1ms
 	TMR4 = 0;
     IFS1bits.T4IF = 0; // Clear Timer4 Interrupt Flag
     IEC1bits.T4IE = 1; // Enable Timer4 interrupt

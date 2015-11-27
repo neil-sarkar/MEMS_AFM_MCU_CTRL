@@ -340,8 +340,6 @@ bool is_received(void)
 							
 static s16 set_char (s16 ch)
 {
-	u8 chchchoo; //Debug only
-
 	if (ch == '\n')  
 	{
 		while(!(0x020==(COMSTA0 & 0x020))) {};
@@ -350,8 +348,6 @@ static s16 set_char (s16 ch)
 	}
     
 	while(!(0x020==(COMSTA0 & 0x020))) {};
-		
-	chchchoo = ch; //For debugging only
  
  	return (COMTX = ch);
 }

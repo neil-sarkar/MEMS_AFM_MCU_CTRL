@@ -39,6 +39,9 @@
 #define BIT30  0x40000000u
 #define BIT31  0x80000000u
 
+#define MICROSEC_CLK 41780
+#define MS_TO_CLK(X) (X * MICROSEC_CLK)
+
 //Message Definitions
 /* AUTOGENERATION CANDIDATE */
 #define AFM_CMD_NOTFOUND  0xF1u

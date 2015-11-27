@@ -67,6 +67,7 @@ volatile unsigned int _outVal;
 
 extern float freqVal;
 extern int sweep_in_progress;
+extern int t4_ms_counter;
 
 ///////////////////////////////////////////////////////////////////
 ///
@@ -100,21 +101,6 @@ void __attribute__((__interrupt__,no_auto_psv)) _T2Interrupt( void )
 void __attribute__((__interrupt__,no_auto_psv)) _T4Interrupt( void )
 {
 	/* Interrupt Service Routine code goes here */
-    if(sweep_in_progress == 1){         
-    if(freqVal > 25){
-               sweep_in_progress = 0;
-               freqVal = 3.0;
-            } else {
-                freqVal = freqVal + 0.01;
-                T2CONbits.TON = 0;
-                PR2 = (double)(40000 / (double)(16 * freqVal)) - 1;
-                TMR2 = 0;
-                T2CONbits.TON = 1;
-                T3CONbits.TON = 0;
-                PR3 = (double)(40000 / (double)(16 * freqVal))*4 - 1; //4 Sample points per full wave
-                TMR3 = 0;
-                T3CONbits.TON = 1;
-            }
-    }
+    t4_ms_counter++;
     IFS1bits.T4IF = 0; // Clear Timer4 Interrupt Flag
 }

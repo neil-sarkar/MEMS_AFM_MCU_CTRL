@@ -104,6 +104,7 @@ void filterInit(void) {
 // Frequency Sweep Globals
 float freqVal;
 int sweep_in_progress;
+int t4_ms_counter;
 
 ///////////////////////////////////////////////////////////////////
 ///
@@ -187,8 +188,9 @@ int main(void) {
     T2CONbits.TON = 1;
     T3CONbits.TON = 1;
     T4CONbits.TON = 1;
-    
+
     sweep_in_progress = false;
+    t4_ms_counter = 0;
 
     while (1) {
         // wait for the next block of processed data SampleReady set in DMA ISR
@@ -198,17 +200,45 @@ int main(void) {
 
         // handle sync change
         //RIC- no idea what this does?
-//        if (BUTTON4 == 0) {
-//            TMR5++;
-//            while (BUTTON4 == 0);
-//        }
+        //        if (BUTTON4 == 0) {
+        //            TMR5++;
+        //            while (BUTTON4 == 0);
+        //        }
 
         // Change frequency when BUTTON3 is pressed
         if (BUTTON4 == 0) {
             // Start sweeping
-            sweep_in_progress = 1;
-            freqVal = 3.0;
+            //  sweep_in_progress = 1;
+            //  freqVal = 3.0;
+
+            t4_ms_counter = 0;
+            //temp
+            T2CONbits.TON = 0;
+            PR2 = (double) (40000 / (double) (16 * freqVal)) - 1;
+            TMR2 = 0;
+            T2CONbits.TON = 1;
+            T3CONbits.TON = 0;
+            PR3 = (double) (40000 / (double) (16 * freqVal))*4 - 1; //4 Sample points per full wave
+            TMR3 = 0;
+            T3CONbits.TON = 1;
+            freqVal = freqVal + 1;
             while (BUTTON4 == 0);
+        }
+        if (sweep_in_progress == 1 && t4_ms_counter > 2600) {
+            t4_ms_counter = 0;
+            if (freqVal > 25) {
+                sweep_in_progress = 0;
+            } else {
+                T2CONbits.TON = 0;
+                PR2 = (double) (40000 / (double) (16 * freqVal)) - 1;
+                TMR2 = 0;
+                T2CONbits.TON = 1;
+                T3CONbits.TON = 0;
+                PR3 = (double) (40000 / (double) (16 * freqVal))*4 - 1; //4 Sample points per full wave
+                TMR3 = 0;
+                T3CONbits.TON = 1;
+                freqVal = freqVal + 1;
+            }
         }
 
         // copy sample values across to local storage so they do not
