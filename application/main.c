@@ -98,6 +98,7 @@ int main(void)
    	sys_init ();
 	
 	UART_ECHO('\n');
+	UART_ECHO(0xF2);
 	UART_ECHO('a');
 	UART_ECHO('f');
 	UART_ECHO('m');
@@ -371,8 +372,14 @@ int main(void)
 				break;
 #endif // configMOTOR_STEPPER_DRV8834
 			case 0x9a:
+				UART_ECHO('\n');
 				auto_approach_begin();
-			break;
+				stpr_exit_cont();
+				UART_ECHO('\n');
+				break;
+			case 0x9b: //placeholder. prevents the sending of AFM_MSG_CMD_NOT_FOUND
+				stpr_exit_cont();
+				break;
 			case 0x9c:
 				auto_approach_get_info();
 			break;
@@ -392,24 +399,6 @@ int main(void)
 		UART_ECHO('\n');
 	}
 	
-}
-
-// Temporary Testing Fcn
-void pingpong(){
-	u8 pga;
-	u8 db;
-
-	// Get pga and pga's db to set
-	pga = uart_wait_get_char();
-	db = uart_wait_get_char();
-
-		switch (pga)
-	{
-	}
-
-	uart_write ("o");
-	uart_write (&pga);
-	uart_write (&db);
 }
 
 /**********************************
@@ -542,13 +531,13 @@ void force_curve (void)
 	{
 		dac_set_val(DAC_ZOFFSET_FINE, dac_val);
 
-	   	adc_start_conv(ADC_ZAMP);
+	  adc_start_conv(ADC_ZAMP);
 		adc_val = adc_get_avgw_val(FC_AVG_CNT, 300);
 
 		uart_write_char(adc_val);
 		uart_write_char((adc_val & 0x0F00) >> 8);
 
-	   	adc_start_conv(ADC_PHASE);
+	  adc_start_conv(ADC_PHASE);
 		adc_val = adc_get_avgw_val(FC_AVG_CNT, 300);
 
 		uart_write_char(adc_val);
