@@ -3,6 +3,7 @@
 
 // Default number of ticks for approach timer 
 #define TMR_DFLT  5000
+#define FAST_SLOW_PERCENT 0.92
 
 #define UART_ECHO(ack_char)	uart_set_char(ack_char)
 
@@ -48,8 +49,6 @@ void auto_approach_begin(void)
 	UART_ECHO('\n');
 	
 	while(aappr.state != DISABLED){
-		// Run the actual state machine
-		auto_approach_state_machine();
 		//Give 1ms to process any incoming UART
 		timer_timestamp_1 = aappr.timer_count;
 		while(aappr.timer_count - timer_timestamp_1 <= 1){
@@ -57,6 +56,8 @@ void auto_approach_begin(void)
 				return;
 			}
 		}
+		// Run the actual state machine (must be after the incoming UART for STOP command to work)
+		auto_approach_state_machine();
 		// Every 300ms we send a status update
 		if((aappr.state == FAST_APPR || aappr.state == SLOW_APPR) && (abs(aappr.timer_count - timer_timestamp_2) > 200)){
 			timer_timestamp_2 = aappr.timer_count;
@@ -165,7 +166,7 @@ void auto_approach_state_machine(){
 				//Stop, switch direction, slow down a bit
         stpr_exit_cont();
 				stpr_set_dir('b'); 
-				stpr_set_speed(0x647D);	//A bit slower..
+				stpr_set_speed(0x64BC);	//A bit slower..
         //Measure Signal... ADC_ZOFFSET
         //Clear existing first
         aappr.measurement_init = 0;
@@ -193,9 +194,9 @@ void auto_approach_state_machine(){
 						aappr.state = SETPOINT_REACHED;
 						break;
 				} else {
-						// VERY IMPORTANT We also double check that the target is less than 95% of the init to begin with.
-						// If it is more than 94%, then we should skip straight to state 6.
-						if(aappr.setpoint <= (0.94*aappr.measurement_init)) {
+						// VERY IMPORTANT We also double check that the target is less than FAST_SLOW_PERCENT% of the init to begin with.
+						// If it is more than FAST_SLOW_PERCENT%, then we should skip straight to state 6.
+						if(aappr.setpoint <= (FAST_SLOW_PERCENT*aappr.measurement_init)) {
 								stpr_cont();
 								auto_approach_send_info();
 								aappr.state++;
@@ -211,10 +212,10 @@ void auto_approach_state_machine(){
         // Get measured signal. 
 				auto_approach_measure();
         // If measured signal is less than whatever, do whatever
-        // if not yet at .940 init, etc...
+        // if not yet at FAST_SLOW_PERCENT * init, etc...
         // Actual logic
         // Now check measurement against target value.
-        if(aappr.measurement <= (0.94*aappr.measurement_init)) {
+        if(aappr.measurement <= (FAST_SLOW_PERCENT*aappr.measurement_init)) {
 						auto_approach_send_info();
             aappr.state++;
         } 
