@@ -106,6 +106,79 @@ float freqVal;
 int sweep_in_progress;
 int t4_ms_counter;
 
+
+///////////////////////////////////////////////////////////////////
+///
+/// The function to change frequency of sine wave generated
+///
+///////////////////////////////////////////////////////////////////
+
+void changeFreq() {
+    unsigned int i;
+    unsigned int outVal;
+    long accumulatedDC;
+    
+    Init_ADC();
+    /*
+    // turn on ADC modules
+	AD1CON1bits.ADON = 0;   
+	// turn on DMA module
+	DMA0CONbits.CHEN = 0; 
+    // clear the status register
+	DMACS0 = 0;	
+    // enable DMA interrupts
+	IFS0bits.DMA0IF = 0;
+	IEC0bits.DMA0IE = 1;
+    // turn on ADC modules
+	AD1CON1bits.ADON = 1;   
+	// turn on DMA module
+	DMA0CONbits.CHEN = 1;
+    */
+
+
+    T2CONbits.TON = 0;
+    PR2 = (double) (40000 / (double) (16 * freqVal)) - 1;
+    TMR2 = 0;
+    T3CONbits.TON = 0;
+    PR3 = (double) (40000 / (double) (16 * freqVal))*4 - 1; //4 Sample points per full wave
+    TMR3 = 0;
+    IFS0bits.T3IF = 0; 
+    
+   // while (BUTTON4 == 0);
+    
+    // perform an initial sample set to get the DC offset without the
+    // T2 ISR running
+    Delay(Delay_15mS_Cnt);
+    outVal = LATG & 0x0FFF;
+    LATG = (63 << 10) | outVal;
+    SampleOffset = 0;
+    TMR3 = 0;
+    T3CONbits.TON = 1;
+    Delay(Delay_15mS_Cnt);
+    DCOffset = 0;
+    SampleOffset = 1;
+    accumulatedDC = 0;
+    for (i = 0; i < 16; i++) {
+        SampleReady = 0;
+        while (SampleReady == 0);
+        accumulatedDC += DCCurrentReading;
+    }
+    SampleOffset = 0;
+    T3CONbits.TON = 0;
+    DCOffset = (fractional) (accumulatedDC / 16);
+    DCOffset /= 2; // because we are outputting the full signal
+    DCOffset = -DCOffset;
+    
+    //Turn both on as closely as possible
+    TMR2 = 0;
+    TMR3 = 0;
+    T2CONbits.TON = 1;
+    T3CONbits.TON = 1;
+    t4_ms_counter = 0;
+    
+    return;
+}
+
 ///////////////////////////////////////////////////////////////////
 ///
 /// The main function.
@@ -193,6 +266,27 @@ int main(void) {
     t4_ms_counter = 0;
 
     while (1) {
+        // Change frequency when BUTTON4 is pressed
+        if (BUTTON4 == 0) {
+            // Start sweeping
+            sweep_in_progress = 1;
+            freqVal = 3.0;
+            
+            while (BUTTON4 == 0);
+            changeFreq();
+           // freqVal = freqVal + 1;
+        }
+
+        if (sweep_in_progress == 1 && t4_ms_counter > 2000) {
+            t4_ms_counter = 0;
+            if (freqVal > 25) {
+                sweep_in_progress = 0;
+            } else {
+                changeFreq();
+                freqVal = freqVal + 1;
+            }
+        }
+
         // wait for the next block of processed data SampleReady set in DMA ISR
         // synchronise with DMA routine to ensure clean data
         SampleReady = 0;
@@ -204,42 +298,6 @@ int main(void) {
         //            TMR5++;
         //            while (BUTTON4 == 0);
         //        }
-
-        // Change frequency when BUTTON3 is pressed
-        if (BUTTON4 == 0) {
-            // Start sweeping
-            //  sweep_in_progress = 1;
-            //  freqVal = 3.0;
-
-            t4_ms_counter = 0;
-            //temp
-            T2CONbits.TON = 0;
-            PR2 = (double) (40000 / (double) (16 * freqVal)) - 1;
-            TMR2 = 0;
-            T2CONbits.TON = 1;
-            T3CONbits.TON = 0;
-            PR3 = (double) (40000 / (double) (16 * freqVal))*4 - 1; //4 Sample points per full wave
-            TMR3 = 0;
-            T3CONbits.TON = 1;
-            freqVal = freqVal + 1;
-            while (BUTTON4 == 0);
-        }
-        if (sweep_in_progress == 1 && t4_ms_counter > 2600) {
-            t4_ms_counter = 0;
-            if (freqVal > 25) {
-                sweep_in_progress = 0;
-            } else {
-                T2CONbits.TON = 0;
-                PR2 = (double) (40000 / (double) (16 * freqVal)) - 1;
-                TMR2 = 0;
-                T2CONbits.TON = 1;
-                T3CONbits.TON = 0;
-                PR3 = (double) (40000 / (double) (16 * freqVal))*4 - 1; //4 Sample points per full wave
-                TMR3 = 0;
-                T3CONbits.TON = 1;
-                freqVal = freqVal + 1;
-            }
-        }
 
         // copy sample values across to local storage so they do not
         // get corrupted by the ISRs if we take a while processing them here	
@@ -278,8 +336,8 @@ int main(void) {
                 puts_lcd(sBuff, strlen(sBuff));
 #endif
 
-                sprintf(sBuff, "%8.4f, %8.4f\r", mag, phi);
-                sprintf(sBuff, "%8.4f, %8.4f\r", mag, phi);
+              //  sprintf(sBuff, "%8.4f, %8.4f\r", mag, phi);
+                sprintf(sBuff, "%8.4f, %8.4f, %8.4f\r", mag, phi, freqVal);
                 RS232XMT(sBuff);
                 if (BUTTON1 == 0)
                     stateDisplay = DISPLAY_DEFAULT;

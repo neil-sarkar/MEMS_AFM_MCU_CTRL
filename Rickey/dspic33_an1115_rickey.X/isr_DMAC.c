@@ -124,6 +124,7 @@ void __attribute__((__interrupt__,no_auto_psv)) _DMA0Interrupt( void )
 
 	// low pass and decimate by 8 giving sample rate of 625Hz
 	// and 2 output samples per channel
+    
 	fTI[0] = foldedFIR(8, (fractional*) &fTI[0], &fir5300FilterI);
 	fTI[1] = foldedFIR(8, (fractional*) &fTI[8], &fir5300FilterI);
 	fTQ[0] = foldedFIR(8, (fractional*) &fTQ[0], &fir5300FilterQ);

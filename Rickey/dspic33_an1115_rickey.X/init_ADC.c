@@ -87,7 +87,7 @@ void Init_ADC( void )
 	AD1CSSL = 0x0000;  
 	AD1CHS0 = 0x0008;
 	
-	// allocate 0 words of buffer for each ADC channel
+	// allocate 1 word of buffer for each ADC channel
 	AD1CON4bits.DMABL = 0b000;
 	
 	// clear the status register

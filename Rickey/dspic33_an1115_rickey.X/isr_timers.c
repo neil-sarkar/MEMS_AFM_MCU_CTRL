@@ -49,7 +49,7 @@
 /// \file isr_timers.c
 
 #include <p33Fxxxx.h>
-#include  <stdbool.h>
+#include <stdbool.h>
 #include "common.h"
 
 /// 16 point table describing the reference signal 
