@@ -50,6 +50,10 @@
 
 #include <p33Fxxxx.h>
 #include "common.h"
+#include <float.h>
+
+// Frequency Sweep Globals
+extern unsigned long t2;
 
 ///////////////////////////////////////////////////////////////////
 ///
@@ -59,29 +63,23 @@
 /// and will be used to generate the 25kHz output waveform. TMR 3 is
 /// set to generate a 100kHz interrupt used for the ADC start conversion
 ///////////////////////////////////////////////////////////////////
-
-// Frequency Sweep Globals
-extern float freqVal;
-extern int sweep_in_progress;
-
 void Init_Timers( void )
 {
-    freqVal = 3.0; //Frequency of the sine wave in kHz
-    sweep_in_progress = 0;
-    
+    t2 = 3000;
+            
 	// set up timer 2 to interrupt at at a rate of 16 points per full
 	// wave at 25kHz (this equals an interrupt rate of 400kHz)
 	T2CON = 0;
 	IFS0bits.T2IF = 0;
 	IPC1bits.T2IP = 5;
-	PR2 = (40000/(16*freqVal))-1;
+	PR2 = ((unsigned long)(2500000/t2)-1); //N.B. this is a simplified expression
 	TMR2 = 0;
 	IEC0bits.T2IE = 1;
 	
 	// set up TMR3 to generate signals for the ADC convert
 	// every 400 cycles or 100kHz
 	T3CON = 0;
-	PR3 = (40000/(16*freqVal))*4-1; //4 Sample points per full wave
+	PR3 = (unsigned long)(2500000/t2)*4-1; //N.B. this is a simplified expression
 	TMR3 = 0;
 	IFS0bits.T3IF = 0;
 	
@@ -95,5 +93,4 @@ void Init_Timers( void )
 	TMR4 = 0;
     IFS1bits.T4IF = 0; // Clear Timer4 Interrupt Flag
     IEC1bits.T4IE = 1; // Enable Timer4 interrupt
-  
 }

@@ -49,8 +49,10 @@
 /// \file isr_timers.c
 
 #include <p33Fxxxx.h>
-#include <stdbool.h>
 #include "common.h"
+
+extern unsigned int sweep_in_progress;
+extern unsigned int t4_ms_counter;
 
 /// 16 point table describing the reference signal 
 /// with 6 bit resolution although only 4 bits are actually used
@@ -64,10 +66,6 @@ static unsigned char sinTable[] = {
 /// static variables to reduce stack frame setup in ISR
 volatile unsigned char _sinTableIndex;
 volatile unsigned int _outVal;
-
-extern float freqVal;
-extern int sweep_in_progress;
-extern int t4_ms_counter;
 
 ///////////////////////////////////////////////////////////////////
 ///

@@ -124,7 +124,6 @@ void __attribute__((__interrupt__,no_auto_psv)) _DMA0Interrupt( void )
 
 	// low pass and decimate by 8 giving sample rate of 625Hz
 	// and 2 output samples per channel
-    
 	fTI[0] = foldedFIR(8, (fractional*) &fTI[0], &fir5300FilterI);
 	fTI[1] = foldedFIR(8, (fractional*) &fTI[8], &fir5300FilterI);
 	fTQ[0] = foldedFIR(8, (fractional*) &fTQ[0], &fir5300FilterQ);
@@ -135,8 +134,8 @@ void __attribute__((__interrupt__,no_auto_psv)) _DMA0Interrupt( void )
 	fTQ[0] = foldedFIR(2, (fractional*) &fTQ[0], &fir150FilterQ);
 
 	// very low frequency final filter with Fpass=0.001Hz and Fstop=2Hz
-	//FIR(1, (fractional*) fTI, (fractional*) &fTI[0], &fir0012FilterI);
-	//FIR(1, (fractional*) fTQ, (fractional*) &fTQ[0], &fir0012FilterQ);
+	FIR(1, (fractional*) fTI, (fractional*) &fTI[0], &fir0012FilterI);
+	FIR(1, (fractional*) fTQ, (fractional*) &fTQ[0], &fir0012FilterQ);
 	fin = fTI[0];
 	fqn = fTQ[0];
 	
