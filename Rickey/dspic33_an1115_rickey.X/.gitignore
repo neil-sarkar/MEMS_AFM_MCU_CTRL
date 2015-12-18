@@ -21,3 +21,5 @@ funclist
 nbproject/Makefile-*
 disassembly/
 *.map
+*.ignore.*
+__pycache__

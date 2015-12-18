@@ -227,21 +227,55 @@ int main ( void )
     while (1) {
          // Change frequency when BUTTON4 is pressed
         if (BUTTON4 == 0) {
+            // Prepare for sweep
+            // Measure DC offset
+            // perform an initial sample set to get the DC offset without the
+            // T2 ISR running
+            T2CONbits.TON = 0;
+            outVal = LATG & 0x0FFF;
+            LATG = (63 << 10) | outVal;
+            SampleOffset = 0;
+            TMR3 = 0;
+            T3CONbits.TON = 1;
+            Delay(Delay_15mS_Cnt);
+            DCOffset = 0;
+            SampleOffset = 1;
+            accumulatedDC = 0;
+            for(i = 0; i < 16; i++) {
+                SampleReady = 0;
+                while (SampleReady == 0);
+                accumulatedDC += DCCurrentReading;
+            }
+            SampleOffset = 0;
+            T3CONbits.TON = 0;
+            DCOffset = (fractional) (accumulatedDC / 16);
+            DCOffset /= 2;	// because we are outputting the full signal
+            DCOffset = -DCOffset;   
+            
             // Start sweeping
             sweep_in_progress = 1;
-            t2 = 3000;
+            t2 = 7500;
+            T2CONbits.TON = 1;
+            T3CONbits.TON = 1;
             
             while (BUTTON4 == 0);
             changeFreq();
-            //t2 = t2 + 500;
+//            if(t2==5000){
+//                t2 = 6660;
+//            } else if (t2==6660){
+//                t2 = 8000;
+//            } else {
+//                t2 = 5000;
+//            }
+            //t2 = t2 + 1000;
         }
-        if (sweep_in_progress == 1 && t4_ms_counter > 5000) {
+        if (sweep_in_progress == 1 && t4_ms_counter > 1000) {
             t4_ms_counter = 0;
-            if (t2 > 28000) {
+            if (t2 > 8150) {
                 sweep_in_progress = 0;
             } else {
                 changeFreq();
-                t2 = t2 + 1000;
+                t2 = t2 + 5;
             }
         }
         
@@ -293,7 +327,7 @@ int main ( void )
 			    puts_lcd(sBuff, strlen(sBuff));
 #endif
 			    
-				sprintf(sBuff, "%8.4f, %8.4f, %lu\r", mag, phi, t2);
+				sprintf(sBuff, "%8.4f, %8.4f, %lu\r", fI, fQ, t2);
 				RS232XMT(sBuff);
 				if (BUTTON1 == 0)
 					stateDisplay = DISPLAY_DEFAULT;

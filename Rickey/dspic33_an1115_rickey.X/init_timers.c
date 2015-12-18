@@ -65,7 +65,7 @@ extern unsigned long t2;
 ///////////////////////////////////////////////////////////////////
 void Init_Timers( void )
 {
-    t2 = 3000;
+    t2 = 5000;
             
 	// set up timer 2 to interrupt at at a rate of 16 points per full
 	// wave at 25kHz (this equals an interrupt rate of 400kHz)

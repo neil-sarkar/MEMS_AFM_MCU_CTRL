@@ -115,29 +115,33 @@ void __attribute__((__interrupt__,no_auto_psv)) _DMA0Interrupt( void )
 		
 	// low pass filter the data and decimate by 10 giving an
 	// effective sampling rate of 5kHz
-	for(i = 0; i < (DMA_BUFFER_SIZE / 20); i++) {
-		fTI[i] = foldedFIR(10, (fractional*) &In[i * 10],
-			&fir1500FilterI);
-		fTQ[i] = foldedFIR(10, (fractional*) &Qn[i * 10],
-			&fir1500FilterQ);		
-	}
+//	for(i = 0; i < (DMA_BUFFER_SIZE / 20); i++) {
+//		fTI[i] = foldedFIR(10, (fractional*) &In[i * 10],
+//			&fir1500FilterI);
+//		fTQ[i] = foldedFIR(10, (fractional*) &Qn[i * 10],
+//			&fir1500FilterQ);		
+//	}
 
 	// low pass and decimate by 8 giving sample rate of 625Hz
 	// and 2 output samples per channel
-	fTI[0] = foldedFIR(8, (fractional*) &fTI[0], &fir5300FilterI);
-	fTI[1] = foldedFIR(8, (fractional*) &fTI[8], &fir5300FilterI);
-	fTQ[0] = foldedFIR(8, (fractional*) &fTQ[0], &fir5300FilterQ);
-	fTQ[1] = foldedFIR(8, (fractional*) &fTQ[8], &fir5300FilterQ);
+//	fTI[0] = foldedFIR(8, (fractional*) &fTI[0], &fir5300FilterI);
+//	fTI[1] = foldedFIR(8, (fractional*) &fTI[8], &fir5300FilterI);
+//	fTQ[0] = foldedFIR(8, (fractional*) &fTQ[0], &fir5300FilterQ);
+//	fTQ[1] = foldedFIR(8, (fractional*) &fTQ[8], &fir5300FilterQ);
 	
 	// decimate once more to give an effective sample rate of 312.5Hz and 1 sample
-	fTI[0] = foldedFIR(2, (fractional*) &fTI[0], &fir150FilterI);
-	fTQ[0] = foldedFIR(2, (fractional*) &fTQ[0], &fir150FilterQ);
+//	fTI[0] = foldedFIR(2, (fractional*) &fTI[0], &fir150FilterI);
+//	fTQ[0] = foldedFIR(2, (fractional*) &fTQ[0], &fir150FilterQ);
 
 	// very low frequency final filter with Fpass=0.001Hz and Fstop=2Hz
-	FIR(1, (fractional*) fTI, (fractional*) &fTI[0], &fir0012FilterI);
-	FIR(1, (fractional*) fTQ, (fractional*) &fTQ[0], &fir0012FilterQ);
-	fin = fTI[0];
-	fqn = fTQ[0];
+//	FIR(1, (fractional*) fTI, (fractional*) &fTI[0], &fir0012FilterI);
+//	FIR(1, (fractional*) fTQ, (fractional*) &fTQ[0], &fir0012FilterQ);
+//	fin = fTI[0];
+//	fqn = fTQ[0];
+    
+    //For dumping raw I and Q values only! TESTing
+    fin = In[1 * 10];
+	fqn = Qn[1 * 10];
 	
 	SampleReady = 1;
 
