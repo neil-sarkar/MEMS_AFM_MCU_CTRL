@@ -256,7 +256,7 @@ void scan4_init (void)
 
 	s4.lvl.ch		= DAC_BFRD3;
 	//default
-	s5.lvl.dir		= 'f';
+	s4.lvl.dir		= 'f';
 
 	s4.xStepCnt 	= 0;
 	s4.lineCnt 		= 0;
