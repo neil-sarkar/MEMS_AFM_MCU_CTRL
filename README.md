@@ -1,7 +1,5 @@
 MEMS AFM MCU Control 
 ====================
-
-
 ## Timer Usage
 -Timer 1: 1ms tick for PID, 1ms tick general use (Used by Auto Approach)
 -Timer 2: Stepper Motor
