@@ -68,7 +68,7 @@ _FWDT(FWDTEN_OFF);
 const char* Version = "\rHAM GIRL\r"; 
 
 // Frequency Sweep Globals
-unsigned long t2;
+unsigned long current_freq;
 unsigned int sweep_in_progress;
 unsigned int t4_ms_counter;
 
@@ -112,17 +112,15 @@ void filterInit(void)
 
 void changeFreq() {
     unsigned int i1, i2, i3;
-    unsigned int outVal;
-    long accumulatedDC;
     
-    i2 = ((unsigned long)(2500000/t2)-1);
-    i3 = (unsigned long)(2500000/t2)*4-1;
+    i2 = ((unsigned long)(2500000/current_freq)-1);
+    i3 = (unsigned long)(2500000/current_freq)*4-1;
  
     T2CONbits.TON = 0;
-    PR2 = ((unsigned long)(2500000/t2)-1);
+    PR2 = ((unsigned long)(2500000/current_freq)-1);
     TMR2 = 0;
     T3CONbits.TON = 0;
-    PR3 = (unsigned long)(2500000/t2)*4-1;
+    PR3 = (unsigned long)(2500000/current_freq)*4-1;
     TMR3 = 0;
     IFS0bits.T3IF = 0; 
     
@@ -254,7 +252,7 @@ int main ( void )
             
             // Start sweeping
             sweep_in_progress = 1;
-            t2 = 7500;
+            current_freq = 7500;
             T2CONbits.TON = 1;
             T3CONbits.TON = 1;
             
@@ -271,11 +269,11 @@ int main ( void )
         }
         if (sweep_in_progress == 1 && t4_ms_counter > 1000) {
             t4_ms_counter = 0;
-            if (t2 > 8150) {
+            if (current_freq > 8150) {
                 sweep_in_progress = 0;
             } else {
                 changeFreq();
-                t2 = t2 + 5;
+                current_freq = current_freq + 5;
             }
         }
         
@@ -327,7 +325,7 @@ int main ( void )
 			    puts_lcd(sBuff, strlen(sBuff));
 #endif
 			    
-				sprintf(sBuff, "%8.4f, %8.4f, %lu\r", fI, fQ, t2);
+				sprintf(sBuff, "%8.4f, %8.4f, %lu\r", fI, fQ, current_freq);
 				RS232XMT(sBuff);
 				if (BUTTON1 == 0)
 					stateDisplay = DISPLAY_DEFAULT;
