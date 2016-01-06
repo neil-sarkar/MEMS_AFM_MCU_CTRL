@@ -111,7 +111,7 @@ void filterInit(void)
 ///////////////////////////////////////////////////////////////////
 
 void changeFreq() {
-    unsigned int i1, i2, i3;
+    unsigned int i2, i3;
     
     i2 = ((unsigned long)(2500000/current_freq)-1);
     i3 = (unsigned long)(2500000/current_freq)*4-1;
@@ -142,7 +142,7 @@ void changeFreq() {
 ///////////////////////////////////////////////////////////////////
 int main ( void )
 {
-	unsigned int i, j;		// temporary index
+	unsigned int i;		// temporary index
 	unsigned int outVal;
 	long accumulatedDC;
 	fractional tI, tQ;
