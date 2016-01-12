@@ -153,13 +153,12 @@ __inline static void SET_PAIRY(u16 v1, u16 v2)
 			  
 void scan4_start (void)
 {
-	s4.start 			= true;
+	s4.start 				= true;
 	s4.isXScanDirDwn 	= true;
 	s4.isLastPnt		= false;
 	s4.xStepCnt 		= 0;
-	s4.lineCnt 			= 0;
-	s4.sendBackCnt		= 8;	
-	s4.iLine			= 0;
+	s4.lineCnt 			= 0;	
+	s4.iLine				= 0;
 
 	s4.xp.a1StartVal 	= 4095;
 	s4.xp.a2StartVal 	= 0;
@@ -194,8 +193,6 @@ void scan4_step (void)
 	// this is essentially the whole scan proccess
 	for ( ; s4.lineCnt < s4.numLines; s4.lineCnt++)
 	{
-		SET_LVLING;
-
 		// scan one line back and forth
 		for ( ; s4.iLine < 2; s4.iLine++)
 		{
@@ -240,6 +237,7 @@ void scan4_step (void)
 		}
 		s4.iLine = 0;
 		SCAN_NEXT_LINE;
+		SET_LVLING;
 	}
 	// reset for the next scan
 	s4.lineCnt = 0;
@@ -262,6 +260,8 @@ void scan4_init (void)
 	s4.lineCnt 		= 0;
 	s4.dwellTime_ms = 1;
 	s4.sampleCnt 	= 16;
+	
+	s4.sendBackCnt	= 8;
 }
 
 void s4_set_dwell_t_ms (u8 dwell_ms)
@@ -315,7 +315,7 @@ bool scan4_get_dac_data (void)
 	if (flash_WriteAdr (s4.f.adr, PAGE_SIZE, (u8*)s4.f.buffer))
 		return false;
 	s4.f.adr += PAGE_SIZE;
-	
+
 	return true;	
 }
 

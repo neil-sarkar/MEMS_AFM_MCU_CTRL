@@ -148,7 +148,6 @@ void scan4_ortho_start (void)
 	s4_o.isLastPnt		= false;
 	s4_o.xStepCnt 		= 0;
 	s4_o.lineCnt 		= 0;
-	s4_o.sendBackCnt	= 8;	
 	s4_o.iLine			= 0;
 
 	s4_o.xp.a1StartVal 	= 4095;
@@ -250,7 +249,8 @@ void scan4_ortho_init (void)
 	s4_o.xStepCnt 		= 0;
 	s4_o.lineCnt 		= 0;
 	s4_o.dwellTime_ms 	= 1;
-	s4_o.sampleCnt 		= 16;
+	s4_o.sampleCnt 		= 16; 
+	s4_o.sendBackCnt = 8;
 }
 
 void s4_set_dwell_t_ms (u8 dwell_ms)
