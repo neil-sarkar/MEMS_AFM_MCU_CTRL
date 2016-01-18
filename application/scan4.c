@@ -50,7 +50,7 @@ struct scan4
 	u16		xStepCnt;
 	u16 	yRange;
 	u16 	lineCnt;
-	u8		sendBackCnt;
+	u16		sendBackCnt;
 	u8  	sampleCnt;
 	u8  	dwellTime_ms;
 	u8		iLine;
@@ -181,12 +181,12 @@ void scan4_start (void)
 
 	// this is a wait so that the actuators settle at the starting point
 	// before starting the scan
-	DELAY_MS(10);
+	DELAY_MS(50);
 }
 
 void scan4_step (void)
 {
-	u8 i;
+	u16 i;
 	s4.isLastPnt = false;
 
 	// this loop keeping track of the number of lines that need to be scanned
@@ -319,9 +319,12 @@ bool scan4_get_dac_data (void)
 	return true;	
 }
 
-void s4_set_send_back_cnt (u8 send_back_cnt)
+void s4_set_send_back_cnt ()
 {
-	s4.sendBackCnt = send_back_cnt;	
+	u8 byte_l, byte_h;
+	byte_l = uart_wait_get_char();
+	byte_h = uart_wait_get_char();
+	s4.sendBackCnt = (byte_h << 8) | byte_l;	
 }
 
 void s4_set_lvl_dir (u8 dir)
