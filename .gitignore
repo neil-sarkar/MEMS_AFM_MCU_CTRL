@@ -55,3 +55,4 @@ project/mems_mcu.plg
 *.hex
 *.uvgui.*
 *.uvguix.*
+*.uvopt
