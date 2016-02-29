@@ -75,7 +75,7 @@ static u16 prevVertPos = 0;
 static bool triggered=false;
 static u8 edgenum=0;
 static u16 trigpos[2] = {0,0};
-static u16 range;
+static u16 range=0;
 static u16 prevRange = 0;
 static u16 hysteresis = 0;
 static u16 threshold=2000;
@@ -98,7 +98,9 @@ void um_track (void)
 		um.horz.iMax = 0;
 		um.horz.iMin = 4095;
 		edgenum=0;
-		for (i = 1500; i < 4095; i += 5)
+		/*
+		
+		for (i = 1000; i < 4095; i += 5)
 		{
 			delay = UM_delay;
 			while (delay--);
@@ -138,7 +140,7 @@ void um_track (void)
 //		um.horz.max_b = 0;
 //		delay = 1000;
 //		while(delay--);
-		for (i = 4095; i > 1500; i -= 5)
+		for (i = 4095; i > 1000; i -= 5)
 		{
 			delay = UM_delay;
 			while (delay--);
@@ -183,10 +185,10 @@ void um_track (void)
 		range = um.horz.iMax - um.horz.iMin;
 		threshold = um.horz.iMin + .7*range;
 		hysteresis = range/10;
-		
-		if((range<=200)&&(exitFlag==0))		//recovery loop; sparse raster scan
+		*/
+		if((range<=350)&&(exitFlag==0))		//recovery loop; sparse raster scan
 		{
-		vertpos+=DIR*(scan_numpts/8);
+		vertpos+=DIR*(scan_numpts/32);
 		if(vertpos>(scan_numpts-1))  
 			{	
 				DIR=DIR*-1;
@@ -204,6 +206,7 @@ void um_track (void)
 	
 		dac_set_val(DAC_X1, scan_r_points[vertpos]);
 		dac_set_val(DAC_Y1, scan_l_points[vertpos]);
+		
 		}
 		else  //vertical tracking
 		{
