@@ -50,7 +50,7 @@ struct scan4
 	u16		xStepCnt;
 	u16 	yRange;
 	u16 	lineCnt;
-	u8		sendBackCnt;
+	u16		sendBackCnt;
 	u8  	sampleCnt;
 	u8  	dwellTime_ms;
 	u8		iLine;
@@ -153,13 +153,12 @@ __inline static void SET_PAIRY(u16 v1, u16 v2)
 			  
 void scan4_start (void)
 {
-	s4.start 			= true;
+	s4.start 				= true;
 	s4.isXScanDirDwn 	= true;
 	s4.isLastPnt		= false;
 	s4.xStepCnt 		= 0;
-	s4.lineCnt 			= 0;
-	s4.sendBackCnt		= 8;	
-	s4.iLine			= 0;
+	s4.lineCnt 			= 0;	
+	s4.iLine				= 0;
 
 	s4.xp.a1StartVal 	= 4095;
 	s4.xp.a2StartVal 	= 0;
@@ -182,20 +181,18 @@ void scan4_start (void)
 
 	// this is a wait so that the actuators settle at the starting point
 	// before starting the scan
-	DELAY_MS(10);
+	DELAY_MS(50);
 }
 
 void scan4_step (void)
 {
-	u8 i;
+	u16 i;
 	s4.isLastPnt = false;
 
 	// this loop keeping track of the number of lines that need to be scanned
 	// this is essentially the whole scan proccess
 	for ( ; s4.lineCnt < s4.numLines; s4.lineCnt++)
 	{
-		SET_LVLING;
-
 		// scan one line back and forth
 		for ( ; s4.iLine < 2; s4.iLine++)
 		{
@@ -240,6 +237,7 @@ void scan4_step (void)
 		}
 		s4.iLine = 0;
 		SCAN_NEXT_LINE;
+		SET_LVLING;
 	}
 	// reset for the next scan
 	s4.lineCnt = 0;
@@ -262,6 +260,8 @@ void scan4_init (void)
 	s4.lineCnt 		= 0;
 	s4.dwellTime_ms = 1;
 	s4.sampleCnt 	= 16;
+	
+	s4.sendBackCnt	= 8;
 }
 
 void s4_set_dwell_t_ms (u8 dwell_ms)
@@ -315,13 +315,16 @@ bool scan4_get_dac_data (void)
 	if (flash_WriteAdr (s4.f.adr, PAGE_SIZE, (u8*)s4.f.buffer))
 		return false;
 	s4.f.adr += PAGE_SIZE;
-	
+
 	return true;	
 }
 
-void s4_set_send_back_cnt (u8 send_back_cnt)
+void s4_set_send_back_cnt ()
 {
-	s4.sendBackCnt = send_back_cnt;	
+	u8 byte_l, byte_h;
+	byte_l = uart_wait_get_char();
+	byte_h = uart_wait_get_char();
+	s4.sendBackCnt = (byte_h << 8) | byte_l;	
 }
 
 void s4_set_lvl_dir (u8 dir)

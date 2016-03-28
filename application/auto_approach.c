@@ -68,7 +68,7 @@ void auto_approach_begin(void)
 
 bool auto_approach_serial_read(void)
 {
-	//listen for the magic 0x9b char, which means stop auto approach
+	//listen for the magic 0x9b char, which means stop/abort auto approach
 	msg_char = uart_get_char();
 
 	// Process the incoming character

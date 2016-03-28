@@ -7,7 +7,7 @@
 /* carriage return ASCII value */
 #define LF     0x0A
 #define CR     0x0D
-#define BFR_SIZE 64
+#define BFR_SIZE 128
 
 typedef enum
 {
@@ -23,6 +23,8 @@ typedef enum
 #define LAYER2_RESET_CHAR			'B'
 #define LAYER3_RESET_CHAR			'C'
 #define LAYER4_RESET_CHAR			'D'
+
+bool buffer_full = false;
 
 RST_STATES rst_state = NO_RESET;
 
@@ -139,6 +141,7 @@ void uart_handler (void){
 				/* Read COMRX to clear interrupt */
 				rx_fifo.status = (uart_status)rx_fifo.rx;
 				rx_fifo.status = UBFR_OVERFLOW;
+				buffer_full = true;
 			}
 			else
 			{	

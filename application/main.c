@@ -79,6 +79,9 @@ static void sys_init (void);
 // Delay variable for the calibration routine
 extern u8 calib_delay;
 
+// Check if buffer full
+extern bool buffer_full;
+
 int main(void)
 {
 	u8 msg_id_char, msg_tag_char;
@@ -110,7 +113,12 @@ int main(void)
 	 */
 	while (true)
 	{
-		
+		if (buffer_full) {
+			UART_ECHO('\n');
+			UART_ECHO(0xf2 );
+			UART_ECHO(0xaa);
+			UART_ECHO('\n');
+		}
 		msg_tag_char = uart_wait_get_char();
 		
 		// Process the incoming character
@@ -286,7 +294,7 @@ int main(void)
 				s4_set_sample_cnt (uart_wait_get_char());
 				break;
 			case 'Z':
-				s4_set_send_back_cnt (uart_wait_get_char());
+				s4_set_send_back_cnt ();
 				break;
 			case '(':
 				s4_set_lvl_dir (uart_wait_get_char());
@@ -554,7 +562,7 @@ void force_curve (void)
 		uart_write_char(adc_val);
 		uart_write_char((adc_val & 0x0F00) >> 8);	
 		
-	   	adc_start_conv(ADC_PHASE);
+	  adc_start_conv(ADC_PHASE);
 		adc_val = adc_get_avgw_val(FC_AVG_CNT, 300);
 
 		uart_write_char(adc_val);
@@ -597,6 +605,7 @@ void read_z (void)
 
 #define MV_TO_ABS_200	248
 #define FUDGE_FACTOR_X1	1047/0.038
+#define VOLTS_TO_OHMS 1/(0.2*200)
 
 void act_res_test (void)
 {
@@ -656,6 +665,7 @@ void act_res_test (void)
 	uart_write_char((adc_val & 0x0F00) >> 8);
 
 	// TODO: CONVERT FROM VOLTAGE TO RESISTANCE 
+	
 
 	// set actuator values to what they were originally	
 	dac_set_val(DAC_X1, x1);
