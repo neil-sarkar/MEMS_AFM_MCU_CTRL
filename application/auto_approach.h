@@ -6,6 +6,7 @@
 #include "../peripheral/flash.h"
 #include "../peripheral/dac.h"
 #include "../peripheral/adc.h"
+#include <stdlib.h>
 
 void auto_approach_begin (void);
 void auto_approach_state_machine (void);

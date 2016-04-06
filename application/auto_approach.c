@@ -1,5 +1,6 @@
 #include "auto_approach.h"
 #include "../system/stpr_DRV8834.h"
+#include "../system/pid.h"
 
 // Default number of ticks for approach timer 
 #define TMR_DFLT  5000

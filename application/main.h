@@ -3,6 +3,29 @@
 
 #include "../global/global.h"
 
+#include "../peripheral/uart.h"
+#include "../peripheral/adc.h"
+#include "../peripheral/dac.h"
+#include "../peripheral/flash.h"
+#include "../peripheral/flash.h"
+#include "../peripheral/wire3.h"
+
+#include "../system/dds_AD5932.h"
+#include "../system/pid.h"
+#include "../system/motor.h"
+#include "../system/stpr_DRV8834.h"
+
+#include "../system/pga_1ch_LM1971.h"
+#include "../system/pga_4ch_PGA4311.h"
+#include "../system/dds_AD9837.h"
+#include "../system/pga_8ch_CS3308.h"
+
+#include "calibration.h"
+#include "scan2.h"
+#include "scan4.h"
+#include "scan4_ortho.h"
+#include "auto_approach.h"
+
 /*
 ISSUES
 
@@ -48,7 +71,8 @@ void set_dac_max (void);
 void write_dac(void);
 void read_dac(void);
 
-void read_adc(void);
+void uart_read_adc(void);
+u16 read_adc(adc adc_ch);
 void read_z (void);
 
 void set_actuators(void);

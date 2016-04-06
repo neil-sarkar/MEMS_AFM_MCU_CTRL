@@ -4,29 +4,6 @@
 
 #include "main.h"
 
-#include "../peripheral/uart.h"
-#include "../peripheral/adc.h"
-#include "../peripheral/dac.h"
-#include "../peripheral/flash.h"
-#include "../peripheral/flash.h"
-#include "../peripheral/wire3.h"
-
-#include "../system/dds_AD5932.h"
-#include "../system/pid.h"
-#include "../system/motor.h"
-#include "../system/stpr_DRV8834.h"
-
-#include "../system/pga_1ch_LM1971.h"
-#include "../system/pga_4ch_PGA4311.h"
-#include "../system/dds_AD9837.h"
-#include "../system/pga_8ch_CS3308.h"
-
-#include "calibration.h"
-#include "scan2.h"
-#include "scan4.h"
-#include "scan4_ortho.h"
-#include "auto_approach.h"
-
 #define UART_ECHO(ack_char)	uart_set_char(ack_char)
 
 #ifdef configSYS_DDS_AD9837
@@ -100,6 +77,7 @@ int main(void)
 	/* initialize all relevant modules */
    	sys_init ();
 	
+
 	UART_ECHO('\n');
 	UART_ECHO(0xF2);
 	UART_ECHO('a');
@@ -148,7 +126,7 @@ int main(void)
 				break;
 			// Read ADC
 			case 'c':
-				read_adc();
+				uart_read_adc();
 				break;
 			// Set Actuator Voltages
 			case 'f':
@@ -538,7 +516,7 @@ void force_curve (void)
 	for (dac_val = FC_INITIAL_Z; dac_val > 0; dac_val -= FC_STEP)
 	{
 		dac_set_val(DAC_ZOFFSET_FINE, dac_val);
-
+		
 	  adc_start_conv(ADC_ZAMP);
 		adc_val = adc_get_avgw_val(FC_AVG_CNT, 300);
 
@@ -800,17 +778,41 @@ void write_dac(void)
 	uart_write("o");
 }
 
-void read_adc(void)
+extern u8 isPidOn;
+extern u16 pid_input;
+extern u16 pid_phase;
+u16 read_adc(adc adc_ch)
+{
+	u16 adc_val;
+	// Read ADC
+	if (isPidOn == 1)
+	{
+		if (adc_ch == PID_INPUT)
+		{
+			adc_val = pid_input;
+		}
+		else if (adc_ch == ADC_PHASE)
+		{
+			adc_val = pid_phase;			
+		}
+	}
+	else
+	{
+		adc_start_conv(adc_ch);
+		adc_val = adc_get_val();
+	}	
+	
+	return adc_val;
+}
+
+void uart_read_adc(void)
 {
 	adc adc_ch;
 	u16 adc_val;
 
 	// Get ADC channel
 	adc_ch = (adc)uart_wait_get_char();
-
-	// Read ADC
-	adc_start_conv(adc_ch);
-	adc_val = adc_get_val();
+	adc_val = read_adc(adc_ch);
 	
 	// Reply the ADC channel along with measured value
 	uart_write_char(adc_ch);  //Response byte 2, ADC channel requested
@@ -918,16 +920,14 @@ void freq_sweep_AD9837(void)
 		while(delay--){};
 
 		// read adc
-		adc_start_conv(ADC_ZAMP);
-		adc_val = adc_get_val();
+		adc_val = read_adc(ADC_ZAMP);
 
 	 	// Send data out
 		uart_write_char((adc_val));
 		uart_write_char(((adc_val >> 8)));
 
 		// read adc for phase data
-		adc_start_conv(ADC_PHASE);
-		adc_val = adc_get_val();
+		adc_val = read_adc(ADC_PHASE);
 
 	 	// Send data out
 		uart_write_char((adc_val));
