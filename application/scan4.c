@@ -5,6 +5,8 @@
 extern u8 isPidOn;
 extern u16 pid_input;
 extern u16 pid_phase;
+extern u16 pid_liamp1;
+extern u16 pid_liamp2;
 
 struct flash
 {
@@ -51,6 +53,8 @@ struct scan4
 	u16 	yRange;
 	u16 	lineCnt;
 	u16		sendBackCnt;
+	u16		liamp1;
+	u16 	liamp2;
 	u8  	sampleCnt;
 	u8  	dwellTime_ms;
 	u8		iLine;
@@ -101,27 +105,37 @@ __inline static void SET_PAIRY(u16 v1, u16 v2)
 
 #define SAMPLE_WAIT_CNT_ABS	50
 
-#define TAKE_MEASUREMENT	if (isPidOn == 1)																	\
-							{																					\
-								s4.img.zAmplitude = pid_input;													\
-								s4.img.zOffset = dac_get_val(DAC_ZOFFSET_FINE);			 						\
-								s4.img.zPhase = pid_phase;														\
-							}																					\
-							else																				\
-							{																					\
-								adc_start_conv (ADC_ZAMP);	 													\
+#define TAKE_MEASUREMENT	if (isPidOn == 1)																									\
+							{																																							\
+								s4.img.zAmplitude = pid_input;																							\
+								s4.img.zOffset = dac_get_val(DAC_ZOFFSET_FINE);			 												\
+								s4.img.zPhase = pid_phase;																									\
+								s4.liamp1 = pid_liamp1;																											\
+								s4.liamp2 = pid_liamp2;																											\
+							}																																							\
+							else																																					\
+							{																																							\
+								adc_start_conv (ADC_ZAMP);	 																								\
 								s4.img.zAmplitude = adc_get_avgw_val(s4.sampleCnt, SAMPLE_WAIT_CNT_ABS); 		\
-								s4.img.zOffset = dac_get_val(DAC_ZOFFSET_FINE);			 						\
-								adc_start_conv(ADC_PHASE);								 						\
-								s4.img.zPhase = adc_get_avgw_val(s4.sampleCnt, SAMPLE_WAIT_CNT_ABS);			\
+								s4.img.zOffset = dac_get_val(DAC_ZOFFSET_FINE);			 												\
+								adc_start_conv(ADC_PHASE);								 																	\
+								s4.img.zPhase = adc_get_avgw_val(s4.sampleCnt, SAMPLE_WAIT_CNT_ABS);				\
+								adc_start_conv(ADC_LIAMP1);								 																	\
+								s4.liamp1 = adc_get_val();																									\
+								adc_start_conv(ADC_LIAMP2);								 																	\
+								s4.liamp2 = adc_get_val();																									\
 							}
 
 #define SEND_DATA_TO_CLIENT uart_set_char((s4.img.zAmplitude & 0xFF)); 											\
-							uart_set_char((s4.img.zAmplitude >> 8) & 0x0F); 									\
-							uart_set_char(s4.img.zOffset & 0xFF); 												\
-							uart_set_char((s4.img.zOffset >> 8) & 0x0F); 										\
-							uart_set_char(s4.img.zPhase & 0xFF); 												\
-							uart_set_char((s4.img.zPhase >> 8) & 0x0F);				
+							uart_set_char((s4.img.zAmplitude >> 8) & 0x0F); 															\
+							uart_set_char(s4.img.zOffset & 0xFF); 																				\
+							uart_set_char((s4.img.zOffset >> 8) & 0x0F); 																	\
+							uart_set_char(s4.img.zPhase & 0xFF); 																					\
+							uart_set_char((s4.img.zPhase >> 8) & 0x0F);																		\
+							uart_set_char(s4.liamp1 & 0xFF); 																							\
+							uart_set_char((s4.liamp1 >> 8) & 0x0F);																				\
+							uart_set_char(s4.liamp2 & 0xFF); 																							\
+							uart_set_char((s4.liamp2 >> 8) & 0x0F);																				\
 
 #define SCAN				if (s4.isXScanDirDwn)																\
 							{														  							\

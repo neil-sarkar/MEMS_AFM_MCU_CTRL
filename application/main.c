@@ -506,15 +506,21 @@ void force_curve (void)
 extern u8 isPidOn;
 extern u16 pid_input;
 extern u16 pid_phase;
+extern u16 pid_liamp1;
+extern u16 pid_liamp2;
+
 void read_z (void)
 {
 	u16 z_amp, z_offset, z_phase;
+	u16 liamp1, liamp2;
 
 	if (isPidOn == 1)
 	{
 		z_amp 		= pid_input;
 		z_offset 	= dac_get_val(DAC_ZOFFSET_FINE);
 		z_phase 	= pid_phase;
+		liamp1		= pid_liamp1;
+		liamp2		= pid_liamp2;
 	}
 	else
 	{
@@ -522,8 +528,15 @@ void read_z (void)
 		z_amp 		= adc_get_val (); 
 		
 		z_offset	= dac_get_val(DAC_ZOFFSET_FINE);
+		
 		adc_start_conv(ADC_PHASE);
 		z_phase 	= adc_get_val();
+		
+		adc_start_conv(ADC_LIAMP1);
+		liamp1 	= adc_get_val();
+		
+		adc_start_conv(ADC_LIAMP2);
+		liamp2 	= adc_get_val();
 	}
 
 	uart_set_char((u8)((z_amp) & 0xFF));
@@ -534,6 +547,12 @@ void read_z (void)
 
 	uart_set_char((u8)(z_phase & 0xFF));
 	uart_set_char((u8)((z_phase >> 8) & 0xFF));
+	
+	uart_set_char((u8)(liamp1 & 0xFF));
+	uart_set_char((u8)((liamp1 >> 8) & 0xFF));
+	
+	uart_set_char((u8)(liamp2 & 0xFF));
+	uart_set_char((u8)((liamp2 >> 8) & 0xFF));
 }
 
 #define MV_TO_ABS_200	248

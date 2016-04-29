@@ -74,7 +74,8 @@
 #define ADC_PHASE			adc0
 #define ADC_ZOFFSET			adc2
 #define ADC_X1				adc3
-#define ADC_SPARE1			adc4
+#define ADC_LIAMP1		adc1			
+#define ADC_LIAMP2		adc4
 #ifdef ZAMP_PADC
 	#error "Still not set PADC"
 	#define ADC_ZAMP		padc0
